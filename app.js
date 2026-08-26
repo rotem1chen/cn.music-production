@@ -446,7 +446,8 @@
       shots.slice(0, 3).forEach((file, si) => {
         const shot = document.createElement("div"); shot.className = "shot";
         const img = document.createElement("img"); img.loading = "lazy"; img.alt = con.artist || "still";
-        img.src = (con.dir || "") + file;
+        img.src = (con.dir || "") + "thumb/" + file;                       // light thumbnail for the grid
+        img.onerror = () => { img.onerror = null; img.src = (con.dir || "") + file; };  // fallback to full if no thumb
         shot.append(img);
         const seeAll = (si === 2 && shots.length > 3);      // last preview → "+N more" → opens the full show subpage
         if (seeAll) {

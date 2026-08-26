@@ -18,7 +18,8 @@
   shots.forEach((file, si) => {
     const shot = document.createElement("div"); shot.className = "shot";
     const img = document.createElement("img"); img.loading = "lazy"; img.alt = CON.artist || "still";
-    img.src = (CON.dir || "") + file;
+    img.src = (CON.dir || "") + "thumb/" + file;                        // light thumbnail for the grid
+    img.onerror = () => { img.onerror = null; img.src = (CON.dir || "") + file; };  // fallback to full if no thumb
     shot.append(img);
     shot.addEventListener("click", () => openPhoto(si));
     grid.appendChild(shot);
