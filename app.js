@@ -273,27 +273,21 @@
     cursor.style.left = cx + "px"; cursor.style.top = cy + "px";
 
     if (fineMouse && cursorShown && !viewerOpen && !document.body.classList.contains("intro-lock")) {
-      const vh = window.innerHeight, mid = vh / 2;
+      const vh = window.innerHeight, mid = vh / 2, dead = vh * 0.15;
+      const d = ty - mid;
       const se = document.scrollingElement || document.documentElement;
-      if (hoverIdx >= 0) {
-        // pointing at a clip → snap THAT clip to the middle (fast but eased)
-        const r = clipEls[hoverIdx].getBoundingClientRect();
-        const delta = (r.top + r.height / 2) - mid;
-        if (Math.abs(delta) > 0.5) se.scrollTop += delta * 0.3;
-      } else {
-        // not over a clip → pan by mouse height (low → down, high → up), then settle
-        const dead = vh * 0.15, d = ty - mid;
-        if (Math.abs(d) > dead) {
-          const dir = d > 0 ? 1 : -1;
-          const frac = Math.min(1, (Math.abs(d) - dead) / (mid - dead));
-          se.scrollTop += dir * frac * frac * 24;
-        } else if (performance.now() - lastWheel > 220) {
-          const { best } = nearestToCenter();
-          if (best >= 0) {
-            const r = clipEls[best].getBoundingClientRect();
-            const delta = (r.top + r.height / 2) - mid;
-            if (Math.abs(delta) > 0.5) se.scrollTop += delta * 0.11;
-          }
+      if (Math.abs(d) > dead) {
+        // pan: mouse low → scroll down, high → up; faster the further out
+        const dir = d > 0 ? 1 : -1;
+        const frac = Math.min(1, (Math.abs(d) - dead) / (mid - dead));
+        se.scrollTop += dir * frac * frac * 24;
+      } else if (performance.now() - lastWheel > 220) {
+        // settled in the middle → gentle magnetic snap to the nearest clip
+        const { best } = nearestToCenter();
+        if (best >= 0) {
+          const r = clipEls[best].getBoundingClientRect();
+          const delta = (r.top + r.height / 2) - mid;
+          if (Math.abs(delta) > 0.5) se.scrollTop += delta * 0.11;
         }
       }
     }
