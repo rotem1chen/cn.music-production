@@ -34,15 +34,22 @@ html { scroll-behavior: smooth; scroll-snap-type: y proximity; background: var(-
 }
 .intro.playing .intro-gate { display: none; }
 .intro-logo { width: clamp(150px, 22vw, 320px); height: auto; display: block; }
+/* Enter framed by the same yellow target-corners as the reel reticle */
 .intro-enter {
-  display: inline-flex; align-items: center; gap: 14px;
-  background: rgba(0,0,0,0.35); border: 1px solid var(--accent); color: var(--text);
-  font-family: var(--mono); font-size: 13px; letter-spacing: 0.28em; text-transform: uppercase;
-  padding: 16px 32px; border-radius: 100px; cursor: pointer;
-  transition: background .25s, color .25s, opacity .35s;
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  padding: 18px 46px; background: transparent; border: 0; cursor: pointer;
 }
-.intro-enter:hover { background: var(--accent); color: #000; }
-.intro-enter .tri { width: 0; height: 0; border-left: 11px solid currentColor; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+.intro-enter .ec-label {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.36em; text-transform: uppercase;
+  color: var(--text); transition: color .25s;
+}
+.intro-enter:hover .ec-label { color: var(--accent); }
+.intro-enter .ec { position: absolute; width: 12px; height: 12px; border: 1.5px solid var(--accent); transition: width .3s var(--ease), height .3s var(--ease); }
+.intro-enter .ec.tl { top: 0; left: 0;  border-right: 0; border-bottom: 0; }
+.intro-enter .ec.tr { top: 0; right: 0; border-left: 0;  border-bottom: 0; }
+.intro-enter .ec.bl { bottom: 0; left: 0;  border-right: 0; border-top: 0; }
+.intro-enter .ec.br { bottom: 0; right: 0; border-left: 0;  border-top: 0; }
+.intro-enter:hover .ec { width: 18px; height: 18px; }
 .intro-enter[hidden] { display: none; }
 .intro-skip {
   position: fixed; bottom: 26px; right: var(--pad); z-index: 301;

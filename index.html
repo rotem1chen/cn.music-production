@@ -8,17 +8,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=17" />
+  <link rel="stylesheet" href="style.css?v=18" />
 </head>
 <body id="top">
   <!-- INTRO (plays once per session, then fades into the site) -->
   <div class="intro" id="intro">
     <video class="intro-video" id="introVideo" playsinline preload="auto">
-      <source src="intro.mp4?v=17" type="video/mp4" />
+      <source src="intro.mp4?v=18" type="video/mp4" />
     </video>
     <div class="intro-gate" id="introGate">
       <img class="intro-logo" src="logo.png?v=12" alt="CN Production" />
-      <button class="intro-enter" id="introEnter"><span class="tri"></span>Enter</button>
+      <button class="intro-enter" id="introEnter">
+        <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
+        <span class="ec-label">Enter</span>
+      </button>
     </div>
     <button class="intro-skip" id="introSkip" hidden>SKIP ✕</button>
   </div>
@@ -97,7 +100,7 @@
   <!-- cursor ring (follows the mouse) -->
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="clips.js?v=17"></script>
-  <script src="app.js?v=17"></script>
+  <script src="clips.js?v=18"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>
