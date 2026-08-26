@@ -227,6 +227,10 @@ a { color: inherit; text-decoration: none; }
   .hud-title { text-align: left; } .hud-artist { text-align: right; }
   .hud-format, .hud-index { display: none; }
 }
+/* touch devices have no mouse → hide the cursor ring so it doesn't sit frozen */
+@media (hover: none), (pointer: coarse) {
+  .cursor { display: none !important; }
+}
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto; }
   html { scroll-snap-type: none; }
