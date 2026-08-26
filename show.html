@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CN Production — Stills</title>
+  <meta name="description" content="Concert photography — CN Production." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=42" />
+</head>
+<body class="show-page" id="top">
+  <!-- NAV -->
+  <header class="nav">
+    <a class="nav-mark" href="index.html">← CN—PRD</a>
+    <nav class="nav-right">
+      <a href="index.html">Work</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+  </header>
+
+  <!-- GALLERY -->
+  <section class="show" id="show">
+    <span class="panel-label">[ STILLS ]</span>
+    <h1 class="show-title" id="showTitle"></h1>
+    <div class="concert-grid" id="showGrid"></div>
+  </section>
+
+  <!-- PHOTO LIGHTBOX -->
+  <div class="plight" id="plight" hidden>
+    <button class="plight-nav prev" id="plightPrev" aria-label="Previous">‹</button>
+    <button class="plight-nav next" id="plightNext" aria-label="Next">›</button>
+    <div class="plight-stage" id="plightStage">
+      <img class="plight-img" id="plightImg" alt="" />
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+    <button class="plight-close" id="plightClose" aria-label="Close">CLOSE ✕</button>
+    <div class="plight-meta"><span id="plightCaption"></span><span id="plightCount"></span></div>
+  </div>
+
+  <script src="photos.js?v=42"></script>
+  <script src="show.js?v=42"></script>
+</body>
+</html>

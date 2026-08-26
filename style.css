@@ -214,6 +214,12 @@ a { color: inherit; text-decoration: none; }
 .plight-meta { position: fixed; left: 0; right: 0; bottom: 22px; display: flex; justify-content: space-between;
   padding: 0 var(--pad); font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
 
+/* ---------- Stills subpage ---------- */
+.show { max-width: 1200px; margin: 0 auto; padding: clamp(96px,14vh,150px) var(--pad) clamp(60px,10vh,110px); }
+.show-title { font-weight: 400; font-size: clamp(20px, 3.2vw, 34px); letter-spacing: 0.03em; text-transform: uppercase; margin: 16px 0 36px; line-height: 1.15; }
+.show-title .concert-meta { color: var(--muted); }
+.nav-mark { white-space: nowrap; }
+
 /* ---------- Bottom HUD readout ---------- */
 .hud {
   position: fixed; left: 0; right: 0; bottom: 22px; z-index: 35;

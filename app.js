@@ -432,7 +432,7 @@
       info.innerHTML = `<span class="concert-artist">${esc(con.artist || "")}</span>` + (meta ? ` <span class="concert-meta">${meta}</span>` : "");
       const all = document.createElement("button"); all.className = "concert-all";
       all.innerHTML = `View all · ${shots.length} <span class="ar">→</span>`;
-      all.addEventListener("click", () => openPhoto(ci, 0));
+      all.addEventListener("click", () => { location.href = "show.html?c=" + ci; });   // full-gallery subpage
       head.append(info, all);
       block.appendChild(head);
 
@@ -442,11 +442,12 @@
         const img = document.createElement("img"); img.loading = "lazy"; img.alt = con.artist || "still";
         img.src = (con.dir || "") + file;
         shot.append(img);
-        if (si === 2 && shots.length > 3) {                 // last preview → "+N more" → opens the full show
+        const seeAll = (si === 2 && shots.length > 3);      // last preview → "+N more" → opens the full show subpage
+        if (seeAll) {
           const more = document.createElement("div"); more.className = "shot-more"; more.textContent = "+" + (shots.length - 3);
           shot.appendChild(more);
         }
-        shot.addEventListener("click", () => openPhoto(ci, si));
+        shot.addEventListener("click", () => { if (seeAll) location.href = "show.html?c=" + ci; else openPhoto(ci, si); });
         grid.appendChild(shot);
       });
       block.appendChild(grid);
