@@ -191,7 +191,7 @@
     if (Math.abs(dest - cur) < 4) return;
     cancelAnimationFrame(scrollRAF);
     animatingScroll = true;
-    const start = cur, dist = dest - start, t0 = performance.now(), dur = 520;
+    const start = cur, dist = dest - start, t0 = performance.now(), dur = 820;
     (function step(now) {
       const p = Math.min(1, (now - t0) / dur);
       const e = 1 - Math.pow(1 - p, 3);          // easeOutCubic
