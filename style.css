@@ -160,16 +160,22 @@ a { color: inherit; text-decoration: none; }
 .stills { max-width: 1200px; margin: 0 auto; padding: clamp(90px,16vh,200px) var(--pad); border-top: 1px solid var(--line); }
 .concert { margin-top: clamp(34px, 6vh, 64px); }
 .concert:first-child { margin-top: 30px; }
-.concert-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 18px;
+.concert-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px;
   font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
 .concert-artist { color: var(--text); font-weight: 700; }
 .concert-meta { color: var(--muted); }
-.concert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.concert-all { background: none; border: 0; cursor: pointer; font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--muted); transition: color .25s; display: inline-flex; align-items: center; gap: 8px; }
+.concert-all:hover { color: var(--accent); }
+.concert-all .ar { transition: transform .25s var(--ease); }
+.concert-all:hover .ar { transform: translateX(4px); }
+.concert-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
 .shot { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: #0c0c0e; cursor: pointer; }
-.shot img { width: 100%; height: 100%; object-fit: cover; display: block;
-  filter: grayscale(1) brightness(.72) contrast(1.05);
-  transition: transform .6s var(--ease), filter .5s var(--ease); }
-.shot:hover img { filter: grayscale(0) brightness(1) contrast(1); transform: scale(1.06); }
+.shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--ease); }
+.shot:hover img { transform: scale(1.05); }
+.shot-more { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.5); color: #fff; font-family: var(--mono); font-size: clamp(20px, 3vw, 30px); letter-spacing: 0.04em; transition: background .25s; }
+.shot:hover .shot-more { background: rgba(0,0,0,.32); }
 .shot::before, .shot::after { content: ""; position: absolute; width: 15px; height: 15px; border: 1.5px solid var(--accent); opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 2; }
 .shot::before { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
 .shot::after { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }

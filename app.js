@@ -423,18 +423,29 @@
 
   if (concertsWrap) {
     concertsData.forEach((con, ci) => {
+      const shots = con.shots || [];
       const block = document.createElement("div"); block.className = "concert";
+
       const head = document.createElement("div"); head.className = "concert-head";
       const meta = [con.venue, con.date].filter(Boolean).map(esc).join(" · ");
-      head.innerHTML = `<span class="concert-artist">${esc(con.artist || "")}</span>` + (meta ? `<span class="concert-meta">${meta}</span>` : "");
+      const info = document.createElement("div");
+      info.innerHTML = `<span class="concert-artist">${esc(con.artist || "")}</span>` + (meta ? ` <span class="concert-meta">${meta}</span>` : "");
+      const all = document.createElement("button"); all.className = "concert-all";
+      all.innerHTML = `View all · ${shots.length} <span class="ar">→</span>`;
+      all.addEventListener("click", () => openPhoto(ci, 0));
+      head.append(info, all);
       block.appendChild(head);
+
       const grid = document.createElement("div"); grid.className = "concert-grid";
-      (con.shots || []).forEach((file, si) => {
+      shots.slice(0, 3).forEach((file, si) => {
         const shot = document.createElement("div"); shot.className = "shot";
         const img = document.createElement("img"); img.loading = "lazy"; img.alt = con.artist || "still";
         img.src = (con.dir || "") + file;
-        const idx = document.createElement("span"); idx.className = "sidx"; idx.textContent = String(si + 1).padStart(2, "0");
-        shot.append(img, idx);
+        shot.append(img);
+        if (si === 2 && shots.length > 3) {                 // last preview → "+N more" → opens the full show
+          const more = document.createElement("div"); more.className = "shot-more"; more.textContent = "+" + (shots.length - 3);
+          shot.appendChild(more);
+        }
         shot.addEventListener("click", () => openPhoto(ci, si));
         grid.appendChild(shot);
       });
