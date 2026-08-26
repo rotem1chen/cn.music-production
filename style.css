@@ -108,13 +108,13 @@ a { color: inherit; text-decoration: none; }
 
 /* cursor ring — the yellow circle that follows the mouse */
 .cursor {
-  position: fixed; top: 0; left: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px;
-  border: 1px solid var(--accent); border-radius: 50%;
+  position: fixed; top: 0; left: 0; width: 22px; height: 22px;
+  border: 1.5px solid var(--accent); border-radius: 50%;
   pointer-events: none; z-index: 200; opacity: 0; will-change: transform;
-  transition: opacity .3s ease, width .18s var(--ease), height .18s var(--ease), margin .18s var(--ease);
+  transition: opacity .25s ease, width .2s var(--ease), height .2s var(--ease);
 }
 .cursor.show { opacity: 1; }
-.cursor.big { width: 40px; height: 40px; margin: -20px 0 0 -20px; }
+.cursor.big { width: 34px; height: 34px; }
 
 /* moving target reticle — glides onto whatever the cursor / scroll targets */
 .target {
