@@ -281,6 +281,24 @@
   }, { passive: true });
   window.addEventListener("resize", refresh);
 
+  /* ---------- Wheel scroll: free scrolling, then a gentle settle to the nearest clip ---------- */
+  const fineMouse = !window.matchMedia || window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  let wheelSettleTimer = null;
+  function settleToNearest() {
+    if (animatingScroll || viewerOpen || document.body.classList.contains("intro-lock")) return;
+    const { best } = nearestToCenter();
+    if (best < 0) return;
+    const r = clipEls[best].getBoundingClientRect();
+    if (Math.abs((r.top + r.height / 2) - window.innerHeight / 2) > 6) scrollToClip(best);
+  }
+  if (fineMouse) {
+    window.addEventListener("wheel", () => {
+      if (animatingScroll) { cancelAnimationFrame(scrollRAF); animatingScroll = false; }  // yield to the user's wheel
+      clearTimeout(wheelSettleTimer);
+      wheelSettleTimer = setTimeout(settleToNearest, 150);                                  // settle once they stop
+    }, { passive: true });
+  }
+
   /* ---------- Cursor ring follows the mouse (with a little lag) ---------- */
   let cx = window.innerWidth / 2, cy = window.innerHeight / 2, tx = cx, ty = cy, cursorShown = false;
   window.addEventListener("mousemove", (e) => {

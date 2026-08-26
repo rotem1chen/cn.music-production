@@ -14,7 +14,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; scroll-snap-type: y proximity; background: var(--bg); }
+html { scroll-behavior: smooth; scroll-snap-type: none; background: var(--bg); }
 
 /* ---------- Intro overlay ---------- */
 .intro {
@@ -282,6 +282,7 @@ a { color: inherit; text-decoration: none; }
 /* touch devices have no mouse → hide the cursor ring so it doesn't sit frozen */
 @media (hover: none), (pointer: coarse) {
   .cursor { display: none !important; }
+  html { scroll-snap-type: y proximity; }   /* mobile keeps native snap */
 }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto; }
