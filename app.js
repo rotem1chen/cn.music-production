@@ -143,17 +143,8 @@
       tryLoad(primary, () => tryLoad(fb, fail));
     })();
 
-    el.addEventListener("mouseenter", () => {
-      if (animatingScroll) return;                 // ignore enters caused by the auto-scroll itself
-      cursor.classList.add("big");
-      hoverIdx = i;
-      if (performance.now() - lastMoveTs < 160) scrollToClip(i);  // only when the mouse actually moved
-      refresh();
-    });
-    el.addEventListener("mouseleave", () => {
-      cursor.classList.remove("big");
-      if (hoverIdx === i && !animatingScroll) { hoverIdx = -1; refresh(); }
-    });
+    el.addEventListener("mouseenter", () => cursor.classList.add("big"));
+    el.addEventListener("mouseleave", () => cursor.classList.remove("big"));
     el.addEventListener("click", () => openViewer(el, c));
     el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openViewer(el, c); } });
     reel.appendChild(el);
@@ -177,29 +168,8 @@
   barsWrap.innerHTML = "";
   const bars = items.map(() => { const b = document.createElement("i"); barsWrap.appendChild(b); return b; });
 
-  let hoverIdx = -1;
   let activeIdx = -1;
   let viewerOpen = false;
-  let animatingScroll = false, scrollRAF = null, lastMoveTs = 0;
-
-  function scrollToClip(i) {
-    const el = clipEls[i]; if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const cur = window.scrollY;
-    const raw = cur + rect.top + rect.height / 2 - window.innerHeight / 2;
-    const dest = Math.max(0, Math.min(raw, document.documentElement.scrollHeight - window.innerHeight));
-    if (Math.abs(dest - cur) < 4) return;
-    cancelAnimationFrame(scrollRAF);
-    animatingScroll = true;
-    const start = cur, dist = dest - start, t0 = performance.now(), dur = 820;
-    (function step(now) {
-      const p = Math.min(1, (now - t0) / dur);
-      const e = 1 - Math.pow(1 - p, 3);          // easeOutCubic
-      window.scrollTo(0, start + dist * e);
-      if (p < 1) scrollRAF = requestAnimationFrame(step);
-      else animatingScroll = false;
-    })(performance.now());
-  }
 
   function positionTarget(i) {
     const r = clipEls[i].getBoundingClientRect();
@@ -255,16 +225,14 @@
   function refresh() {
     if (viewerOpen) return;
     const { best, bestD } = nearestToCenter();
-    const useHover = hoverIdx >= 0;
-    const a = useHover ? hoverIdx : best;
-    const show = a >= 0 && (useHover || bestD < window.innerHeight * 0.7);
+    const show = best >= 0 && bestD < window.innerHeight * 0.7;
 
     chrome.classList.toggle("hide", !show);
     hud.classList.toggle("hide", !show);
 
-    if (a >= 0 && show) {
-      if (a !== activeIdx) setActive(a);
-      positionTarget(a);
+    if (best >= 0 && show) {
+      if (best !== activeIdx) setActive(best);
+      positionTarget(best);
     }
 
     const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -283,14 +251,27 @@
   let cx = window.innerWidth / 2, cy = window.innerHeight / 2, tx = cx, ty = cy, cursorShown = false;
   window.addEventListener("mousemove", (e) => {
     tx = e.clientX; ty = e.clientY;
-    lastMoveTs = performance.now();               // mark genuine mouse movement
     if (viewerOpen) return;                        // ring hidden over the player (iframe eats mouse events)
     if (!cursorShown) { cursorShown = true; cursor.classList.add("show"); }
   });
   window.addEventListener("mouseout", (e) => { if (!e.relatedTarget) { cursorShown = false; cursor.classList.remove("show"); } });
+
+  const fineMouse = !window.matchMedia || window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   (function cursorLoop() {
     cx += (tx - cx) * 0.2; cy += (ty - cy) * 0.2;
     cursor.style.left = cx + "px"; cursor.style.top = cy + "px";
+
+    // continuous pan: mouse in lower half scrolls down, upper half up, middle = still (desktop only)
+    if (fineMouse && cursorShown && !viewerOpen && !document.body.classList.contains("intro-lock")) {
+      const vh = window.innerHeight, mid = vh / 2, dead = vh * 0.15;
+      const d = ty - mid;
+      if (Math.abs(d) > dead) {
+        const dir = d > 0 ? 1 : -1;
+        const frac = Math.min(1, (Math.abs(d) - dead) / (mid - dead));
+        const se = document.scrollingElement || document.documentElement;
+        se.scrollTop += dir * frac * frac * 24;      // direct set → bypasses CSS smooth scroll
+      }
+    }
     requestAnimationFrame(cursorLoop);
   })();
 
