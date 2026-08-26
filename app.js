@@ -419,7 +419,63 @@
 
   closeBtn.addEventListener("click", closeViewer);
   viewer.addEventListener("click", (e) => { if (e.target === viewer) closeViewer(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeViewer(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !viewer.hidden) closeViewer(); });
+
+  /* ---------- STILLS: concert contact sheets + photo lightbox ---------- */
+  const concertsData = (typeof CONCERTS !== "undefined" && Array.isArray(CONCERTS)) ? CONCERTS : [];
+  const concertsWrap = document.getElementById("concerts");
+  function esc(s) { return String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])); }
+
+  if (concertsWrap) {
+    concertsData.forEach((con, ci) => {
+      const block = document.createElement("div"); block.className = "concert";
+      const head = document.createElement("div"); head.className = "concert-head";
+      const meta = [con.venue, con.date].filter(Boolean).map(esc).join(" · ");
+      head.innerHTML = `<span class="concert-artist">${esc(con.artist || "")}</span>` + (meta ? `<span class="concert-meta">${meta}</span>` : "");
+      block.appendChild(head);
+      const grid = document.createElement("div"); grid.className = "concert-grid";
+      (con.shots || []).forEach((file, si) => {
+        const shot = document.createElement("div"); shot.className = "shot";
+        const img = document.createElement("img"); img.loading = "lazy"; img.alt = con.artist || "still";
+        img.src = (con.dir || "") + file;
+        shot.appendChild(img);
+        shot.addEventListener("click", () => openPhoto(ci, si));
+        grid.appendChild(shot);
+      });
+      block.appendChild(grid);
+      concertsWrap.appendChild(block);
+    });
+  }
+
+  const plight = document.getElementById("plight");
+  const plightImg = document.getElementById("plightImg");
+  const plightCaption = document.getElementById("plightCaption");
+  const plightCount = document.getElementById("plightCount");
+  let pCon = 0, pShot = 0;
+
+  function showPhoto() {
+    const con = concertsData[pCon]; if (!con) return;
+    const shots = con.shots || []; if (!shots.length) return;
+    pShot = ((pShot % shots.length) + shots.length) % shots.length;
+    plightImg.src = (con.dir || "") + shots[pShot];
+    plightCaption.textContent = [con.artist, con.venue, con.date].filter(Boolean).join(" · ");
+    plightCount.textContent = String(pShot + 1).padStart(2, "0") + " / " + String(shots.length).padStart(2, "0");
+  }
+  function openPhoto(ci, si) { pCon = ci; pShot = si; showPhoto(); plight.hidden = false; document.body.style.overflow = "hidden"; }
+  function closePhoto() { plight.hidden = true; plightImg.src = ""; document.body.style.overflow = ""; }
+
+  if (plight) {
+    document.getElementById("plightPrev").addEventListener("click", () => { pShot--; showPhoto(); });
+    document.getElementById("plightNext").addEventListener("click", () => { pShot++; showPhoto(); });
+    document.getElementById("plightClose").addEventListener("click", closePhoto);
+    plight.addEventListener("click", (e) => { if (e.target === plight) closePhoto(); });
+    document.addEventListener("keydown", (e) => {
+      if (plight.hidden) return;
+      if (e.key === "Escape") closePhoto();
+      else if (e.key === "ArrowLeft") { pShot--; showPhoto(); }
+      else if (e.key === "ArrowRight") { pShot++; showPhoto(); }
+    });
+  }
 
   /* ---------- Go ---------- */
   refresh();

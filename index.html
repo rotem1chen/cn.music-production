@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=32" />
+  <link rel="stylesheet" href="style.css?v=33" />
 </head>
 <body id="top">
   <!-- INTRO (plays once per session, then fades into the site) -->
@@ -30,8 +30,8 @@
   <header class="nav">
     <a class="nav-mark" href="#top" data-mark>CN—PRD</a>
     <nav class="nav-right">
+      <a href="#stills">STILLS</a>
       <a href="#contact">CONTACT</a>
-      <a href="#work">ARCHIVE</a>
     </nav>
   </header>
 
@@ -40,6 +40,7 @@
     <img class="logo-photo" id="logoPhoto" src="logo.png?v=12" alt="CN Production" />
     <span class="logo-mark" id="logoFallback" role="img" aria-label="CN Production"></span>
     <span class="logo-word" data-brand>CN PRODUCTION</span>
+    <a class="skip-stills" href="#stills">Skip the films <span>↓</span></a>
   </div>
 
   <!-- VIEWFINDER CHROME (fixed) — brackets only, no lines -->
@@ -67,6 +68,12 @@
     <span class="hud-artist" data-hud-artist></span>
     <span class="hud-index"  data-hud-index></span>
   </div>
+
+  <!-- STILLS — concert photography -->
+  <section class="stills" id="stills">
+    <span class="panel-label">[ STILLS ]</span>
+    <div class="concerts" id="concerts"></div>
+  </section>
 
   <!-- ABOUT / CONTACT -->
   <section class="panel about" id="about">
@@ -97,10 +104,24 @@
     <button class="viewer-close" id="viewerClose" aria-label="Close">CLOSE ✕</button>
   </div>
 
+  <!-- PHOTO LIGHTBOX -->
+  <div class="plight" id="plight" hidden>
+    <button class="plight-nav prev" id="plightPrev" aria-label="Previous">‹</button>
+    <button class="plight-nav next" id="plightNext" aria-label="Next">›</button>
+    <div class="plight-stage" id="plightStage">
+      <img class="plight-img" id="plightImg" alt="" />
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+    <button class="plight-close" id="plightClose" aria-label="Close">CLOSE ✕</button>
+    <div class="plight-meta"><span id="plightCaption"></span><span id="plightCount"></span></div>
+  </div>
+
   <!-- cursor ring (follows the mouse) -->
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="clips.js?v=32"></script>
-  <script src="app.js?v=32"></script>
+  <script src="clips.js?v=33"></script>
+  <script src="photos.js?v=33"></script>
+  <script src="app.js?v=33"></script>
 </body>
 </html>
