@@ -30,4 +30,5 @@ const SITE = {
 
 const CLIPS = [
   { url: "https://www.youtube.com/watch?v=BPPiZgkobEg", title: "דרעק", artist: "ayubii", format: "DIGITAL" },
+  { url: "https://youtu.be/-pC_MCcH4c8",                title: "שקוף", artist: "סיד",   format: "DIGITAL" },
 ];
