@@ -1,0 +1,187 @@
+/* ---------- Tokens ---------- */
+:root {
+  --bg:     #000;
+  --text:   #f4f4f2;
+  --muted:  rgba(244,244,242,0.42);
+  --line:   rgba(244,244,242,0.16);
+  --lead:   rgba(244,244,242,0.28);
+  --accent: #ffd400;                 /* brand yellow — the "targeting" colour */
+  --mono:   "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --pad:    clamp(18px, 3.4vw, 42px);
+  --ease:   cubic-bezier(.16,1,.3,1);
+  --clipW:  clamp(200px, 24vw, 380px);
+  --clipH:  calc(var(--clipW) * 0.5625);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-snap-type: y proximity; background: var(--bg); }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--mono); -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Nav ---------- */
+.nav {
+  position: fixed; inset: 0 0 auto 0; z-index: 60;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px var(--pad);
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  mix-blend-mode: difference;
+}
+.nav-right { display: flex; gap: clamp(20px, 3vw, 46px); }
+.nav a { opacity: .82; transition: opacity .25s; }
+.nav a:hover { opacity: 1; }
+
+/* ---------- Logo (yellow, fades on scroll) ---------- */
+.logo-hero {
+  position: fixed; top: 7vh; left: 50%; transform: translateX(-50%);
+  z-index: 25; text-align: center; pointer-events: none; will-change: opacity;
+}
+.logo-photo {
+  display: block; margin: 0 auto;
+  width: clamp(110px, 15vw, 200px); height: auto;
+}
+.logo-mark {                         /* fallback if logo.png is missing */
+  display: none; margin: 0 auto;
+  width: clamp(72px, 9vw, 120px); aspect-ratio: 123.21 / 129.73;
+  background-color: var(--accent);
+  -webkit-mask: url("logo.svg") center / contain no-repeat;
+          mask: url("logo.svg") center / contain no-repeat;
+}
+.logo-word { display: block; margin-top: 12px; font-size: 11px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--text); }
+
+/* ---------- Viewfinder chrome ---------- */
+.chrome { position: fixed; inset: 0; z-index: 30; pointer-events: none; transition: opacity .45s var(--ease); }
+.chrome.hide { opacity: 0; }
+.deco-bars { position: absolute; left: var(--pad); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; }
+.deco-bars i { display: block; height: 2px; width: 14px; background: var(--muted); transition: width .35s var(--ease), background .3s; }
+.deco-bars i.on { width: 34px; background: var(--accent); }
+.deco-squares { position: absolute; right: var(--pad); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 7px; }
+.deco-squares i { width: 10px; height: 10px; border: 1px solid var(--muted); transition: background .3s, border-color .3s; }
+.deco-squares i.on { background: var(--accent); border-color: var(--accent); }
+
+/* cursor ring — the yellow circle that follows the mouse */
+.cursor {
+  position: fixed; top: 0; left: 0; width: 26px; height: 26px;
+  border: 1px solid var(--accent); border-radius: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: none; z-index: 200; opacity: 0;
+  transition: opacity .3s ease, transform .18s var(--ease);
+  will-change: left, top;
+}
+.cursor.show { opacity: 1; }
+.cursor.big { transform: translate(-50%, -50%) scale(1.75); }
+
+/* moving target reticle — glides onto whatever the cursor / scroll targets */
+.target {
+  position: fixed; pointer-events: none;
+  transition: top .42s var(--ease), left .42s var(--ease), width .42s var(--ease), height .42s var(--ease), opacity .35s;
+}
+.corner { position: absolute; width: 18px; height: 18px; border: 1.5px solid var(--accent); }
+.corner.tl { top: 0; left: 0;  border-right: 0; border-bottom: 0; }
+.corner.tr { top: 0; right: 0; border-left: 0;  border-bottom: 0; }
+.corner.bl { bottom: 0; left: 0;  border-right: 0; border-top: 0; }
+.corner.br { bottom: 0; right: 0; border-left: 0;  border-top: 0; }
+.target.lock .corner { animation: cornerIn .45s var(--ease); }
+@keyframes cornerIn {
+  0%   { opacity: 0; transform: translate(var(--dx,0), var(--dy,0)); }
+  100% { opacity: 1; transform: translate(0,0); }
+}
+.target .tl { --dx: -12px; --dy: -12px; }
+.target .tr { --dx:  12px; --dy: -12px; }
+.target .bl { --dx: -12px; --dy:  12px; }
+.target .br { --dx:  12px; --dy:  12px; }
+
+/* ---------- Reel ---------- */
+.reel {
+  display: flex; flex-direction: column; align-items: center;
+  gap: clamp(14px, 2.4vh, 30px);
+  padding: calc(50vh - var(--clipH)/2 - 20px) 0;
+}
+.clip {
+  width: var(--clipW); height: var(--clipH);
+  position: relative; overflow: hidden; background: #070707; border-radius: 10px;
+  scroll-snap-align: center; cursor: pointer; outline: none;
+  opacity: 0.24; transition: opacity .5s var(--ease);
+}
+.clip.active { opacity: 1; }
+.clip .poster { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.clip iframe, .clip video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; pointer-events: none; }
+
+/* ---------- Bottom HUD readout ---------- */
+.hud {
+  position: fixed; left: 0; right: 0; bottom: 22px; z-index: 35;
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; align-items: center;
+  padding: 0 var(--pad);
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  transition: opacity .45s var(--ease); pointer-events: none;
+}
+.hud.hide { opacity: 0; }
+.hud-format { text-align: left;   color: var(--muted); }
+.hud-title  { text-align: center; color: var(--text); }
+.hud-artist { text-align: center; color: var(--muted); }
+.hud-index  { text-align: right;  color: var(--muted); }
+
+/* ---------- About / Contact ---------- */
+.panel { max-width: 1200px; margin: 0 auto; padding: clamp(90px,16vh,200px) var(--pad); border-top: 1px solid var(--line); }
+.panel:first-of-type { margin-top: 12vh; }
+.panel-label { display: block; font-size: 11px; letter-spacing: 0.24em; color: var(--muted); margin-bottom: 30px; }
+.panel-text { font-size: clamp(18px, 2.6vw, 30px); line-height: 1.5; max-width: 30ch; }
+.contact-email { font-size: clamp(22px, 5vw, 52px); line-height: 1; display: inline-block; border-bottom: 1px solid transparent; transition: border-color .3s; }
+.contact-email:hover { border-color: var(--accent); }
+.socials { display: flex; gap: 22px; margin-top: 36px; flex-wrap: wrap; }
+.socials a { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); transition: color .25s; }
+.socials a:hover { color: var(--text); }
+.colophon { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 80px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+
+/* ---------- Viewer (grow + spreading crosshair) ---------- */
+.viewer { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0); transition: background .55s var(--ease); }
+.viewer[hidden] { display: none; }
+.viewer.open { background: rgba(0,0,0,.96); }
+
+/* crosshair lines that spread outward slowly — a camera grid drawing itself */
+.v-lead {
+  position: fixed; background: var(--lead); opacity: 0; pointer-events: none; z-index: 101;
+  transition: top 1.2s var(--ease), left 1.2s var(--ease), opacity .5s var(--ease);
+}
+.v-lead-t, .v-lead-b { left: 0; width: 100vw; height: 1px; }
+.v-lead-l, .v-lead-r { top: 0; height: 100vh; width: 1px; }
+.viewer.open .v-lead { opacity: 1; }
+
+.viewer-stage {
+  position: fixed; overflow: visible; background: #000 center/cover no-repeat; border-radius: 10px; z-index: 102;
+  will-change: top, left, width, height;
+  transition: top 1.1s var(--ease), left 1.1s var(--ease), width 1.1s var(--ease), height 1.1s var(--ease);
+}
+/* transparent while the poster grows; the real player fades in only once loaded */
+.viewer-media { position: absolute; inset: 0; overflow: hidden; border-radius: 10px; background: transparent; opacity: 0; transition: opacity .45s ease; }
+.viewer.loaded .viewer-media { opacity: 1; }
+.viewer-media iframe, .viewer-media video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.viewer-stage .corner { width: 20px; height: 20px; opacity: 0; transition: opacity .3s ease .05s; }
+.viewer.open .viewer-stage .corner { opacity: 1; }
+.viewer-stage .tl { top: 8px; left: 8px; }
+.viewer-stage .tr { top: 8px; right: 8px; }
+.viewer-stage .bl { bottom: 8px; left: 8px; }
+.viewer-stage .br { bottom: 8px; right: 8px; }
+
+.viewer-close {
+  position: fixed; top: 22px; right: var(--pad); z-index: 103;
+  background: none; border: 0; color: var(--text); cursor: pointer;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  opacity: 0; transition: opacity .3s ease .4s, color .2s;
+}
+.viewer-close:hover { color: var(--accent); }
+.viewer.open .viewer-close { opacity: 1; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 720px) {
+  .deco-circle, .deco-bars { display: none; }
+  .hud { grid-template-columns: 1fr 1fr; gap: 6px 0; bottom: 16px; }
+  .hud-title { text-align: left; } .hud-artist { text-align: right; }
+  .hud-format, .hud-index { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto; }
+  html { scroll-snap-type: none; }
+}

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CN Production</title>
+  <meta name="description" content="Music video & clip production studio — directing, production, post-production." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=12" />
+</head>
+<body id="top">
+  <!-- NAV -->
+  <header class="nav">
+    <a class="nav-mark" href="#top" data-mark>CN—PRD</a>
+    <nav class="nav-right">
+      <a href="#contact">CONTACT</a>
+      <a href="#work">ARCHIVE</a>
+    </nav>
+  </header>
+
+  <!-- LOGO (fixed, fades on scroll) -->
+  <div class="logo-hero" id="logoHero">
+    <img class="logo-photo" id="logoPhoto" src="logo.png?v=12" alt="CN Production" />
+    <span class="logo-mark" id="logoFallback" role="img" aria-label="CN Production"></span>
+    <span class="logo-word" data-brand>CN PRODUCTION</span>
+  </div>
+
+  <!-- VIEWFINDER CHROME (fixed) — brackets only, no lines -->
+  <div class="chrome" id="chrome" aria-hidden="true">
+    <div class="deco-bars">
+      <i style="width:34px"></i><i style="width:26px"></i><i style="width:20px"></i>
+      <i style="width:15px"></i><i style="width:11px"></i><i style="width:8px"></i>
+      <i style="width:6px"></i><i style="width:9px"></i><i style="width:13px"></i>
+      <i style="width:18px"></i><i style="width:24px"></i><i style="width:30px"></i>
+    </div>
+    <div class="deco-squares" id="squares"><i></i><i class="on"></i><i></i></div>
+    <div class="target" id="target">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+  </div>
+
+  <!-- REEL -->
+  <main class="reel" id="work"></main>
+
+  <!-- BOTTOM HUD READOUT (fixed) -->
+  <div class="hud" id="hud">
+    <span class="hud-format" data-hud-format></span>
+    <span class="hud-title"  data-hud-title></span>
+    <span class="hud-artist" data-hud-artist></span>
+    <span class="hud-index"  data-hud-index></span>
+  </div>
+
+  <!-- ABOUT / CONTACT -->
+  <section class="panel about" id="about">
+    <span class="panel-label">[ ABOUT ]</span>
+    <p class="panel-text" data-about></p>
+  </section>
+  <section class="panel contact" id="contact">
+    <span class="panel-label">[ CONTACT ]</span>
+    <a class="contact-email" href="#" data-email-link>hello@cnproduction.com</a>
+    <div class="socials" id="socials"></div>
+    <div class="colophon">
+      <span>© <span data-year></span> <span data-brand>CN PRODUCTION</span></span>
+      <span data-tagline></span>
+    </div>
+  </section>
+
+  <!-- VIEWER — video grows, crosshair lines spread with it -->
+  <div class="viewer" id="viewer" hidden>
+    <span class="v-lead v-lead-t" id="vLeadT"></span>
+    <span class="v-lead v-lead-b" id="vLeadB"></span>
+    <span class="v-lead v-lead-l" id="vLeadL"></span>
+    <span class="v-lead v-lead-r" id="vLeadR"></span>
+    <div class="viewer-stage" id="viewerStage">
+      <div class="viewer-media" id="viewerMedia"></div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+    <button class="viewer-close" id="viewerClose" aria-label="Close">CLOSE ✕</button>
+  </div>
+
+  <!-- cursor ring (follows the mouse) -->
+  <div class="cursor" id="cursor" aria-hidden="true"></div>
+
+  <script src="clips.js?v=12"></script>
+  <script src="app.js?v=12"></script>
+</body>
+</html>
