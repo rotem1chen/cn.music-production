@@ -300,6 +300,7 @@
 
   /* ---------- YouTube API: reveal the player only once it's actually playing ---------- */
   let ytApiReady = false, ytApiLoading = false, ytPlayer = null, pendingMount = null;
+  const isTouch = !!(window.matchMedia && window.matchMedia("(hover: none), (pointer: coarse)").matches) || "ontouchstart" in window;
   function loadYTApi() {
     if (ytApiReady || ytApiLoading) return;
     ytApiLoading = true;
@@ -315,6 +316,11 @@
 
   function mountPlayer(c) {
     if (c.v.type === "youtube") {
+      if (isTouch) {                                    // mobile: plain iframe, reveal now, tap to play (mobile blocks autoplay)
+        mediaBox.innerHTML = `<iframe src="https://www.youtube.com/embed/${c.v.id}?autoplay=1&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+        viewer.classList.add("loaded");
+        return;
+      }
       if (!ytApiReady) { pendingMount = () => mountPlayer(c); return; }
       mediaBox.innerHTML = '<div id="ytHost"></div>';
       ytPlayer = new YT.Player("ytHost", {
@@ -325,7 +331,7 @@
           onStateChange: (e) => { if (e.data === YT.PlayerState.PLAYING) viewer.classList.add("loaded"); },
         },
       });
-      setTimeout(() => viewer.classList.add("loaded"), 3000);   // safety fallback
+      setTimeout(() => viewer.classList.add("loaded"), 2000);   // safety fallback
     } else if (c.v.type === "vimeo") {
       mediaBox.innerHTML = `<iframe src="${c.v.player}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
       setTimeout(() => viewer.classList.add("loaded"), 1000);
