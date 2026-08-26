@@ -29,8 +29,5 @@ const SITE = {
    ============================================================ */
 
 const CLIPS = [
-  { url: "https://www.youtube.com/watch?v=BPPiZgkobEg", title: "Untitled Film", artist: "Artist Name", format: "DIGITAL" },
-  { url: "https://www.youtube.com/watch?v=9bZkp7q19f0", title: "Second Film",  artist: "Artist Name", format: "DIGITAL" },
-  { url: "https://www.youtube.com/watch?v=kJQP7kiw5Fk", title: "Third Film",   artist: "Artist Name", format: "16MM" },
-  { url: "https://www.youtube.com/watch?v=RgKAFK5djSk", title: "Fourth Film",  artist: "Artist Name", format: "4K" },
+  { url: "https://www.youtube.com/watch?v=BPPiZgkobEg", title: "דרעק", artist: "ayubii", format: "DIGITAL" },
 ];
