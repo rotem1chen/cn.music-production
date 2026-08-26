@@ -21,7 +21,7 @@
       try { sessionStorage.setItem("cn_intro_played", "1"); } catch (_) {}
       el.classList.add("done");
       document.body.classList.remove("intro-lock");
-      setTimeout(() => el.remove(), 900);
+      setTimeout(() => el.remove(), 600);
     }
 
     function start() {
