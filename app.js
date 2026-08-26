@@ -257,19 +257,29 @@
   window.addEventListener("mouseout", (e) => { if (!e.relatedTarget) { cursorShown = false; cursor.classList.remove("show"); } });
 
   const fineMouse = !window.matchMedia || window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  let lastWheel = -1e9;
+  window.addEventListener("wheel", () => { lastWheel = performance.now(); }, { passive: true });
   (function cursorLoop() {
     cx += (tx - cx) * 0.2; cy += (ty - cy) * 0.2;
     cursor.style.left = cx + "px"; cursor.style.top = cy + "px";
 
-    // continuous pan: mouse in lower half scrolls down, upper half up, middle = still (desktop only)
     if (fineMouse && cursorShown && !viewerOpen && !document.body.classList.contains("intro-lock")) {
       const vh = window.innerHeight, mid = vh / 2, dead = vh * 0.15;
       const d = ty - mid;
+      const se = document.scrollingElement || document.documentElement;
       if (Math.abs(d) > dead) {
+        // pan: mouse low → scroll down, high → up; faster the further out
         const dir = d > 0 ? 1 : -1;
         const frac = Math.min(1, (Math.abs(d) - dead) / (mid - dead));
-        const se = document.scrollingElement || document.documentElement;
-        se.scrollTop += dir * frac * frac * 24;      // direct set → bypasses CSS smooth scroll
+        se.scrollTop += dir * frac * frac * 24;
+      } else if (performance.now() - lastWheel > 220) {
+        // settled in the middle → gentle magnetic snap to the nearest clip
+        const { best } = nearestToCenter();
+        if (best >= 0) {
+          const r = clipEls[best].getBoundingClientRect();
+          const delta = (r.top + r.height / 2) - mid;
+          if (Math.abs(delta) > 0.5) se.scrollTop += delta * 0.11;
+        }
       }
     }
     requestAnimationFrame(cursorLoop);
