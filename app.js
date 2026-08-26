@@ -32,6 +32,7 @@
       video.addEventListener("ended", end, { once: true });
       video.addEventListener("error", end, { once: true });
       video.muted = false;                                   // user gesture → sound allowed
+      video.volume = 0.3;                                    // quieter intro
       try { video.currentTime = 0; } catch (_) {}
       const p = video.play && video.play();
       if (p && p.catch) p.catch(() => {                      // if playing-with-sound is refused, fall back to muted
