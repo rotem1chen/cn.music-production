@@ -34,5 +34,8 @@ Then bump `?v` in `index.html` and push. (YouTube video must be Public + embedda
 - Intro: black screen → logo + ENTER → plays intro with music (click anywhere to skip) → fades in. Once per session.
 - Mobile: custom cursor is hidden; videos need a **tap to play** (mobile blocks autoplay).
 
-## Known issue
-- Film **שקוף** (`-pC_MCcH4c8`) isn't embeddable — needs "Public" + "Allow embedding" on YouTube.
+## YouTube notes
+- All films currently embed and play correctly (the old **שקוף** embedding issue is resolved).
+- **Unlisted is fine** — unlisted videos embed normally. Only *Private* breaks embeds.
+- The setting that matters is separate from visibility: Studio → Content → video → Details →
+  Show more → *License and distribution* → **Allow embedding**. If a film shows as a dead tile, check that first.
