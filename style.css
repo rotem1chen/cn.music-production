@@ -107,13 +107,7 @@ a { color: inherit; text-decoration: none; }
 .deco-squares i.on { background: var(--accent); border-color: var(--accent); }
 
 /* cursor ring — the yellow circle that follows the mouse */
-.cursor {
-  position: fixed; top: 0; left: 0; width: 24px; height: 24px;
-  border: 1.5px solid var(--accent); border-radius: 50%;
-  pointer-events: none; z-index: 200; opacity: 0;
-  transition: opacity .25s ease;
-}
-.cursor.show { opacity: 1; }
+.cursor { display: none !important; }   /* custom cursor removed — use the normal pointer */
 
 /* moving target reticle — glides onto whatever the cursor / scroll targets */
 .target {
