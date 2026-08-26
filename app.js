@@ -143,8 +143,6 @@
       tryLoad(primary, () => tryLoad(fb, fail));
     })();
 
-    el.addEventListener("mouseenter", () => cursor.classList.add("big"));
-    el.addEventListener("mouseleave", () => cursor.classList.remove("big"));
     el.addEventListener("click", () => openViewer(el, c));
     el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openViewer(el, c); } });
     reel.appendChild(el);
@@ -168,8 +166,17 @@
   barsWrap.innerHTML = "";
   const bars = items.map(() => { const b = document.createElement("i"); barsWrap.appendChild(b); return b; });
 
+  let hoverIdx = -1;
   let activeIdx = -1;
   let viewerOpen = false;
+
+  function clipUnder(x, y) {
+    for (let i = 0; i < clipEls.length; i++) {
+      const r = clipEls[i].getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
+    }
+    return -1;
+  }
 
   function positionTarget(i) {
     const r = clipEls[i].getBoundingClientRect();
@@ -253,6 +260,8 @@
     tx = e.clientX; ty = e.clientY;
     if (viewerOpen) return;                        // ring hidden over the player (iframe eats mouse events)
     if (!cursorShown) { cursorShown = true; cursor.classList.add("show"); }
+    hoverIdx = clipUnder(e.clientX, e.clientY);    // which clip is pointed at (-1 = none); genuine-move only → no drift
+    cursor.classList.toggle("big", hoverIdx >= 0);
   });
   window.addEventListener("mouseout", (e) => { if (!e.relatedTarget) { cursorShown = false; cursor.classList.remove("show"); } });
 
@@ -264,21 +273,27 @@
     cursor.style.left = cx + "px"; cursor.style.top = cy + "px";
 
     if (fineMouse && cursorShown && !viewerOpen && !document.body.classList.contains("intro-lock")) {
-      const vh = window.innerHeight, mid = vh / 2, dead = vh * 0.15;
-      const d = ty - mid;
+      const vh = window.innerHeight, mid = vh / 2;
       const se = document.scrollingElement || document.documentElement;
-      if (Math.abs(d) > dead) {
-        // pan: mouse low → scroll down, high → up; faster the further out
-        const dir = d > 0 ? 1 : -1;
-        const frac = Math.min(1, (Math.abs(d) - dead) / (mid - dead));
-        se.scrollTop += dir * frac * frac * 24;
-      } else if (performance.now() - lastWheel > 220) {
-        // settled in the middle → gentle magnetic snap to the nearest clip
-        const { best } = nearestToCenter();
-        if (best >= 0) {
-          const r = clipEls[best].getBoundingClientRect();
-          const delta = (r.top + r.height / 2) - mid;
-          if (Math.abs(delta) > 0.5) se.scrollTop += delta * 0.11;
+      if (hoverIdx >= 0) {
+        // pointing at a clip → glide THAT clip to the middle
+        const r = clipEls[hoverIdx].getBoundingClientRect();
+        const delta = (r.top + r.height / 2) - mid;
+        if (Math.abs(delta) > 0.5) se.scrollTop += delta * 0.14;
+      } else {
+        // not over a clip → pan by mouse height (low → down, high → up), then settle
+        const dead = vh * 0.15, d = ty - mid;
+        if (Math.abs(d) > dead) {
+          const dir = d > 0 ? 1 : -1;
+          const frac = Math.min(1, (Math.abs(d) - dead) / (mid - dead));
+          se.scrollTop += dir * frac * frac * 24;
+        } else if (performance.now() - lastWheel > 220) {
+          const { best } = nearestToCenter();
+          if (best >= 0) {
+            const r = clipEls[best].getBoundingClientRect();
+            const delta = (r.top + r.height / 2) - mid;
+            if (Math.abs(delta) > 0.5) se.scrollTop += delta * 0.11;
+          }
         }
       }
     }
