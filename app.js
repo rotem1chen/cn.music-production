@@ -143,19 +143,9 @@
       tryLoad(primary, () => tryLoad(fb, fail));
     })();
 
-    el.addEventListener("mouseenter", () => {
-      cursor.classList.add("big");
-      if (animatingScroll) return;                        // ignore enters during the auto-scroll
-      if (performance.now() - lastMoveTs > 160) return;   // enter caused by content shifting, not a real move → ignore
-      hoverIdx = i;
-      scrollToClip(i);
-      refresh();
-    });
-    el.addEventListener("mouseleave", () => {
-      cursor.classList.remove("big");
-      if (performance.now() - lastMoveTs > 160) return;   // leave caused by content shifting → ignore
-      if (hoverIdx === i && !animatingScroll) { hoverIdx = -1; refresh(); }
-    });
+    // mouse only moves the target-corners onto the pointed clip — no auto-centering
+    el.addEventListener("mouseenter", () => { cursor.classList.add("big"); hoverIdx = i; refresh(); });
+    el.addEventListener("mouseleave", () => { cursor.classList.remove("big"); if (hoverIdx === i) { hoverIdx = -1; refresh(); } });
     el.addEventListener("click", () => openViewer(el, c));
     el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openViewer(el, c); } });
     reel.appendChild(el);
@@ -281,23 +271,7 @@
   }, { passive: true });
   window.addEventListener("resize", refresh);
 
-  /* ---------- Wheel scroll: free scrolling, then a gentle settle to the nearest clip ---------- */
-  const fineMouse = !window.matchMedia || window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  let wheelSettleTimer = null;
-  function settleToNearest() {
-    if (animatingScroll || viewerOpen || document.body.classList.contains("intro-lock")) return;
-    const { best } = nearestToCenter();
-    if (best < 0) return;
-    const r = clipEls[best].getBoundingClientRect();
-    if (Math.abs((r.top + r.height / 2) - window.innerHeight / 2) > 6) scrollToClip(best);
-  }
-  if (fineMouse) {
-    window.addEventListener("wheel", () => {
-      if (animatingScroll) { cancelAnimationFrame(scrollRAF); animatingScroll = false; }  // yield to the user's wheel
-      clearTimeout(wheelSettleTimer);
-      wheelSettleTimer = setTimeout(settleToNearest, 150);                                  // settle once they stop
-    }, { passive: true });
-  }
+  /* wheel does all the scrolling — free, no auto-centering */
 
   /* ---------- Cursor ring follows the mouse (with a little lag) ---------- */
   let cx = window.innerWidth / 2, cy = window.innerHeight / 2, tx = cx, ty = cy, cursorShown = false;
