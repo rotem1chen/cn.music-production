@@ -285,7 +285,7 @@
   window.addEventListener("mouseout", (e) => { if (!e.relatedTarget) { cursorShown = false; cursor.classList.remove("show"); } });
   (function cursorLoop() {
     cx += (tx - cx) * 0.2; cy += (ty - cy) * 0.2;
-    cursor.style.left = cx + "px"; cursor.style.top = cy + "px";
+    cursor.style.transform = "translate3d(" + cx + "px," + cy + "px,0)";
     requestAnimationFrame(cursorLoop);
   })();
 
