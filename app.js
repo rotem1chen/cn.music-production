@@ -438,7 +438,8 @@
         const shot = document.createElement("div"); shot.className = "shot";
         const img = document.createElement("img"); img.loading = "lazy"; img.alt = con.artist || "still";
         img.src = (con.dir || "") + file;
-        shot.appendChild(img);
+        const idx = document.createElement("span"); idx.className = "sidx"; idx.textContent = String(si + 1).padStart(2, "0");
+        shot.append(img, idx);
         shot.addEventListener("click", () => openPhoto(ci, si));
         grid.appendChild(shot);
       });

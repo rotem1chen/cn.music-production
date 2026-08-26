@@ -163,21 +163,31 @@ a { color: inherit; text-decoration: none; }
   font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
 .concert-artist { color: var(--text); font-weight: 700; }
 .concert-meta { color: var(--muted); }
-.concert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: clamp(8px, 1vw, 14px); }
-.shot { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: #0c0c0e; border-radius: 6px; cursor: pointer; }
-.shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s var(--ease), filter .3s; }
-.shot:hover img { transform: scale(1.05); filter: brightness(.78); }
-.shot::before, .shot::after { content: ""; position: absolute; width: 16px; height: 16px; border: 1.5px solid var(--accent); opacity: 0; transition: opacity .25s; pointer-events: none; }
-.shot::before { top: 7px; left: 7px; border-right: 0; border-bottom: 0; }
-.shot::after { bottom: 7px; right: 7px; border-left: 0; border-top: 0; }
+.concert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.shot { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: #0c0c0e; cursor: pointer; }
+.shot img { width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: grayscale(1) brightness(.72) contrast(1.05);
+  transition: transform .6s var(--ease), filter .5s var(--ease); }
+.shot:hover img { filter: grayscale(0) brightness(1) contrast(1); transform: scale(1.06); }
+.shot::before, .shot::after { content: ""; position: absolute; width: 15px; height: 15px; border: 1.5px solid var(--accent); opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 2; }
+.shot::before { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+.shot::after { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
 .shot:hover::before, .shot:hover::after { opacity: 1; }
+.sidx { position: absolute; top: 9px; right: 12px; z-index: 2; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  color: var(--text); opacity: 0; transform: translateY(-4px); transition: opacity .3s, transform .3s var(--ease); text-shadow: 0 1px 5px rgba(0,0,0,.7); }
+.shot:hover .sidx { opacity: 1; transform: none; }
 
-/* skip-to-stills button in the hero */
-.skip-stills { pointer-events: auto; display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); transition: color .25s; }
-.skip-stills span { transition: transform .25s var(--ease); }
+/* skip-to-stills button in the hero — framed with the target-corners */
+.skip-stills { pointer-events: auto; position: relative; display: inline-flex; align-items: center; gap: 10px;
+  margin-top: 30px; padding: 13px 28px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted); transition: color .25s; }
 .skip-stills:hover { color: var(--accent); }
-.skip-stills:hover span { transform: translateY(3px); }
+.skip-stills .ar { transition: transform .25s var(--ease); }
+.skip-stills:hover .ar { transform: translateY(3px); }
+.skip-stills::before, .skip-stills::after { content: ""; position: absolute; width: 10px; height: 10px; border: 1.5px solid var(--line); transition: border-color .25s; }
+.skip-stills::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.skip-stills::after { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+.skip-stills:hover::before, .skip-stills:hover::after { border-color: var(--accent); }
 
 /* ---------- Photo lightbox ---------- */
 .plight { position: fixed; inset: 0; z-index: 110; background: rgba(0,0,0,.96);
