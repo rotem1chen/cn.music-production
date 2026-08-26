@@ -276,10 +276,10 @@
       const vh = window.innerHeight, mid = vh / 2;
       const se = document.scrollingElement || document.documentElement;
       if (hoverIdx >= 0) {
-        // pointing at a clip → glide THAT clip to the middle
+        // pointing at a clip → snap THAT clip to the middle (fast but eased)
         const r = clipEls[hoverIdx].getBoundingClientRect();
         const delta = (r.top + r.height / 2) - mid;
-        if (Math.abs(delta) > 0.5) se.scrollTop += delta * 0.14;
+        if (Math.abs(delta) > 0.5) se.scrollTop += delta * 0.3;
       } else {
         // not over a clip → pan by mouse height (low → down, high → up), then settle
         const dead = vh * 0.15, d = ty - mid;
