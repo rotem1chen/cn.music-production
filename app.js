@@ -195,7 +195,7 @@
     (function step(now) {
       const p = Math.min(1, (now - t0) / dur);
       const e = 1 - Math.pow(1 - p, 3);          // easeOutCubic
-      window.scrollTo(0, start + dist * e);
+      (document.scrollingElement || document.documentElement).scrollTop = start + dist * e;  // direct → no smooth/snap jump
       if (p < 1) scrollRAF = requestAnimationFrame(step);
       else animatingScroll = false;
     })(performance.now());
