@@ -120,19 +120,28 @@
     el.setAttribute("role", "button");
     el.setAttribute("aria-label", "Play " + (c.title || "clip"));
 
-    const posterUrl = c.thumb || c.v.thumb;
     const poster = document.createElement("div");
     poster.className = "poster";
-    if (posterUrl) {
-      poster.style.backgroundImage = `url("${posterUrl}")`;
-      if (c.v.thumbFallback) {
-        const test = new Image();
-        test.onerror = () => (poster.style.backgroundImage = `url("${c.v.thumbFallback}")`);
-        test.src = posterUrl;
-      }
-    }
     el.appendChild(poster);
     el._poster = poster;
+    (function setPoster() {
+      const primary = c.thumb || c.v.thumb, fb = c.v.thumbFallback;
+      function fail() {                                   // no thumbnail available → clean titled tile
+        el.classList.add("no-thumb");
+        const lab = document.createElement("div");
+        lab.className = "clip-fallback";
+        lab.textContent = c.title || "";
+        el.appendChild(lab);
+      }
+      function tryLoad(url, next) {
+        if (!url) return next();
+        const img = new Image();
+        img.onload = () => { poster.style.backgroundImage = `url("${url}")`; };
+        img.onerror = next;
+        img.src = url;
+      }
+      tryLoad(primary, () => tryLoad(fb, fail));
+    })();
 
     el.addEventListener("mouseenter", () => {
       if (animatingScroll) return;                 // ignore enters caused by the auto-scroll itself
@@ -258,7 +267,6 @@
       positionTarget(a);
     }
 
-    logoHero.style.opacity = Math.max(0, 1 - window.scrollY / (window.innerHeight * 0.4));
     const max = document.documentElement.scrollHeight - window.innerHeight;
     const frac = max > 0 ? window.scrollY / max : 0;
     const on = Math.min(squares.length - 1, Math.floor(frac * squares.length));
