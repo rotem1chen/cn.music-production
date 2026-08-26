@@ -10,12 +10,12 @@ const SITE = {
   about:
     "CN Production is a music video and clip production studio — producing, " +
     "directing and post-producing cinematic work for artists and labels.",
-  email: "hello@cnproduction.com",
+  email: "rotem1chen@gmail.com",
   socials: {
-    instagram: "https://instagram.com/",
-    youtube: "https://youtube.com/",
+    instagram: "https://instagram.com/chen1rotem",
+    youtube: "",
     vimeo: "",
-    email: "hello@cnproduction.com",
+    email: "rotem1chen@gmail.com",
   },
 };
 

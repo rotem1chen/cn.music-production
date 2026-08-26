@@ -2,6 +2,36 @@
 (function () {
   "use strict";
 
+  /* ---------- Intro (once per session) ---------- */
+  (function intro() {
+    const el = document.getElementById("intro");
+    if (!el) return;
+    const video = document.getElementById("introVideo");
+    const skip = document.getElementById("introSkip");
+    let done = false;
+
+    // already played this session → skip instantly
+    if (sessionStorage.getItem("cn_intro_played")) { el.remove(); return; }
+
+    document.body.classList.add("intro-lock");
+    function end() {
+      if (done) return; done = true;
+      try { sessionStorage.setItem("cn_intro_played", "1"); } catch (_) {}
+      el.classList.add("done");
+      document.body.classList.remove("intro-lock");
+      setTimeout(() => el.remove(), 900);
+    }
+
+    if (video) {
+      video.addEventListener("ended", end);
+      video.addEventListener("error", end);           // no video file → skip gracefully
+      const p = video.play && video.play();
+      if (p && p.catch) p.catch(() => {});             // autoplay blocked → wait for ended/skip/timeout
+    }
+    if (skip) skip.addEventListener("click", end);
+    setTimeout(end, 9000);                             // safety cap
+  })();
+
   /* ---------- Site text ---------- */
   document.title = SITE.name + " — Music Video Production";
   document.querySelectorAll("[data-brand]").forEach((el) => (el.textContent = SITE.name));
