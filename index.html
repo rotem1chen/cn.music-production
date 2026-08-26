@@ -8,15 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=16" />
 </head>
 <body id="top">
   <!-- INTRO (plays once per session, then fades into the site) -->
   <div class="intro" id="intro">
-    <video class="intro-video" id="introVideo" muted playsinline autoplay preload="auto" poster="intro-poster.jpg">
+    <video class="intro-video" id="introVideo" playsinline preload="auto" poster="intro-poster.jpg">
       <source src="intro.mp4" type="video/mp4" />
     </video>
-    <button class="intro-skip" id="introSkip">SKIP ✕</button>
+    <button class="intro-enter" id="introEnter"><span class="tri"></span>Enter</button>
+    <button class="intro-skip" id="introSkip" hidden>SKIP ✕</button>
   </div>
 
   <!-- NAV -->
@@ -93,7 +94,7 @@
   <!-- cursor ring (follows the mouse) -->
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="clips.js?v=15"></script>
-  <script src="app.js?v=15"></script>
+  <script src="clips.js?v=16"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

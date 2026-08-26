@@ -2,18 +2,20 @@
 (function () {
   "use strict";
 
-  /* ---------- Intro (once per session) ---------- */
+  /* ---------- Intro (Enter to play with sound, once per session) ---------- */
   (function intro() {
     const el = document.getElementById("intro");
     if (!el) return;
     const video = document.getElementById("introVideo");
+    const enter = document.getElementById("introEnter");
     const skip = document.getElementById("introSkip");
     let done = false;
 
-    // already played this session → skip instantly
+    // already played this session → skip the gate entirely
     if (sessionStorage.getItem("cn_intro_played")) { el.remove(); return; }
 
     document.body.classList.add("intro-lock");
+
     function end() {
       if (done) return; done = true;
       try { sessionStorage.setItem("cn_intro_played", "1"); } catch (_) {}
@@ -22,14 +24,25 @@
       setTimeout(() => el.remove(), 900);
     }
 
-    if (video) {
-      video.addEventListener("ended", end);
-      video.addEventListener("error", end);           // no video file → skip gracefully
+    function start() {
+      el.classList.add("playing");
+      if (enter) enter.hidden = true;
+      if (skip) skip.hidden = false;
+      if (!video) return end();
+      video.addEventListener("ended", end, { once: true });
+      video.addEventListener("error", end, { once: true });
+      video.muted = false;                                   // user gesture → sound allowed
+      try { video.currentTime = 0; } catch (_) {}
       const p = video.play && video.play();
-      if (p && p.catch) p.catch(() => {});             // autoplay blocked → wait for ended/skip/timeout
+      if (p && p.catch) p.catch(() => {                      // if playing-with-sound is refused, fall back to muted
+        video.muted = true;
+        const p2 = video.play && video.play();
+        if (p2 && p2.catch) p2.catch(end);
+      });
     }
+
+    if (enter) enter.addEventListener("click", start);
     if (skip) skip.addEventListener("click", end);
-    setTimeout(end, 9000);                             // safety cap
   })();
 
   /* ---------- Site text ---------- */
