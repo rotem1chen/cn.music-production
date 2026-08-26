@@ -144,14 +144,16 @@
     })();
 
     el.addEventListener("mouseenter", () => {
-      if (animatingScroll) return;                 // ignore enters caused by the auto-scroll itself
       cursor.classList.add("big");
+      if (animatingScroll) return;                        // ignore enters during the auto-scroll
+      if (performance.now() - lastMoveTs > 160) return;   // enter caused by content shifting, not a real move → ignore
       hoverIdx = i;
-      if (performance.now() - lastMoveTs < 160) scrollToClip(i);  // only when the mouse actually moved
+      scrollToClip(i);
       refresh();
     });
     el.addEventListener("mouseleave", () => {
       cursor.classList.remove("big");
+      if (performance.now() - lastMoveTs > 160) return;   // leave caused by content shifting → ignore
       if (hoverIdx === i && !animatingScroll) { hoverIdx = -1; refresh(); }
     });
     el.addEventListener("click", () => openViewer(el, c));
