@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v49**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v50**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -34,5 +34,8 @@ Then bump `?v` in `index.html` and push. (YouTube video must be Public + embedda
 - Intro: black screen → logo + ENTER → plays intro with music (click anywhere to skip) → fades in. Once per session.
 - Mobile: custom cursor is hidden; videos need a **tap to play** (mobile blocks autoplay).
 
-## Known issue
-- Film **שקוף** (`-pC_MCcH4c8`) isn't embeddable — needs "Public" + "Allow embedding" on YouTube.
+## YouTube notes
+- All films currently embed and play correctly (the old **שקוף** embedding issue is resolved).
+- **Unlisted is fine** — unlisted videos embed normally. Only *Private* breaks embeds.
+- The setting that matters is separate from visibility: Studio → Content → video → Details →
+  Show more → *License and distribution* → **Allow embedding**. If a film shows as a dead tile, check that first.
