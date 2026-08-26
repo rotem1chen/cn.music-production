@@ -40,6 +40,7 @@
         const p2 = video.play && video.play();
         if (p2 && p2.catch) p2.catch(end);
       });
+      setTimeout(() => el.addEventListener("click", end), 0);   // click anywhere skips while it's playing
     }
 
     if (enter) enter.addEventListener("click", start);
