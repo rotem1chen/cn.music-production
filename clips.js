@@ -29,11 +29,11 @@ const SITE = {
    ============================================================ */
 
 const CLIPS = [
-  { url: "https://www.youtube.com/watch?v=BPPiZgkobEg", title: "דרעק",       artist: "ayubii", format: "DIGITAL" },
-  { url: "https://www.youtube.com/watch?v=p14Mww6wgkk", title: "גברת קארמה", artist: "סיד",    format: "DIGITAL" },
-  { url: "https://youtu.be/-pC_MCcH4c8",                title: "שקוף",       artist: "סיד",    format: "DIGITAL" },
-  { url: "https://youtu.be/8JPeYDKJP4g",                title: "DIN WARP",   artist: "",       format: "DIGITAL" },
-  { url: "https://youtu.be/t32fPgJ2FIs",                title: "יהלומים",    artist: "הילל",   format: "DIGITAL" },
-  { url: "https://youtu.be/qu7cYF-YV8M",                title: "אני ואור",   artist: "רון עשהל", format: "DIGITAL" },
-  { url: "https://youtu.be/RKI861xIfTA",                title: "genesis",    artist: "בלולו",  format: "DIGITAL" },
+  { url: "https://www.youtube.com/watch?v=BPPiZgkobEg",  title: "דרעק",        artist: "ayubii",    format: "DIGITAL" },
+  { url: "https://www.youtube.com/watch?v=p14Mww6wgkk",  title: "גברת קארמה",  artist: "סיד",       format: "DIGITAL" },
+  { url: "https://youtu.be/-pC_MCcH4c8",                 title: "שקוף",        artist: "סיד",       format: "DIGITAL" },
+  { url: "https://youtu.be/8JPeYDKJP4g",                 title: "DIN WARP",    artist: "",          format: "DIGITAL" },
+  { url: "https://youtu.be/t32fPgJ2FIs",                 title: "יהלומים",     artist: "הילל",      format: "DIGITAL" },
+  { url: "https://youtu.be/qu7cYF-YV8M",                 title: "אני ואור",    artist: "רון עשהל",  format: "DIGITAL" },
+  { url: "https://youtu.be/RKI861xIfTA",                 title: "genesis",     artist: "בלולו",     format: "DIGITAL" },
 ];
