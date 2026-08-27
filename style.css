@@ -176,28 +176,27 @@ a { color: inherit; text-decoration: none; }
 .shot:hover .sidx { opacity: 1; transform: none; }
 
 /* skip past the films — small text, fixed top-left under the nav */
-/* Skip-to-stills — a real viewfinder target, clear of the fixed nav (z-index 60).
-   Was 10px muted text at top:60px with only 3px of nav clearance, so the nav
-   swallowed clicks near its top edge and the 11px-tall box was easy to miss. */
+/* Skip-to-stills — clear of the fixed nav (z-index 60), which used to swallow
+   clicks: the old link sat at top:60px with 3px clearance and an 11px-tall box.
+   The padding here is the hit area (46px) — keep it even though it is invisible. */
 .skip-stills { position: fixed; left: var(--pad); top: 92px; z-index: 65;
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 13px 20px; min-height: 46px;
-  font-family: var(--mono); font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--accent); background: rgba(0,0,0,0.62);
-  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-  border: 1px solid rgba(255,212,0,0.45); cursor: pointer;
-  transition: color .25s, background .25s, border-color .25s, opacity .45s var(--ease), transform .3s var(--ease); }
-.skip-stills:hover, .skip-stills:focus-visible { color: #000; background: var(--accent); border-color: var(--accent); }
-.skip-stills:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.skip-stills .ec { position: absolute; width: 10px; height: 10px; border: 1.5px solid var(--accent);
-  transition: width .3s var(--ease), height .3s var(--ease); }
-.skip-stills .ec.tl { top: -4px; left: -4px;   border-right: 0; border-bottom: 0; }
-.skip-stills .ec.tr { top: -4px; right: -4px;  border-left: 0;  border-bottom: 0; }
-.skip-stills .ec.bl { bottom: -4px; left: -4px;  border-right: 0; border-top: 0; }
-.skip-stills .ec.br { bottom: -4px; right: -4px; border-left: 0;  border-top: 0; }
-.skip-stills:hover .ec { width: 17px; height: 17px; }
-.skip-stills .ar { animation: ssNudge 2.1s var(--ease) infinite; }
-@keyframes ssNudge { 0%, 72%, 100% { transform: translateY(0); } 84% { transform: translateY(4px); } }
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 13px 16px; min-height: 46px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(255,212,0,0.72); cursor: pointer;
+  transition: color .25s, opacity .45s var(--ease), transform .3s var(--ease); }
+.skip-stills:hover, .skip-stills:focus-visible { color: var(--accent); }
+.skip-stills:focus-visible { outline: 1px solid rgba(255,212,0,0.6); outline-offset: 2px; }
+/* corner brackets only — the viewfinder cue, no box and no fill */
+.skip-stills .ec { position: absolute; width: 7px; height: 7px; border: 1px solid rgba(255,212,0,0.55);
+  transition: width .3s var(--ease), height .3s var(--ease), border-color .25s; }
+.skip-stills .ec.tl { top: 0; left: 0;   border-right: 0; border-bottom: 0; }
+.skip-stills .ec.tr { top: 0; right: 0;  border-left: 0;  border-bottom: 0; }
+.skip-stills .ec.bl { bottom: 0; left: 0;  border-right: 0; border-top: 0; }
+.skip-stills .ec.br { bottom: 0; right: 0; border-left: 0;  border-top: 0; }
+.skip-stills:hover .ec { width: 11px; height: 11px; border-color: var(--accent); }
+.skip-stills .ar { transition: transform .25s var(--ease); }
+.skip-stills:hover .ar { transform: translateY(2px); }
 /* once the gallery is on screen the button has done its job — get it out of the way */
 .skip-stills.gone { opacity: 0; pointer-events: none; transform: translateY(-8px); }
 
@@ -296,7 +295,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {
-  .skip-stills { top: 84px; font-size: 11px; padding: 12px 16px; letter-spacing: 0.16em; }
+  .skip-stills { top: 84px; font-size: 10px; padding: 13px 14px; letter-spacing: 0.16em; }
   .deco-circle, .deco-bars { display: none; }
   .hud { grid-template-columns: 1fr 1fr; gap: 6px 0; bottom: 16px; }
   .hud-title { text-align: left; } .hud-artist { text-align: right; }
