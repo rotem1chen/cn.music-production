@@ -492,6 +492,34 @@
     });
   }
 
+  /* ---------- Skip to stills ---------- */
+  (function skipToStills() {
+    const btn = document.getElementById("skipStills");
+    const stills = document.getElementById("stills");
+    if (!btn || !stills) return;
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const root = document.documentElement;
+      // mobile keeps `scroll-snap-type: y proximity`, which can drag the page
+      // back onto a clip mid-flight — suspend it until we have landed.
+      const prevSnap = root.style.scrollSnapType;
+      root.style.scrollSnapType = "none";
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const dest = stills.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: dest, behavior: reduce ? "auto" : "smooth" });
+      history.replaceState(null, "", "#stills");
+      setTimeout(() => { root.style.scrollSnapType = prevSnap; }, 1100);
+    });
+
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(
+        ([entry]) => btn.classList.toggle("gone", entry.isIntersecting),
+        { rootMargin: "-20% 0px 0px 0px" }
+      ).observe(stills);
+    }
+  })();
+
   /* ---------- Go ---------- */
   refresh();
 })();
