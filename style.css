@@ -261,12 +261,12 @@ a { color: inherit; text-decoration: none; }
 
 /* crosshair lines that spread outward slowly — a camera grid drawing itself */
 .v-lead {
-  position: fixed; background: var(--lead); opacity: 0; pointer-events: none; z-index: 101;
+  position: fixed; background: var(--accent); opacity: 0; pointer-events: none; z-index: 101;
   transition: top 1.2s var(--ease), left 1.2s var(--ease), opacity .5s var(--ease);
 }
 .v-lead-t, .v-lead-b { left: 0; width: 100vw; height: 1px; }
 .v-lead-l, .v-lead-r { top: 0; height: 100vh; width: 1px; }
-.viewer.open .v-lead { opacity: 1; }
+.viewer.open .v-lead { opacity: 0.85; }
 
 .viewer-stage {
   position: fixed; overflow: visible; background: #000 center/cover no-repeat; border-radius: 10px; z-index: 102;
