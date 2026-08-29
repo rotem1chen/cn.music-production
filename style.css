@@ -134,7 +134,9 @@ a { color: inherit; text-decoration: none; }
   display: flex; flex-direction: column; align-items: center;
   gap: clamp(14px, 2.4vh, 30px);
   padding: calc(50vh - var(--clipH)/2 - 20px) 0;
+  transition: opacity .3s var(--ease);          /* crossfade when the next five swap in */
 }
+.reel.swap { opacity: 0; }
 .clip {
   width: var(--clipW); height: var(--clipH);
   position: relative; overflow: hidden; background: #070707; border-radius: 10px;
@@ -341,4 +343,9 @@ a { color: inherit; text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto; }
   html { scroll-snap-type: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reel { transition: none; }
+  .reel.swap { opacity: 1; }
 }

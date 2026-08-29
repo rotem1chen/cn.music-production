@@ -189,25 +189,29 @@
         (next === 0 ? "Back to the first " + count : "Next " + count + " films") +
       '</span><span class="ar" aria-hidden="true">' + (next === 0 ? "\u2191" : "\u2193") + '</span>' +
       '<span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>';
-    btn.addEventListener("click", () => {
-      renderPage(page + 1);
-      scrollToTopOfReel();
-    });
+    btn.addEventListener("click", () => goToPage(page + 1));
     return btn;
   }
 
-  // swap happens off-screen-ish: glide back to the first clip of the new set
-  function scrollToTopOfReel() {
-    cancelAnimationFrame(scrollRAF);
-    animatingScroll = true;
-    const start = window.scrollY, dist = -start, t0 = performance.now(), dur = 520;
-    (function step(now) {
-      const p2 = Math.min(1, (now - t0) / dur);
-      const e = 1 - Math.pow(1 - p2, 3);
-      (document.scrollingElement || document.documentElement).scrollTop = start + dist * e;
-      if (p2 < 1) scrollRAF = requestAnimationFrame(step);
-      else { animatingScroll = false; refresh(); }
-    })(performance.now());
+  // fade the reel out, swap the films and land at the top while nobody can see it, fade back in
+  let swapping = false;
+  function goToPage(next) {
+    if (swapping) return;                                  // ignore double-clicks mid-swap
+    swapping = true;
+    chrome.classList.add("hide");                          // brackets + HUD step aside for the swap
+    hud.classList.add("hide");
+    reel.classList.add("swap");
+
+    const FADE = 300;                                      // keep in step with .reel's transition
+    setTimeout(() => {
+      renderPage(next);
+      (document.scrollingElement || document.documentElement).scrollTop = 0;   // invisible jump
+      setTimeout(() => {                                   // timer, not rAF — rAF stalls in background tabs
+        reel.classList.remove("swap");
+        swapping = false;
+        refresh();                                         // target + HUD land on the new first film
+      }, 20);
+    }, FADE);
   }
 
   /* ---------- Refs ---------- */
@@ -302,7 +306,7 @@
   }
 
   function refresh() {
-    if (viewerOpen) return;
+    if (viewerOpen || swapping) return;
     const { best, bestD } = nearestToCenter();
     const useHover = hoverIdx >= 0;
     const a = useHover ? hoverIdx : best;
