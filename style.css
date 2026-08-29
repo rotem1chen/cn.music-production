@@ -218,8 +218,8 @@ a { color: inherit; text-decoration: none; }
 .skip-stills:hover .ec { width: 11px; height: 11px; border-color: var(--accent); }
 .skip-stills .ar { transition: transform .25s var(--ease); }
 .skip-stills:hover .ar { transform: translateY(2px); }
-/* once the gallery is on screen the button has done its job — get it out of the way */
-.skip-stills.gone { opacity: 0; pointer-events: none; transform: translateY(-8px); }
+/* in the stills and below it the button turns round into "Back to top" */
+.skip-stills.up:hover .ar { transform: translateY(-2px); }
 
 /* ---------- Photo lightbox ---------- */
 .plight { position: fixed; inset: 0; z-index: 110; background: rgba(0,0,0,.96);

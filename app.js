@@ -579,32 +579,49 @@
     });
   })();
 
-  /* ---------- Skip to stills ---------- */
-  (function skipToStills() {
+  /* ---------- Corner button: "Skip to stills" going down, "Back to top" once you're there ---------- */
+  (function skipStills() {
     const btn = document.getElementById("skipStills");
     const stills = document.getElementById("stills");
     if (!btn || !stills) return;
+    const label = btn.querySelector(".ss-label");
+    const arrow = btn.querySelector(".ar");
+    let atStills = false;                       // false → jumps down to stills, true → jumps back to top
 
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
+    function glideTo(dest, hash) {
       const root = document.documentElement;
       // mobile keeps `scroll-snap-type: y proximity`, which can drag the page
       // back onto a clip mid-flight — suspend it until we have landed.
       const prevSnap = root.style.scrollSnapType;
       root.style.scrollSnapType = "none";
+      // "instant", not "auto" — auto defers to html{scroll-behavior:smooth} and animates anyway
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const dest = stills.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: dest, behavior: reduce ? "auto" : "smooth" });
-      history.replaceState(null, "", "#stills");
+      window.scrollTo({ top: dest, behavior: reduce ? "instant" : "smooth" });
+      history.replaceState(null, "", hash);
       setTimeout(() => { root.style.scrollSnapType = prevSnap; }, 1100);
+    }
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (atStills) glideTo(0, location.pathname + location.search);
+      else glideTo(stills.getBoundingClientRect().top + window.scrollY, "#stills");
     });
 
-    if ("IntersectionObserver" in window) {
-      new IntersectionObserver(
-        ([entry]) => btn.classList.toggle("gone", entry.isIntersecting),
-        { rootMargin: "-20% 0px 0px 0px" }
-      ).observe(stills);
+    // once the stills are reached — and everywhere below them — the button turns round
+    function sync() {
+      const reached = window.scrollY >= stills.offsetTop - window.innerHeight * 0.2;
+      if (reached === atStills) return;
+      atStills = reached;
+      btn.classList.toggle("up", reached);
+      btn.href = reached ? "#top" : "#stills";
+      if (label) label.textContent = reached ? "Back to top" : "Skip to stills";
+      if (arrow) arrow.textContent = reached ? "\u2191" : "\u2193";
     }
+
+    // read the offset live — swapping the reel to a shorter page moves the stills up
+    window.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync);
+    sync();
   })();
 
   /* ---------- Go ---------- */
