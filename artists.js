@@ -18,7 +18,7 @@ const ARTISTS = [
   { name: "הילל",          spotify: "https://open.spotify.com/artist/3caj1D7JZUccUXhSkyC67M", instagram: "https://www.instagram.com/h_i_l_l_e_l" },
   { name: "רון עשהל",      spotify: "https://open.spotify.com/artist/2eZbfk94fTCmZGNVrKoLC3", instagram: "https://www.instagram.com/ron_asael/" },
   { name: "בלולו",         spotify: "https://open.spotify.com/artist/3udw16EyYOicdZgTkvyRlh", instagram: "https://www.instagram.com/_.balulu._/" },
-  { name: "אביהו פנחסוב",  spotify: "https://open.spotify.com/album/77amQMA4o6PxWhSSGdTclZ", instagram: "https://www.instagram.com/avihu_pinhasov/?hl=he" },
+  { name: "פנחסוב",        spotify: "https://open.spotify.com/album/77amQMA4o6PxWhSSGdTclZ", instagram: "https://www.instagram.com/avihu_pinhasov/?hl=he" },
   { name: "ayubii",        spotify: "", instagram: "https://www.instagram.com/yoav_lore",
     youtube: "https://www.youtube.com/watch?v=qo_FJ7v-yqQ&list=PLDctwXiQATzKWHSzw1vNQoGIpOXu70uLt" },
   { name: "Yuvi",          spotify: "https://open.spotify.com/track/1pwY6GXfMPgpxsvY6CNozQ", instagram: "https://www.instagram.com/uv_raps" },
