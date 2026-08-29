@@ -109,12 +109,16 @@
     .map((c) => ({ ...c, v: parseVideo(c.url) }))
     .filter((c) => c.v);
 
-  /* ---------- Build reel ---------- */
+  /* ---------- Build reel — 5 films at a time, button swaps in the next 5 ---------- */
   const reel = document.getElementById("work");
   const total = String(items.length).padStart(2, "0");
-  const clipEls = [];
+  const PAGE_SIZE = 5;
+  const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  let page = 0;
+  const clipEls = [];        // elements currently on screen (one page's worth)
+  const pageItems = [];      // the clip data behind them, same order
 
-  items.forEach((c, i) => {
+  function buildClip(c, i) {
     const el = document.createElement("div");
     el.className = "clip";
     el.tabIndex = 0;
@@ -149,9 +153,62 @@
     el.addEventListener("mouseleave", () => { cursor.classList.remove("big"); if (hoverIdx === i) { hoverIdx = -1; refresh(); } });
     el.addEventListener("click", () => openViewer(el, c));
     el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openViewer(el, c); } });
-    reel.appendChild(el);
-    clipEls.push(el);
-  });
+    return el;
+  }
+
+  function renderPage(p) {
+    page = ((p % pageCount) + pageCount) % pageCount;      // wraps back round to the first five
+    clipEls.forEach(stopPreview);
+    reel.innerHTML = "";
+    clipEls.length = 0;
+    pageItems.length = 0;
+    hoverIdx = -1;
+    activeIdx = -1;                                        // force the HUD + target to reattach
+
+    items.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).forEach((c, i) => {
+      const el = buildClip(c, i);
+      reel.appendChild(el);
+      clipEls.push(el);
+      pageItems.push(c);
+    });
+
+    // one bar per film on this page
+    barsWrap.innerHTML = "";
+    bars = clipEls.map(() => { const b = document.createElement("i"); barsWrap.appendChild(b); return b; });
+
+    if (pageCount > 1) reel.appendChild(buildMoreButton());
+    refresh();          // reattach HUD + target to the new set straight away
+  }
+
+  function buildMoreButton() {
+    const next = (page + 1) % pageCount;
+    const count = items.slice(next * PAGE_SIZE, next * PAGE_SIZE + PAGE_SIZE).length;
+    const btn = document.createElement("button");
+    btn.className = "reel-more";
+    btn.innerHTML = '<span class="rm-label">' +
+        (next === 0 ? "Back to the first " + count : "Next " + count + " films") +
+      '</span><span class="ar" aria-hidden="true">' + (next === 0 ? "\u2191" : "\u2193") + '</span>' +
+      '<span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>';
+    btn.addEventListener("click", () => {
+      renderPage(page + 1);
+      scrollToTopOfReel();
+    });
+    return btn;
+  }
+
+  // swap happens off-screen-ish: glide back to the first clip of the new set
+  function scrollToTopOfReel() {
+    cancelAnimationFrame(scrollRAF);
+    animatingScroll = true;
+    const start = window.scrollY, dist = -start, t0 = performance.now(), dur = 520;
+    (function step(now) {
+      const p2 = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - p2, 3);
+      (document.scrollingElement || document.documentElement).scrollTop = start + dist * e;
+      if (p2 < 1) scrollRAF = requestAnimationFrame(step);
+      else { animatingScroll = false; refresh(); }
+    })(performance.now());
+  }
 
   /* ---------- Refs ---------- */
   const chrome = document.getElementById("chrome");
@@ -165,10 +222,9 @@
   const hudArtist = document.querySelector("[data-hud-artist]");
   const hudIndex = document.querySelector("[data-hud-index]");
 
-  // left indicator: one bar per film, active one lit (shows position + how many left)
+  // left indicator: one bar per film on the current page, active one lit
   const barsWrap = document.querySelector(".deco-bars");
-  barsWrap.innerHTML = "";
-  const bars = items.map(() => { const b = document.createElement("i"); barsWrap.appendChild(b); return b; });
+  let bars = [];
 
   let hoverIdx = -1;
   let activeIdx = -1;
@@ -206,14 +262,14 @@
   function setActive(i) {
     if (clipEls[activeIdx]) { clipEls[activeIdx].classList.remove("active"); stopPreview(clipEls[activeIdx]); }
     activeIdx = i;
-    const el = clipEls[i], c = items[i];
+    const el = clipEls[i], c = pageItems[i];
     if (!el) return;
     el.classList.add("active");
     // reel shows the still thumbnail only — the video plays when opened
     hudFormat.textContent = c.format || "DIGITAL";
     hudTitle.textContent = c.title || "Untitled";
     hudArtist.textContent = c.artist || "";
-    hudIndex.textContent = String(i + 1).padStart(2, "0") + " — " + total;
+    hudIndex.textContent = String(page * PAGE_SIZE + i + 1).padStart(2, "0") + " — " + total;
     bars.forEach((b, j) => b.classList.toggle("on", j === i));
     target.classList.remove("lock"); void target.offsetWidth; target.classList.add("lock");
   }
@@ -271,6 +327,9 @@
     if (!ticking) { requestAnimationFrame(() => { refresh(); ticking = false; }); ticking = true; }
   }, { passive: true });
   window.addEventListener("resize", refresh);
+
+  renderPage(0);          // first five films (everything above must exist before this runs)
+  refresh();
 
   /* wheel does all the scrolling — free, no auto-centering */
 
@@ -491,6 +550,30 @@
       else if (e.key === "ArrowRight") { pShot++; showPhoto(); }
     });
   }
+
+  /* ---------- ARTISTS: everyone we've worked with ---------- */
+  (function artistList() {
+    const wrap = document.getElementById("artistList");
+    const data = (typeof ARTISTS !== "undefined" && Array.isArray(ARTISTS)) ? ARTISTS : [];
+    if (!wrap || !data.length) return;
+
+    data.forEach((a, i) => {
+      const row = document.createElement("div"); row.className = "artist";
+      row.innerHTML = '<span class="a-idx">' + String(i + 1).padStart(2, "0") + '</span>' +
+                      '<span class="a-name">' + esc(a.name || "") + '</span>';
+
+      const links = document.createElement("span"); links.className = "a-links";
+      [["spotify", "Spotify"], ["youtube", "YouTube"], ["instagram", "Instagram"]].forEach(([k, label]) => {
+        if (!a[k]) return;                                  // no link → no chip
+        const el = document.createElement("a");
+        el.className = "a-link"; el.textContent = label;
+        el.href = a[k]; el.target = "_blank"; el.rel = "noopener";
+        links.appendChild(el);
+      });
+      row.appendChild(links);
+      wrap.appendChild(row);
+    });
+  })();
 
   /* ---------- Skip to stills ---------- */
   (function skipToStills() {

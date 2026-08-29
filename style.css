@@ -147,6 +147,25 @@ a { color: inherit; text-decoration: none; }
 .clip-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-align: center; padding: 14px; }
 .clip iframe, .clip video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; pointer-events: none; }
 
+/* the reel shows five films; this swaps in the next five */
+.reel-more { position: relative; margin-top: clamp(18px, 3vh, 36px);
+  background: none; border: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 14px 18px; min-height: 46px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(255,212,0,0.72); transition: color .25s; }
+.reel-more:hover, .reel-more:focus-visible { color: var(--accent); }
+.reel-more:focus-visible { outline: 1px solid rgba(255,212,0,0.6); outline-offset: 2px; }
+.reel-more .ec { position: absolute; width: 7px; height: 7px; border: 1px solid rgba(255,212,0,0.55);
+  transition: width .3s var(--ease), height .3s var(--ease), border-color .25s; }
+.reel-more .ec.tl { top: 0; left: 0;   border-right: 0; border-bottom: 0; }
+.reel-more .ec.tr { top: 0; right: 0;  border-left: 0;  border-bottom: 0; }
+.reel-more .ec.bl { bottom: 0; left: 0;  border-right: 0; border-top: 0; }
+.reel-more .ec.br { bottom: 0; right: 0; border-left: 0;  border-top: 0; }
+.reel-more:hover .ec { width: 11px; height: 11px; border-color: var(--accent); }
+.reel-more .ar { transition: transform .25s var(--ease); }
+.reel-more:hover .ar { transform: translateY(2px); }
+
 /* ---------- STILLS ---------- */
 .stills { max-width: 1200px; margin: 0 auto; padding: clamp(90px,16vh,200px) var(--pad); border-top: 1px solid var(--line); }
 .concert { margin-top: clamp(34px, 6vh, 64px); }
@@ -243,6 +262,19 @@ a { color: inherit; text-decoration: none; }
 .hud-index  { text-align: right;  color: var(--muted); }
 
 /* ---------- About / Contact ---------- */
+/* ---------- Artists ---------- */
+.artist-list { border-top: 1px solid var(--line); }
+.artist { position: relative; display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  padding: 18px 4px; border-bottom: 1px solid var(--line); transition: padding-left .3s var(--ease); }
+.artist:hover { padding-left: 14px; }
+.a-idx { font-size: 11px; letter-spacing: 0.16em; color: var(--muted); min-width: 26px; }
+.a-name { font-size: clamp(17px, 2.6vw, 28px); font-weight: 700; margin-right: auto; transition: color .25s; }
+.artist:hover .a-name { color: var(--accent); }
+.a-links { display: inline-flex; gap: 10px; flex-wrap: wrap; }
+.a-link { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--line); padding: 6px 12px; transition: color .25s, border-color .25s; }
+.a-link:hover { color: var(--accent); border-color: var(--accent); }
+
 .panel { max-width: 1200px; margin: 0 auto; padding: clamp(90px,16vh,200px) var(--pad); border-top: 1px solid var(--line); }
 .panel:first-of-type { margin-top: 12vh; }
 .panel-label { display: block; font-size: 11px; letter-spacing: 0.24em; color: var(--muted); margin-bottom: 30px; }
