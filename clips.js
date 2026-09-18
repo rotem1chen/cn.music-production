@@ -33,7 +33,7 @@ const SITE = {
 
 const CLIPS = [
   { url: "https://youtu.be/gItPFC-qhic",                 title: "דרעק",        artist: "ayubii",           format: "DIGITAL" },
-  { url: "https://youtu.be/HeRs2D2EXSk",                 title: "פוקוס",       artist: "עדן מניוב, ירין",  format: "DIGITAL", ratio: "1/1" },
+  { url: "https://youtu.be/HeRs2D2EXSk",                 title: "פוקוס",       artist: "עדן מניוב, ירין",  format: "DIGITAL", thumb: "thumbs/fokus.jpg" },
   { url: "https://www.youtube.com/watch?v=p14Mww6wgkk",  title: "גברת קארמה",  artist: "סיד",              format: "DIGITAL", thumb: "thumbs/gveret-karma.jpg" },
   { url: "https://youtu.be/-pC_MCcH4c8",                 title: "שקוף",        artist: "סיד",              format: "DIGITAL" },
   { url: "https://youtu.be/8JPeYDKJP4g",                 title: "DIN WARP",    artist: "",                 format: "DIGITAL" },
