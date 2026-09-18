@@ -22,4 +22,6 @@ const ARTISTS = [
   { name: "ayubii",        spotify: "", instagram: "https://www.instagram.com/yoav_lore",
     youtube: "https://www.youtube.com/watch?v=qo_FJ7v-yqQ&list=PLDctwXiQATzKWHSzw1vNQoGIpOXu70uLt" },
   { name: "Yuvi",          spotify: "https://open.spotify.com/track/1pwY6GXfMPgpxsvY6CNozQ", instagram: "https://www.instagram.com/uv_raps" },
+  { name: "עדן מניוב",     spotify: "", instagram: "" },
+  { name: "ירין",          spotify: "", instagram: "" },
 ];
