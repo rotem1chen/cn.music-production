@@ -118,10 +118,30 @@
   const clipEls = [];        // elements currently on screen (one page's worth)
   const pageItems = [];      // the clip data behind them, same order
 
+  /* A clip may declare its own shape, e.g. ratio: "1/1" for a square social post
+     or "9/16" for a vertical one. Returns height / width; 16:9 when unset. */
+  function clipAspect(c) {
+    const r = c && c.ratio;
+    if (!r) return 0.5625;
+    if (typeof r === "number" && r > 0) return r;
+    const m = String(r).match(/^\s*(\d+(?:\.\d+)?)\s*[\/:]\s*(\d+(?:\.\d+)?)\s*$/);
+    if (m && +m[1] > 0 && +m[2] > 0) return +m[2] / +m[1];      // "w/h" -> h/w
+    return 0.5625;
+  }
+
   function buildClip(c, i) {
     const el = document.createElement("div");
     el.className = "clip";
     el.tabIndex = 0;
+
+    // Non-16:9 films keep the row HEIGHT (so the reel's rhythm and the 50vh
+    // centring maths are untouched) and simply get narrower — the tile matches
+    // the film, so nothing is letterboxed.
+    const aspect = clipAspect(c);
+    if (Math.abs(aspect - 0.5625) > 0.001) {
+      el.style.aspectRatio = (1 / aspect).toFixed(6) + " / 1";
+      el.style.width = "auto";
+    }
     el.setAttribute("role", "button");
     el.setAttribute("aria-label", "Play " + (c.title || "clip"));
 
@@ -414,11 +434,12 @@
     vLeadT.style.top = top + "px"; vLeadB.style.top = bottom + "px";
     vLeadL.style.left = left + "px"; vLeadR.style.left = right + "px";
   }
-  function bigRect() {
+  function bigRect(aspect) {
+    const a = aspect > 0 ? aspect : 0.5625;
     const vw = window.innerWidth, vh = window.innerHeight;
     const tw = Math.min(vw * 0.92, 1320);
-    const th = Math.min(vh * 0.82, tw * 0.5625);
-    const fw = Math.min(tw, th / 0.5625), fh = fw * 0.5625;
+    const th = Math.min(vh * 0.82, tw * a);
+    const fw = Math.min(tw, th / a), fh = fw * a;
     return { x: (vw - fw) / 2, y: (vh - fh) / 2, w: fw, h: fh };
   }
 
@@ -447,7 +468,7 @@
     // BEAT 2: once the grid has settled, grow the photo + spread the lines back outward
     const GRID_HOLD = 1450;
     stage._grow = setTimeout(() => {
-      const B = bigRect();
+      const B = bigRect(clipAspect(c));
       setStage(B.x, B.y, B.w, B.h);
       setLines(B.y, B.y + B.h, B.x, B.x + B.w);
     }, GRID_HOLD);

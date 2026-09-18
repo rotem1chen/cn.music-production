@@ -26,11 +26,14 @@ const SITE = {
    artist:   shown centre-right of the HUD
    format:   left of the HUD (e.g. DIGITAL, 16MM, 4K). Optional.
    thumb:    cover image URL — optional for YouTube (auto), needed for Vimeo/mp4.
+   ratio:    OPTIONAL shape, e.g. "1/1" for a square social post, "9/16" for a
+             vertical one. Leave it out for normal 16:9 films. The tile keeps the
+             same height as the others and just gets narrower — no black bars.
    ============================================================ */
 
 const CLIPS = [
   { url: "https://youtu.be/gItPFC-qhic",                 title: "דרעק",        artist: "ayubii",           format: "DIGITAL" },
-  { url: "https://youtube.com/shorts/yEnN--a0lAM",       title: "פוקוס",       artist: "עדן מניוב וירין",  format: "DIGITAL" },
+  { url: "https://youtube.com/shorts/yEnN--a0lAM",       title: "פוקוס",       artist: "עדן מניוב, ירין",  format: "DIGITAL", ratio: "1/1" },
   { url: "https://www.youtube.com/watch?v=p14Mww6wgkk",  title: "גברת קארמה",  artist: "סיד",              format: "DIGITAL" },
   { url: "https://youtu.be/-pC_MCcH4c8",                 title: "שקוף",        artist: "סיד",              format: "DIGITAL" },
   { url: "https://youtu.be/8JPeYDKJP4g",                 title: "DIN WARP",    artist: "",                 format: "DIGITAL" },
