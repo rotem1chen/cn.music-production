@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CN Production — Link maker</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=81" />
+</head>
+<body class="show-page pool-page" id="top">
+  <header class="nav">
+    <a class="nav-mark" href="index.html">CN—PRD</a>
+    <nav class="nav-right"><a href="index.html">Work</a></nav>
+  </header>
+
+  <section class="pool linkmaker">
+    <div class="pool-head">
+      <img class="pool-logo" src="logo.png?v=12" alt="CN Production" />
+      <span class="panel-label">[ LINK MAKER ]</span>
+      <h1 class="show-title pool-title">Client link</h1>
+      <p class="pool-status lm-help">Share the Drive folder as “Anyone with the link”, then paste the folder link here.</p>
+    </div>
+
+    <label class="lm-field">
+      <span class="lm-label">Drive folder link</span>
+      <input class="lm-input" id="lmIn" type="text" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off" spellcheck="false" />
+    </label>
+
+    <div class="lm-result" id="lmResult" hidden>
+      <span class="lm-label">Send this to the client</span>
+      <div class="lm-out" id="lmOut"></div>
+      <div class="pool-actions">
+        <button class="pool-btn" id="lmCopy" type="button">
+          <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
+          <span id="lmCopyLabel">Copy link</span>
+        </button>
+        <a class="pool-btn ghost" id="lmOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
+        <a class="pool-btn ghost" id="lmWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+      </div>
+      <div class="pool-status" id="lmCheck"></div>
+    </div>
+  </section>
+
+  <script src="media-config.js?v=81"></script>
+  <script>
+  (function () {
+    "use strict";
+    const BASE = location.origin + location.pathname.replace(/[^/]*$/, "") + "media.html?f=";
+    const KEY = (typeof MEDIA !== "undefined" && MEDIA.apiKey) ? MEDIA.apiKey : "";
+    const inp = document.getElementById("lmIn"), out = document.getElementById("lmOut"), res = document.getElementById("lmResult");
+    const copyBtn = document.getElementById("lmCopy"), copyLabel = document.getElementById("lmCopyLabel");
+    const open = document.getElementById("lmOpen"), wa = document.getElementById("lmWa"), check = document.getElementById("lmCheck");
+    let link = "", timer = 0;
+
+    function idFrom(raw) {
+      raw = raw.trim();
+      const m = raw.match(/folders\/([\w-]{10,})/) || raw.match(/[?&]id=([\w-]{10,})/) || raw.match(/^([\w-]{10,})$/);
+      return m ? m[1] : "";
+    }
+
+    /* ask Drive for the folder so we can warn if it isn't shared */
+    async function verify(id) {
+      check.textContent = "Checking the folder…";
+      if (!KEY) { check.textContent = "Can't verify sharing (no API key set)."; return; }
+      try {
+        const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=name,mimeType&supportsAllDrives=true&key=${KEY}`);
+        if (!r.ok) throw r.status;
+        const f = await r.json();
+        if (f.mimeType !== "application/vnd.google-apps.folder") { check.textContent = "⚠ That's a file, not a folder. Paste the folder link."; return; }
+        const q = encodeURIComponent(`'${id}' in parents and trashed = false`);
+        const l = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true&key=${KEY}`);
+        const n = l.ok ? ((await l.json()).files || []).length : 0;
+        check.textContent = `✓ “${f.name}” — ${n} item${n === 1 ? "" : "s"} · shared correctly`;
+        check.classList.add("ok");
+      } catch (s) {
+        check.textContent = (s === 404 || s === 403)
+          ? "⚠ Not shared yet — in Drive: right-click the folder → Share → “Anyone with the link” → Viewer."
+          : "⚠ Couldn't check the folder right now. The link may still work.";
+      }
+    }
+
+    function update() {
+      const id = idFrom(inp.value);
+      check.textContent = ""; check.classList.remove("ok");
+      copyLabel.textContent = "Copy link";
+      if (!id) { res.hidden = true; link = ""; return; }
+      link = BASE + id;
+      out.textContent = link; open.href = link;
+      wa.href = "https://wa.me/?text=" + encodeURIComponent(link);
+      res.hidden = false;
+      clearTimeout(timer); timer = setTimeout(() => verify(id), 400);
+    }
+
+    inp.addEventListener("input", update);
+    inp.addEventListener("paste", () => setTimeout(update, 0));
+    copyBtn.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(link); copyLabel.textContent = "Copied ✓"; }
+      catch { const r = document.createRange(); r.selectNodeContents(out); getSelection().removeAllRanges(); getSelection().addRange(r); copyLabel.textContent = "Select & copy"; }
+      setTimeout(() => { copyLabel.textContent = "Copy link"; }, 1800);
+    });
+    inp.focus();
+  })();
+  </script>
+</body>
+</html>

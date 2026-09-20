@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v80**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v81**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -61,5 +61,6 @@ Files: `media.html`, `media.js`, `media-config.js` (holds the Drive API key), st
    (add `localhost/*` too if testing locally); API restrictions → restrict to **Google Drive API**. Save.
 5. Paste the key into `media-config.js` (`apiKey: "..."`), bump `?v`, push.
 
-**Per client:** upload to a Drive folder → Share → Anyone with the link → copy the folder id from the URL
-(`drive.google.com/drive/folders/<THIS>`) → send `media.html?f=<THIS>`. No site edit needed.
+**Per client:** upload to a Drive folder → Share → Anyone with the link → open **`link.html`** (hidden helper page),
+paste the Drive folder link → it builds the client link, checks the folder is shared, copy / WhatsApp / preview.
+(Manual: `media.html?f=<folder id from drive.google.com/drive/folders/<id>>`.) No site edit needed.
