@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v79**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v80**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -42,3 +42,24 @@ Then bump `?v` in `index.html` and push. (YouTube video must be Public + embedda
 - **Unlisted is fine** — unlisted videos embed normally. Only *Private* breaks embeds.
 - The setting that matters is separate from visibility: Studio → Content → video → Details →
   Show more → *License and distribution* → **Allow embedding**. If a film shows as a dead tile, check that first.
+
+## Media pool (client delivery) — `media.html`
+Hidden page (not linked from the site, `noindex`) that shows one Google Drive folder in the site's look:
+**`https://music.cn-production.com/media.html?f=<drive folder id>`** — `f` also accepts a pasted Drive folder link.
+Files: `media.html`, `media.js`, `media-config.js` (holds the Drive API key), styles under "Media pool" in `style.css`.
+
+- Videos → 16:9 tiles, click plays inside the page (Drive player). Photos → grid + lightbox (full-res via Drive).
+  Other files → list. Subfolders (e.g. `EDITED / RAW / SOCIAL`) become their own blocks, one level deep.
+- Every tile has a ↓ download; "Download all" zips the whole folder via Drive; "Open in Drive" is the fallback.
+- The folder (and everything in it) must be shared **Anyone with the link → Viewer**. The link is the only "password".
+
+**One-time setup (API key)** — needed once, then never again:
+1. https://console.cloud.google.com → create project (e.g. "CN media pool").
+2. APIs & Services → Library → **Google Drive API** → Enable.
+3. APIs & Services → Credentials → Create credentials → **API key**.
+4. Edit the key: Application restrictions → **Websites** → add `music.cn-production.com/*`
+   (add `localhost/*` too if testing locally); API restrictions → restrict to **Google Drive API**. Save.
+5. Paste the key into `media-config.js` (`apiKey: "..."`), bump `?v`, push.
+
+**Per client:** upload to a Drive folder → Share → Anyone with the link → copy the folder id from the URL
+(`drive.google.com/drive/folders/<THIS>`) → send `media.html?f=<THIS>`. No site edit needed.
