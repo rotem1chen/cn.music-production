@@ -353,7 +353,7 @@ a { color: inherit; text-decoration: none; }
 /* ---------- Media pool (media.html — client delivery from a Drive folder) ---------- */
 .pool { max-width: 1200px; margin: 0 auto; padding: clamp(96px,14vh,150px) var(--pad) clamp(60px,10vh,110px); }
 .pool-head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: clamp(30px, 5vh, 56px); }
-.pool-logo { width: clamp(64px, 8vw, 96px); height: auto; margin-bottom: 26px; }
+.pool-logo { width: clamp(120px, 15vw, 200px); height: auto; margin-bottom: 30px; }
 .pool-head .panel-label { margin-bottom: 8px; }
 .pool-title { margin: 0 0 22px; word-break: break-word; }
 .pool-actions { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
