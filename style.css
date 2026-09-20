@@ -432,8 +432,16 @@ a { color: inherit; text-decoration: none; }
 .vplay { position: fixed; inset: 0; z-index: 110; background: rgba(0,0,0,.96);
   display: flex; align-items: center; justify-content: center; padding: clamp(20px,5vw,64px); }
 .vplay[hidden] { display: none; }
-.vplay-stage { position: relative; width: min(1400px, 92vw, calc(82vh * var(--va, 1.7778))); aspect-ratio: var(--va, 1.7778); background: #000; }
-.vplay-stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.vplay-stage { position: relative; width: min(1400px, 92vw, calc(82vh * var(--va, 1.7778))); aspect-ratio: var(--va, 1.7778); background: #000;
+  --vzoom: 1; --vunzoom: 1; }
+/* Drive's transport controls are a fixed pixel size and live inside a cross-origin
+   iframe, so no CSS of ours can restyle them — on a phone they swallow the picture.
+   Instead, lay the iframe out --vzoom x larger than the stage and scale it back down:
+   Drive sizes its chrome for the bigger box, so the controls land proportionally
+   smaller while the video still fills the same area. */
+.vplay-stage iframe { position: absolute; top: 0; left: 0; border: 0;
+  width: calc(100% * var(--vzoom)); height: calc(100% * var(--vzoom));
+  transform: scale(var(--vunzoom)); transform-origin: top left; }
 .vplay-stage .corner { position: absolute; width: 22px; height: 22px; }
 .vplay-stage .tl { top: -10px; left: -10px; }
 .vplay-stage .tr { top: -10px; right: -10px; }
@@ -446,6 +454,9 @@ a { color: inherit; text-decoration: none; }
   .pool-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
   .vid-grid { grid-template-columns: 1fr; }
   .pool-actions { gap: 6px; }
+  /* half-size Drive controls, and give the picture the rest of the screen */
+  .vplay { padding: 10px; }
+  .vplay-stage { width: min(96vw, calc(84vh * var(--va, 1.7778))); --vzoom: 2; --vunzoom: 0.5; }
 }
 
 /* ---------- Link maker (link.html — paste a Drive folder, get the client link) ---------- */
