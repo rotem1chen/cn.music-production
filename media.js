@@ -190,15 +190,47 @@
   const vplay = document.getElementById("vplay");
   const vstage = document.getElementById("vplayStage");
   const vframe = document.getElementById("vplayFrame");
+  const vvideo = document.getElementById("vplayVideo");
+  /* Direct byte stream. Unlike uc?export=download this skips Drive's virus-scan
+     interstitial on large files, so a <video> gets video instead of a web page. */
+  const streamUrl = (id) => `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`;
+  let vTimer = null;
+
+  /* Drive's own player: last resort. Its controls are fixed-size and live in a
+     cross-origin iframe, so they cannot be restyled — hence trying native first. */
+  function useDriveFrame(f) {
+    clearTimeout(vTimer);
+    vvideo.hidden = true; vvideo.removeAttribute("src"); vvideo.load();
+    vframe.hidden = false; vframe.src = playUrl(f.id);
+  }
+
+  function useNative(f) {
+    vframe.hidden = true; vframe.src = "about:blank";
+    vvideo.hidden = false;
+    let settled = false;
+    const giveUp = () => { if (!settled) { settled = true; useDriveFrame(f); } };
+    vvideo.onloadedmetadata = () => { settled = true; clearTimeout(vTimer); };
+    vvideo.onerror = giveUp;                      // HTML instead of video → fires at once
+    vTimer = setTimeout(giveUp, 5000);            // backstop for a stream that never starts
+    vvideo.src = streamUrl(f.id);
+    vvideo.play && vvideo.play().catch(() => {}); // autoplay refusal is fine, controls are there
+  }
+
   function openVideo(f) {
     const a = aspectOf(f);
     vstage.style.setProperty("--va", (a || 1.7778).toFixed(4));
-    vframe.src = playUrl(f.id);
     document.getElementById("vplayCaption").textContent = f.name;
     document.getElementById("vplayDl").href = dlUrl(f);
     vplay.hidden = false; document.body.style.overflow = "hidden";
+    useNative(f);
   }
-  function closeVideo() { vplay.hidden = true; vframe.src = "about:blank"; document.body.style.overflow = ""; }
+  function closeVideo() {
+    clearTimeout(vTimer);
+    vplay.hidden = true;
+    vframe.src = "about:blank"; vframe.hidden = true;
+    vvideo.pause && vvideo.pause(); vvideo.removeAttribute("src"); vvideo.load(); vvideo.hidden = true;
+    document.body.style.overflow = "";
+  }
   document.getElementById("vplayClose").addEventListener("click", closeVideo);
   vplay.addEventListener("click", (e) => { if (e.target === vplay) closeVideo(); });
 
