@@ -398,8 +398,11 @@ a { color: inherit; text-decoration: none; }
 .shot-name { font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-align: center; word-break: break-all; }
 
 /* videos: 16:9 tiles with a play mark and a name strip */
-.vid-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
-.vid { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #0c0c0e; cursor: pointer; }
+/* --va is the video's real width/height, set per tile from Drive's videoMediaMetadata;
+   it falls back to 16:9 when Drive has not reported dimensions yet.
+   align-items:start so a tall tile does not stretch the 16:9 ones beside it. */
+.vid-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; align-items: start; }
+.vid { position: relative; aspect-ratio: var(--va, 1.7778); overflow: hidden; background: #0c0c0e; cursor: pointer; }
 .vid img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--ease), opacity .3s; }
 .vid:hover img { transform: scale(1.04); opacity: .85; }
 .vid-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 2;
@@ -429,7 +432,7 @@ a { color: inherit; text-decoration: none; }
 .vplay { position: fixed; inset: 0; z-index: 110; background: rgba(0,0,0,.96);
   display: flex; align-items: center; justify-content: center; padding: clamp(20px,5vw,64px); }
 .vplay[hidden] { display: none; }
-.vplay-stage { position: relative; width: min(1400px, 92vw, calc(82vh * 16 / 9)); aspect-ratio: 16 / 9; background: #000; }
+.vplay-stage { position: relative; width: min(1400px, 92vw, calc(82vh * var(--va, 1.7778))); aspect-ratio: var(--va, 1.7778); background: #000; }
 .vplay-stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .vplay-stage .corner { position: absolute; width: 22px; height: 22px; }
 .vplay-stage .tl { top: -10px; left: -10px; }

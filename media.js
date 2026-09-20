@@ -27,6 +27,12 @@
   const thumb = (id, w) => `https://drive.google.com/thumbnail?id=${id}&sz=w${w}`;
   const dlUrl = (f) => f.webContentLink || `https://drive.google.com/uc?export=download&id=${f.id}`;
   const playUrl = (id) => `https://drive.google.com/file/d/${id}/preview`;
+  /* Drive reports the real pixel size in videoMediaMetadata — use it so vertical and
+     square cuts are not crushed into a 16:9 box. 0 = unknown, caller falls back to 16:9. */
+  const aspectOf = (f) => {
+    const m = f.videoMediaMetadata;
+    return (m && m.width > 0 && m.height > 0) ? m.width / m.height : 0;
+  };
   const isFolder = (f) => f.mimeType === "application/vnd.google-apps.folder";
   const isVideo = (f) => f.mimeType.startsWith("video/");
   const isImage = (f) => f.mimeType.startsWith("image/") || /\.(heic|dng|cr2|cr3|arw|nef|raf)$/i.test(f.name);
@@ -90,6 +96,8 @@
     const grid = document.createElement("div"); grid.className = "vid-grid";
     files.forEach((f) => {
       const t = document.createElement("div"); t.className = "vid";
+      const a = aspectOf(f);
+      if (a) t.style.setProperty("--va", a.toFixed(4));
       const img = document.createElement("img"); img.loading = "lazy"; img.alt = f.name; img.src = thumb(f.id, 800);
       img.onerror = () => { img.remove(); t.classList.add("no-thumb"); };
       const play = document.createElement("span"); play.className = "vid-play"; play.textContent = "▶";
@@ -180,8 +188,11 @@
 
   /* ---- video player ---- */
   const vplay = document.getElementById("vplay");
+  const vstage = document.getElementById("vplayStage");
   const vframe = document.getElementById("vplayFrame");
   function openVideo(f) {
+    const a = aspectOf(f);
+    vstage.style.setProperty("--va", (a || 1.7778).toFixed(4));
     vframe.src = playUrl(f.id);
     document.getElementById("vplayCaption").textContent = f.name;
     document.getElementById("vplayDl").href = dlUrl(f);
