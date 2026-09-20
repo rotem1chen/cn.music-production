@@ -3,5 +3,5 @@
    Paste your Google Drive API key here (see CLAUDE.md → "Media pool" for the 5-minute setup).
    The key is public by design — restrict it to this domain in Google Cloud so nobody else can use it. */
 const MEDIA = {
-  apiKey: "",
+  apiKey: "AIzaSyBRZFGGh0ROIdgbKrqx1REIpu0A3T3q5ZA",
 };
