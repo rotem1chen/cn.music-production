@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v87**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v88**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -64,3 +64,17 @@ Files: `media.html`, `media.js`, `media-config.js` (holds the Drive API key), st
 **Per client:** upload to a Drive folder → Share → Anyone with the link → open **`link.html`** (hidden helper page, 4-digit code gate — hash in the page, remembered 30 days per device),
 paste the Drive folder link → it builds the client link, checks the folder is shared, copy / WhatsApp / preview.
 (Manual: `media.html?f=<folder id from drive.google.com/drive/folders/<id>>`.) No site edit needed.
+
+## Cut review (client notes on a timeline) — `review.html`
+**`review.html?v=<Drive video id / Drive file link / YouTube link>`** — hidden, `noindex`. Made from `link.html` → "02 — Cut review".
+Files: `review.html`, `review.js`, styles under "Cut review" in `style.css`. **Zero backend**: notes live in the viewer's
+browser (`localStorage`, keyed by video) and travel inside the link (`&n=` = deflate + base64url JSON). No accounts.
+
+- Player: Drive videos stream natively (`drive.usercontent.google.com/download?…&confirm=t`, same as media.js) — needs
+  H.264 .mp4 or similar the browser can decode; otherwise use an unlisted **YouTube** link (IFrame API, custom timeline).
+- Client: pause → **+ NOTE** (or `N`) → name once + text → marker on the timeline. Keys: space, ←/→ 5s, shift+←/→ 1 frame, F.
+- **SEND**: WhatsApp / Email (`SITE.email` from clips.js) / Copy — the link carries all notes. Opening it merges them
+  into the recipient's storage and cleans `n` from the URL. Same note id → newest "fixed" state wins.
+- CN side: click a marker/timecode to jump; ✓ **Fixed** per note; **export** → Resolve markers `.edl` (CMX3600 with
+  `|M:` marker lines, record TC from 01:00:00:00, FPS selector) or a `.txt` list. Timecodes shown as mm:ss:ff.
+- Limitation of zero-backend: two reviewers = two links; the client must press SEND. Upgrade path: Firebase (free) if needed.

@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=87" />
+  <link rel="stylesheet" href="style.css?v=88" />
 </head>
 <body class="show-page pool-page" id="top">
   <!-- PIN GATE — the page stays hidden until the code is entered (remembered on this device for 30 days) -->
@@ -34,26 +34,52 @@
       <img class="pool-logo" src="logo.png?v=12" alt="CN Production" />
       <span class="panel-label">[ LINK MAKER ]</span>
       <h1 class="show-title pool-title">Client link</h1>
-      <p class="pool-status lm-help">Share the Drive folder as “Anyone with the link”, then paste the folder link here.</p>
+      <p class="pool-status lm-help">Share the Drive folder or file as “Anyone with the link”, then paste the link here.</p>
     </div>
 
-    <label class="lm-field">
-      <span class="lm-label">Drive folder link</span>
-      <input class="lm-input" id="lmIn" type="text" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off" spellcheck="false" />
-    </label>
-
-    <div class="lm-result" id="lmResult" hidden>
-      <span class="lm-label">Send this to the client</span>
-      <div class="lm-out" id="lmOut"></div>
-      <div class="pool-actions">
-        <button class="pool-btn" id="lmCopy" type="button">
-          <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
-          <span id="lmCopyLabel">Copy link</span>
-        </button>
-        <a class="pool-btn ghost" id="lmOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
-        <a class="pool-btn ghost" id="lmWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+    <!-- DELIVERY -->
+    <div class="lm-block">
+      <span class="panel-label">[ 01 — DELIVERY ]</span>
+      <label class="lm-field">
+        <span class="lm-label">Drive folder link</span>
+        <input class="lm-input" id="lmIn" type="text" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="lm-result" id="lmResult" hidden>
+        <span class="lm-label">Send this to the client</span>
+        <div class="lm-out" id="lmOut"></div>
+        <div class="pool-actions">
+          <button class="pool-btn" id="lmCopy" type="button">
+            <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
+            <span id="lmCopyLabel">Copy link</span>
+          </button>
+          <a class="pool-btn ghost" id="lmOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
+          <a class="pool-btn ghost" id="lmWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+        </div>
+        <div class="pool-status" id="lmCheck"></div>
       </div>
-      <div class="pool-status" id="lmCheck"></div>
+    </div>
+
+    <!-- REVIEW -->
+    <div class="lm-block">
+      <span class="panel-label">[ 02 — CUT REVIEW ]</span>
+      <p class="pool-status lm-help">Paste a Drive <b>video</b> link (shared “Anyone with the link”) or an unlisted <b>YouTube</b> link. The client gets a player with a timeline and sends notes back.</p>
+      <label class="lm-field">
+        <span class="lm-label">Video link</span>
+        <input class="lm-input" id="rvIn" type="text" placeholder="https://drive.google.com/file/d/…  or  https://youtu.be/…" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="lm-result" id="rvResult" hidden>
+        <span class="lm-label">Send this to the client</span>
+        <div class="lm-out" id="rvOut"></div>
+        <div class="pool-actions">
+          <button class="pool-btn" id="rvCopy" type="button">
+            <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
+            <span id="rvCopyLabel">Copy link</span>
+          </button>
+          <a class="pool-btn ghost" id="rvOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
+          <a class="pool-btn ghost" id="rvWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+        </div>
+        <div class="pool-status" id="rvCheck"></div>
+      </div>
     </div>
   </section>
 
@@ -95,64 +121,86 @@
     paint(); inp.focus();
   })();
   </script>
-  <script src="media-config.js?v=87"></script>
+  <script src="media-config.js?v=88"></script>
   <script>
   (function () {
     "use strict";
-    const BASE = location.origin + location.pathname.replace(/[^/]*$/, "") + "media.html?f=";
+    const DIR = location.origin + location.pathname.replace(/[^/]*$/, "");
     const KEY = (typeof MEDIA !== "undefined" && MEDIA.apiKey) ? MEDIA.apiKey : "";
-    const inp = document.getElementById("lmIn"), out = document.getElementById("lmOut"), res = document.getElementById("lmResult");
-    const copyBtn = document.getElementById("lmCopy"), copyLabel = document.getElementById("lmCopyLabel");
-    const open = document.getElementById("lmOpen"), wa = document.getElementById("lmWa"), check = document.getElementById("lmCheck");
-    let link = "", timer = 0;
+    const driveGet = (id, fields) => fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=${fields}&supportsAllDrives=true&key=${KEY}`);
+    const NOT_SHARED = "⚠ Not shared yet — in Drive: right-click → Share → “Anyone with the link” → Viewer.";
 
-    function idFrom(raw) {
-      raw = raw.trim();
-      const m = raw.match(/folders\/([\w-]{10,})/) || raw.match(/[?&]id=([\w-]{10,})/) || raw.match(/^([\w-]{10,})$/);
-      return m ? m[1] : "";
-    }
-
-    /* ask Drive for the folder so we can warn if it isn't shared */
-    async function verify(id) {
-      check.textContent = "Checking the folder…";
-      if (!KEY) { check.textContent = "Can't verify sharing (no API key set)."; return; }
-      try {
-        const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=name,mimeType&supportsAllDrives=true&key=${KEY}`);
-        if (!r.ok) throw r.status;
-        const f = await r.json();
-        if (f.mimeType !== "application/vnd.google-apps.folder") { check.textContent = "⚠ That's a file, not a folder. Paste the folder link."; return; }
-        const q = encodeURIComponent(`'${id}' in parents and trashed = false`);
-        const l = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true&key=${KEY}`);
-        const n = l.ok ? ((await l.json()).files || []).length : 0;
-        check.textContent = `✓ “${f.name}” — ${n} item${n === 1 ? "" : "s"} · shared correctly`;
-        check.classList.add("ok");
-      } catch (s) {
-        check.textContent = (s === 404 || s === 403)
-          ? "⚠ Not shared yet — in Drive: right-click the folder → Share → “Anyone with the link” → Viewer."
-          : "⚠ Couldn't check the folder right now. The link may still work.";
+    /* one wiring for both blocks: parse → build link → verify with Drive */
+    function wire(p) {
+      const inp = document.getElementById(p.in), out = document.getElementById(p.out), res = document.getElementById(p.res);
+      const copyBtn = document.getElementById(p.copy), copyLabel = document.getElementById(p.copyLabel);
+      const open = document.getElementById(p.open), wa = document.getElementById(p.wa), check = document.getElementById(p.check);
+      let link = "", timer = 0;
+      function update() {
+        const src = p.parse(inp.value.trim());
+        check.textContent = ""; check.classList.remove("ok"); copyLabel.textContent = "Copy link";
+        if (!src) { res.hidden = true; link = ""; if (inp.value.trim()) check.textContent = ""; return; }
+        link = p.build(src);
+        out.textContent = link; open.href = link;
+        wa.href = "https://wa.me/?text=" + encodeURIComponent(link);
+        res.hidden = false;
+        clearTimeout(timer); timer = setTimeout(() => p.verify(src, check), 400);
       }
+      inp.addEventListener("input", update);
+      inp.addEventListener("paste", () => setTimeout(update, 0));
+      copyBtn.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(link); copyLabel.textContent = "Copied ✓"; }
+        catch { const r = document.createRange(); r.selectNodeContents(out); getSelection().removeAllRanges(); getSelection().addRange(r); copyLabel.textContent = "Select & copy"; }
+        setTimeout(() => { copyLabel.textContent = "Copy link"; }, 1800);
+      });
     }
 
-    function update() {
-      const id = idFrom(inp.value);
-      check.textContent = ""; check.classList.remove("ok");
-      copyLabel.textContent = "Copy link";
-      if (!id) { res.hidden = true; link = ""; return; }
-      link = BASE + id;
-      out.textContent = link; open.href = link;
-      wa.href = "https://wa.me/?text=" + encodeURIComponent(link);
-      res.hidden = false;
-      clearTimeout(timer); timer = setTimeout(() => verify(id), 400);
-    }
-
-    inp.addEventListener("input", update);
-    inp.addEventListener("paste", () => setTimeout(update, 0));
-    copyBtn.addEventListener("click", async () => {
-      try { await navigator.clipboard.writeText(link); copyLabel.textContent = "Copied ✓"; }
-      catch { const r = document.createRange(); r.selectNodeContents(out); getSelection().removeAllRanges(); getSelection().addRange(r); copyLabel.textContent = "Select & copy"; }
-      setTimeout(() => { copyLabel.textContent = "Copy link"; }, 1800);
+    /* 01 — delivery: a Drive folder */
+    wire({
+      in: "lmIn", out: "lmOut", res: "lmResult", copy: "lmCopy", copyLabel: "lmCopyLabel", open: "lmOpen", wa: "lmWa", check: "lmCheck",
+      parse: (raw) => { const m = raw.match(/folders\/([\w-]{10,})/) || raw.match(/[?&]id=([\w-]{10,})/) || raw.match(/^([\w-]{10,})$/); return m ? m[1] : ""; },
+      build: (id) => DIR + "media.html?f=" + id,
+      verify: async (id, check) => {
+        check.textContent = "Checking the folder…";
+        if (!KEY) { check.textContent = "Can't verify sharing (no API key set)."; return; }
+        try {
+          const r = await driveGet(id, "name,mimeType"); if (!r.ok) throw r.status;
+          const f = await r.json();
+          if (f.mimeType !== "application/vnd.google-apps.folder") { check.textContent = "⚠ That's a file, not a folder. Paste the folder link."; return; }
+          const q = encodeURIComponent(`'${id}' in parents and trashed = false`);
+          const l = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true&key=${KEY}`);
+          const n = l.ok ? ((await l.json()).files || []).length : 0;
+          check.textContent = `✓ “${f.name}” — ${n} item${n === 1 ? "" : "s"} · shared correctly`; check.classList.add("ok");
+        } catch (s) { check.textContent = (s === 404 || s === 403) ? NOT_SHARED : "⚠ Couldn't check the folder right now. The link may still work."; }
+      },
     });
-    if (document.getElementById("pin").hidden) inp.focus();
+
+    /* 02 — cut review: a Drive video or a YouTube video */
+    wire({
+      in: "rvIn", out: "rvOut", res: "rvResult", copy: "rvCopy", copyLabel: "rvCopyLabel", open: "rvOpen", wa: "rvWa", check: "rvCheck",
+      parse: (raw) => {
+        let m;
+        if ((m = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/))) return { kind: "yt", id: m[1] };
+        if ((m = raw.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)([\w-]{20,})/))) return { kind: "drive", id: m[1] };
+        if (/^[\w-]{11}$/.test(raw)) return { kind: "yt", id: raw };
+        if (/^[\w-]{20,}$/.test(raw)) return { kind: "drive", id: raw };
+        return null;
+      },
+      build: (src) => DIR + "review.html?v=" + src.id,
+      verify: async (src, check) => {
+        if (src.kind === "yt") { check.textContent = "✓ YouTube — make sure the video is Unlisted (not Private)."; check.classList.add("ok"); return; }
+        check.textContent = "Checking the file…";
+        if (!KEY) { check.textContent = "Can't verify sharing (no API key set)."; return; }
+        try {
+          const r = await driveGet(src.id, "name,mimeType,videoMediaMetadata(width,height)"); if (!r.ok) throw r.status;
+          const f = await r.json();
+          if (f.mimeType === "application/vnd.google-apps.folder") { check.textContent = "⚠ That's a folder. Paste the link of one video file."; return; }
+          if (!f.mimeType.startsWith("video/")) { check.textContent = `⚠ “${f.name}” isn't a video file.`; return; }
+          const m = f.videoMediaMetadata;
+          check.textContent = `✓ “${f.name}”${m && m.width ? ` — ${m.width}×${m.height}` : ""} · shared correctly. Best as an H.264 .mp4; if it won't play, use an unlisted YouTube link.`; check.classList.add("ok");
+        } catch (s) { check.textContent = (s === 404 || s === 403) ? NOT_SHARED : "⚠ Couldn't check the file right now. The link may still work."; }
+      },
+    });
   })();
   </script>
 </body>

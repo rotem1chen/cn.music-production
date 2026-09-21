@@ -505,3 +505,96 @@ a { color: inherit; text-decoration: none; }
 .pin.shake .pin-boxes { animation: pinShake .4s var(--ease); }
 @keyframes pinShake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
 body.pin-lock { overflow: hidden; }
+
+/* ---------- Cut review (review.html — timestamped client notes on a video) ---------- */
+.review { max-width: 1100px; }
+.rv-head { margin-bottom: clamp(22px, 4vh, 40px); }
+.rv-help { margin-top: 0; text-transform: none; letter-spacing: 0.06em; font-size: 12px; }
+.rv-help b { color: var(--accent); font-weight: 400; }
+
+/* stage: the video keeps its real shape; corners like the film viewer */
+.rv-stage { position: relative; width: 100%; max-height: 74vh; aspect-ratio: var(--va, 1.7778); margin: 0 auto; background: #000; outline: none; }
+.rv-media { position: absolute; inset: 0; overflow: hidden; }
+.rv-media video, .rv-media iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+.rv-media [hidden] { display: none; }
+.rv-stage .corner { position: absolute; width: 20px; height: 20px; z-index: 3; pointer-events: none; }
+.rv-stage .tl { top: -9px; left: -9px; } .rv-stage .tr { top: -9px; right: -9px; }
+.rv-stage .bl { bottom: -9px; left: -9px; } .rv-stage .br { bottom: -9px; right: -9px; }
+.rv-bigplay { position: absolute; inset: 0; z-index: 2; margin: auto; width: 84px; height: 84px; border-radius: 50%;
+  background: rgba(0,0,0,.55); border: 1px solid rgba(255,212,0,.6); color: var(--accent); font-size: 26px; padding-left: 6px;
+  cursor: pointer; transition: background .25s, transform .3s var(--ease); }
+.rv-bigplay:hover { background: rgba(255,212,0,.15); transform: scale(1.06); }
+.rv-bigplay[hidden] { display: none; }
+.rv-stage:fullscreen { max-height: none; width: 100vw; height: 100vh; aspect-ratio: auto; }
+.rv-stage:fullscreen .corner { display: none; }
+
+/* controls */
+.rv-controls { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+.rv-btn { background: none; border: 0; color: var(--text); cursor: pointer; font-family: var(--mono); font-size: 14px; line-height: 1;
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: color .2s; }
+.rv-btn:hover { color: var(--accent); }
+.rv-step { font-size: 22px; width: 26px; }
+.rv-time { font-size: 11px; letter-spacing: 0.14em; color: var(--muted); white-space: nowrap; }
+.rv-time #rvCur { color: var(--text); }
+.rv-track { position: relative; flex: 1; height: 34px; cursor: pointer; touch-action: none; }
+.rv-track::before { content: ""; position: absolute; left: 0; right: 0; top: 16px; height: 2px; background: var(--line); }
+.rv-buffer { position: absolute; left: 0; top: 16px; height: 2px; background: rgba(244,244,242,.25); width: 0; }
+.rv-progress { position: absolute; left: 0; top: 16px; height: 2px; background: var(--accent); width: 0; }
+.rv-head-pin { position: absolute; top: 9px; width: 1.5px; height: 16px; background: var(--accent); transform: translateX(-50%); pointer-events: none; }
+.rv-marks { position: absolute; inset: 0; }
+.rv-mark { position: absolute; top: 22px; width: 10px; height: 10px; transform: translateX(-50%) rotate(45deg); background: var(--accent);
+  border: 0; padding: 0; cursor: pointer; transition: transform .25s var(--ease), background .2s; }
+.rv-mark:hover { transform: translateX(-50%) rotate(45deg) scale(1.5); }
+.rv-mark.fixed { background: transparent; border: 1.5px solid var(--muted); }
+
+/* compose */
+.rv-compose { margin-top: 24px; }
+.rv-compose .pool-btn.primary #rvAddAt { opacity: .7; }
+.rv-form { border: 1px solid rgba(255,212,0,.45); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.rv-form[hidden] { display: none; }
+.rv-form-row { display: flex; align-items: center; gap: 14px; }
+.rv-tc { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; color: var(--accent); background: none; border: 1px solid rgba(255,212,0,.5);
+  padding: 8px 10px; white-space: nowrap; cursor: pointer; transition: background .2s, color .2s; }
+button.rv-tc:hover { background: var(--accent); color: #000; }
+.rv-name { flex: 1; padding: 10px 12px; font-size: 13px; }
+.rv-text { padding: 12px; font-size: 14px; line-height: 1.5; resize: vertical; min-height: 84px; }
+
+/* notes list */
+.rv-notes-wrap { margin-top: clamp(30px, 5vh, 50px); }
+.rv-note { display: flex; align-items: flex-start; gap: 16px; padding: 16px 4px; border-bottom: 1px solid var(--line); transition: background .4s; }
+.rv-note:first-child { border-top: 1px solid var(--line); }
+.rv-note.flash { background: rgba(255,212,0,.08); }
+.rv-body { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rv-author { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.rv-author:empty { display: none; }
+.rv-x { font-size: 14px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.rv-note.fixed .rv-x { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(255,212,0,.5); }
+.rv-fix { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); cursor: pointer; white-space: nowrap; padding-top: 8px; }
+.rv-fix input { accent-color: var(--accent); }
+.rv-note.fixed .rv-fix { color: var(--accent); }
+.rv-del { background: none; border: 0; color: var(--muted); cursor: pointer; font-family: var(--mono); font-size: 12px; padding: 8px 4px; opacity: 0; transition: opacity .2s, color .2s; }
+.rv-note:hover .rv-del { opacity: 1; }
+.rv-del:hover { color: var(--accent); }
+@media (hover: none) { .rv-del { opacity: .6; } }
+
+/* send / export */
+.rv-send { margin-top: clamp(36px, 6vh, 64px); padding-top: 28px; border-top: 1px solid var(--line); }
+.rv-export { margin-top: 26px; }
+.rv-export summary { cursor: pointer; list-style: none; }
+.rv-export summary::before { content: "+ "; color: var(--accent); }
+.rv-export[open] summary::before { content: "− "; }
+.rv-fps { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.rv-fps select { background: #0c0c0e; color: var(--text); border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; padding: 8px 10px; }
+
+@media (max-width: 720px) {
+  .rv-controls { flex-wrap: wrap; gap: 8px; }
+  .rv-track { order: -1; flex-basis: 100%; }
+  .rv-time { margin-left: auto; }
+  .rv-note { gap: 10px; flex-wrap: wrap; }
+  .rv-body { flex-basis: 100%; order: 3; }
+}
+.pool-btn[hidden] { display: none; }
+.lm-block { margin-top: clamp(30px, 5vh, 50px); padding-top: 26px; border-top: 1px solid var(--line); }
+.lm-block .panel-label { margin-bottom: 18px; }
+.lm-block .lm-help { margin: 0 0 18px; text-transform: none; letter-spacing: 0.06em; font-size: 12px; }
+.lm-block .lm-help b { color: var(--text); font-weight: 400; }
