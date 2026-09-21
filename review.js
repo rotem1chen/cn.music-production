@@ -123,6 +123,30 @@
     };
   }
 
+  async function driveBlob(url) {
+    const buffer = $("rvBuffer");
+    let cache = null;
+    try { cache = await caches.open("cn-review-video"); } catch {}
+    let r = cache && await cache.match(url);
+    if (r) { statusEl.textContent = ""; return URL.createObjectURL(await r.blob()); }
+    r = await fetch(url, { mode: "cors", credentials: "omit" });
+    const type = r.headers.get("content-type") || "";
+    if (!r.ok || !/^(video|audio)\//.test(type)) throw new Error("not video");
+    const total = Number(r.headers.get("content-length")) || 0, chunks = []; let got = 0;
+    const reader = r.body.getReader();
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break;
+      chunks.push(value); got += value.length;
+      const pct = total ? Math.round(got / total * 100) : 0;
+      statusEl.textContent = "טוען וידאו… " + (total ? pct + "%" : Math.round(got / 1e6) + " MB");
+      buffer.style.width = (total ? pct : 0) + "%";
+    }
+    const blob = new Blob(chunks, { type });
+    buffer.style.width = "100%"; statusEl.textContent = "";
+    if (cache) cache.put(url, new Response(blob, { headers: { "Content-Type": type, "Content-Length": String(blob.size) } })).catch(() => {});
+    return URL.createObjectURL(blob);
+  }
+
   function setAspect(a) { if (a > 0) stage.style.setProperty("--va", a.toFixed(4)); }
 
   /* ---- controls ---- */
@@ -306,7 +330,12 @@
           if (r.ok) { const f = await r.json(); titleEl.textContent = f.name.replace(/\.\w{2,4}$/, ""); document.title = titleEl.textContent + " — תגובות"; }
         } catch {}
       }
-      nativePlayer(`https://www.googleapis.com/drive/v3/files/${SRC.id}?alt=media&supportsAllDrives=true&key=${KEY}`);
+      const mediaUrl = `https://www.googleapis.com/drive/v3/files/${SRC.id}?alt=media&supportsAllDrives=true&key=${KEY}`;
+      /* Streaming straight from that endpoint stutters (no CDN, ~2 s per seek), so the file is
+         fetched once — with a progress bar — and played from memory. It's kept in the browser's
+         Cache Storage so the next open of the same link is instant. Falls back to streaming. */
+      try { nativePlayer(await driveBlob(mediaUrl)); }
+      catch { nativePlayer(mediaUrl); }
     } else if (SRC.kind === "url") {
       nativePlayer(SRC.id);
     } else {
