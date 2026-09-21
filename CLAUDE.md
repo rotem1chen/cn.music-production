@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v90**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v91**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -78,7 +78,7 @@ browser (`localStorage`, keyed by video) and travel inside the link (`&n=` = def
   File must be "Anyone with the link" and browser-decodable (H.264 .mp4; ProRes/.mov won't). media.js uses the same
   URL for its native player, with Drive's iframe as fallback. Unlisted YouTube links also work (IFrame API).
 - Player: native `<video>` for Drive / direct .mp4; YouTube IFrame API with `controls:0`, timeline polled every 200 ms.
-- Client: pause → **+ NOTE** (or `N`) → name once + text → marker on the timeline. Keys: space, ←/→ 5s, shift+←/→ 1 frame, F.
+- Client UI is **Hebrew** (RTL text blocks, LTR player row; no name field). Pause → big **תגובה** button (or `N`) → text → marker on the timeline. Keys: space, ←/→ 5s, shift+←/→ 1 frame, F.
 - **SEND**: WhatsApp / Email (`SITE.email` from clips.js) / Copy — the link carries all notes. Opening it merges them
   into the recipient's storage and cleans `n` from the URL. Same note id → newest "fixed" state wins.
 - CN side: click a marker/timecode to jump; ✓ **Fixed** per note; **export** → Resolve markers `.edl` (CMX3600 with

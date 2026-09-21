@@ -22,7 +22,7 @@
   }
   const SRC = parseSource(params.get("v"));
   const titleEl = $("rvTitle"), statusEl = $("rvStatus");
-  if (!SRC) { titleEl.textContent = "Review"; statusEl.textContent = "No video in the link. Use review.html?v=<Drive video link or YouTube link>"; return; }
+  if (!SRC) { titleEl.textContent = "תגובות"; statusEl.textContent = "אין וידאו בקישור."; return; }
   const STORE = "cn-review:" + SRC.kind + ":" + SRC.id;
 
   /* ---- time helpers ---- */
@@ -84,7 +84,7 @@
     video.hidden = false; video.src = src;
     let failed = false;
     video.addEventListener("loadedmetadata", () => { ready = true; setAspect(video.videoWidth / video.videoHeight); onReady(); });
-    video.addEventListener("error", () => { if (!failed) { failed = true; statusEl.textContent = SRC.kind === "drive" ? "Can't play this Drive file. Check it's shared “Anyone with the link”, and that it's an .mp4 (H.264) — a ProRes/.mov export won't play in a browser." : "This video can't be played."; } });
+    video.addEventListener("error", () => { if (!failed) { failed = true; statusEl.textContent = SRC.kind === "drive" ? "לא ניתן לנגן את הקובץ. צריך לוודא שהוא משותף כ״כל מי שיש לו את הקישור״ ושהוא mp4 (H.264) — קובץ ProRes/‎.mov לא מתנגן בדפדפן." : "לא ניתן לנגן את הווידאו."; } });
     video.addEventListener("timeupdate", tick);
     video.addEventListener("progress", () => { try { const b = video.buffered; if (b.length && video.duration) $("rvBuffer").style.width = (b.end(b.length - 1) / video.duration * 100) + "%"; } catch {} });
     video.addEventListener("play", syncPlay); video.addEventListener("pause", syncPlay); video.addEventListener("ended", syncPlay);
@@ -106,7 +106,7 @@
           onReady: () => {
             ready = true;
             const d = yt.getVideoData && yt.getVideoData();
-            if (d && d.title && !params.get("t")) titleEl.textContent = d.title, document.title = d.title + " — Review";
+            if (d && d.title && !params.get("t")) titleEl.textContent = d.title, document.title = d.title + " — תגובות";
             onReady();
             poll = setInterval(tick, 200);
           },
@@ -185,16 +185,15 @@
   });
 
   /* ---- compose a note ---- */
-  const form = $("rvForm"), addBtn = $("rvAdd"), nameIn = $("rvName"), textIn = $("rvText"), formAt = $("rvFormAt");
+  const form = $("rvForm"), addBtn = $("rvAdd"), textIn = $("rvText"), formAt = $("rvFormAt");
   let composing = false, composeT = 0;
   function startCompose() {
     if (!ready) return;
     P.pause();
     composeT = P.time(); composing = true;
     formAt.textContent = fmtFrames(composeT, fps());
-    nameIn.value = name;
     form.hidden = false; addBtn.hidden = true;
-    (name ? textIn : nameIn).focus();
+    textIn.focus();
   }
   function cancelCompose() { composing = false; form.hidden = true; addBtn.hidden = false; textIn.value = ""; tick(); }
   addBtn.addEventListener("click", startCompose);
@@ -203,8 +202,7 @@
     e.preventDefault();
     const x = textIn.value.trim();
     if (!x) { textIn.focus(); return; }
-    name = nameIn.value.trim();
-    notes.push({ i: Math.random().toString(36).slice(2, 9), t: Math.round(composeT * 100) / 100, a: name, x, d: 0, c: Date.now() });
+    notes.push({ i: Math.random().toString(36).slice(2, 9), t: Math.round(composeT * 100) / 100, a: "", x, d: 0, c: Date.now() });
     save(); render(); cancelCompose();
   });
   textIn.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
@@ -217,14 +215,14 @@
     const d = P ? P.dur() : 0;
     notes.forEach((n) => {
       const row = document.createElement("div"); row.className = "rv-note" + (n.d ? " fixed" : "");
-      row.innerHTML = `<button class="rv-tc" type="button"></button><div class="rv-body"><span class="rv-author"></span><span class="rv-x"></span></div><label class="rv-fix"><input type="checkbox" /> <span>Fixed</span></label><button class="rv-del" type="button" title="Delete">✕</button>`;
+      row.innerHTML = `<button class="rv-tc" type="button" dir="ltr"></button><div class="rv-body"><span class="rv-author"></span><span class="rv-x"></span></div><label class="rv-fix"><input type="checkbox" /> <span>תוקן</span></label><button class="rv-del" type="button" title="מחיקה">✕</button>`;
       row.querySelector(".rv-tc").textContent = fmtFrames(n.t, fps());
       row.querySelector(".rv-author").textContent = n.a || "";
       row.querySelector(".rv-x").textContent = n.x; row.querySelector(".rv-x").dir = "auto";
       const cb = row.querySelector("input"); cb.checked = !!n.d;
       cb.addEventListener("change", () => { n.d = cb.checked ? 1 : 0; n.c = Date.now(); save(); render(); });
       row.querySelector(".rv-tc").addEventListener("click", () => { P && P.pause(); P && P.seek(n.t); stage.scrollIntoView({ behavior: "smooth", block: "nearest" }); });
-      row.querySelector(".rv-del").addEventListener("click", () => { if (confirm("Delete this note?")) { notes = notes.filter((m) => m !== n); save(); render(); } });
+      row.querySelector(".rv-del").addEventListener("click", () => { if (confirm("למחוק את התגובה?")) { notes = notes.filter((m) => m !== n); save(); render(); } });
       list.appendChild(row);
 
       const mk = document.createElement("button"); mk.className = "rv-mark" + (n.d ? " fixed" : ""); mk.type = "button";
@@ -246,14 +244,14 @@
     if (notes.length) u.searchParams.set("n", await encodeNotes(notes));
     shareLink = u.toString();
     const title = titleEl.textContent;
-    const msg = `Notes on "${title}" (${notes.length}):\n${shareLink}`;
+    const msg = `תגובות על "${title}" (${notes.length}):\n${shareLink}`;
     wa.href = "https://wa.me/?text=" + encodeURIComponent(msg);
-    mail.href = (CONTACT ? "mailto:" + CONTACT : "mailto:") + "?subject=" + encodeURIComponent("Notes: " + title) + "&body=" + encodeURIComponent(msg);
+    mail.href = (CONTACT ? "mailto:" + CONTACT : "mailto:") + "?subject=" + encodeURIComponent("תגובות: " + title) + "&body=" + encodeURIComponent(msg);
   }
   copyBtn.addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(shareLink); copyLabel.textContent = "Copied ✓"; }
-    catch { prompt("Copy this link:", shareLink); }
-    setTimeout(() => { copyLabel.textContent = "Copy link"; }, 1800);
+    try { await navigator.clipboard.writeText(shareLink); copyLabel.textContent = "הועתק ✓"; }
+    catch { prompt("העתיקו את הקישור:", shareLink); }
+    setTimeout(() => { copyLabel.textContent = "העתקת קישור"; }, 1800);
   });
 
   /* ---- export for the edit ---- */
@@ -295,17 +293,17 @@
     if (params.get("n")) { const u = new URL(location.href); u.searchParams.delete("n"); history.replaceState(null, "", u); }   // notes are safe in storage; keep the bar clean
 
     const t = params.get("t");
-    if (t) { titleEl.textContent = t; document.title = t + " — Review"; }
-    else titleEl.textContent = "Review";
+    if (t) { titleEl.textContent = t; document.title = t + " — תגובות"; }
+    else titleEl.textContent = "תגובות";
 
     if (SRC.kind === "drive") {
       /* Drive's download/preview hosts refuse cross-site playback (403), but the Drive API's
          media endpoint streams the file with Range support when called with the site's API key. */
-      if (!KEY) { statusEl.textContent = "Setup needed: the Drive API key is missing (media-config.js)."; return; }
+      if (!KEY) { statusEl.textContent = "חסר מפתח Drive API (media-config.js)."; return; }
       if (!t) {
         try {
           const r = await fetch(`https://www.googleapis.com/drive/v3/files/${SRC.id}?fields=name&supportsAllDrives=true&key=${KEY}`);
-          if (r.ok) { const f = await r.json(); titleEl.textContent = f.name.replace(/\.\w{2,4}$/, ""); document.title = titleEl.textContent + " — Review"; }
+          if (r.ok) { const f = await r.json(); titleEl.textContent = f.name.replace(/\.\w{2,4}$/, ""); document.title = titleEl.textContent + " — תגובות"; }
         } catch {}
       }
       nativePlayer(`https://www.googleapis.com/drive/v3/files/${SRC.id}?alt=media&supportsAllDrives=true&key=${KEY}`);
@@ -314,7 +312,7 @@
     } else {
       ytPlayer(SRC.id);
     }
-    statusEl.textContent = "Loading video…";
+    statusEl.textContent = "טוען וידאו…";
     render();
   })();
 })();

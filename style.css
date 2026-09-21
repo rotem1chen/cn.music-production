@@ -549,7 +549,7 @@ body.pin-lock { overflow: hidden; }
 
 /* compose */
 .rv-compose { margin-top: 24px; }
-.rv-compose .pool-btn.primary #rvAddAt { opacity: .7; }
+
 .rv-form { border: 1px solid rgba(255,212,0,.45); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .rv-form[hidden] { display: none; }
 .rv-form-row { display: flex; align-items: center; gap: 14px; }
@@ -599,3 +599,15 @@ button.rv-tc:hover { background: var(--accent); color: #000; }
 .lm-block .lm-help { margin: 0 0 18px; text-transform: none; letter-spacing: 0.06em; font-size: 12px; }
 .lm-block .lm-help b { color: var(--text); font-weight: 400; }
 .lm-result.no-link .lm-out, .lm-result.no-link .pool-actions, .lm-result.no-link > .lm-label { display: none; }
+
+/* review page in Hebrew: text blocks are RTL, the player row stays LTR */
+.rv-head, .rv-compose, .rv-notes-wrap, .rv-send { text-align: right; }
+.rv-head { align-items: flex-end; }
+.rv-help, .rv-notes-wrap .pool-status, .rv-send .lm-label { font-family: var(--mono), system-ui; }
+/* the big תגובה button */
+.rv-add { font-size: clamp(18px, 2.6vw, 24px); letter-spacing: 0.08em; padding: 20px 34px; gap: 16px; }
+.rv-add-plus { font-size: 1.3em; line-height: 1; }
+.rv-add-at { font-size: 12px; letter-spacing: 0.14em; opacity: .7; align-self: center; }
+.rv-form-hint { font-size: 12px; color: var(--muted); }
+.rv-note .rv-tc { min-width: 92px; text-align: center; }
+@media (max-width: 720px) { .rv-add { width: 100%; justify-content: center; } }
