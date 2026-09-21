@@ -598,3 +598,4 @@ button.rv-tc:hover { background: var(--accent); color: #000; }
 .lm-block .panel-label { margin-bottom: 18px; }
 .lm-block .lm-help { margin: 0 0 18px; text-transform: none; letter-spacing: 0.06em; font-size: 12px; }
 .lm-block .lm-help b { color: var(--text); font-weight: 400; }
+.lm-result.no-link .lm-out, .lm-result.no-link .pool-actions, .lm-result.no-link > .lm-label { display: none; }

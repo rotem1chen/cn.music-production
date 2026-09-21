@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v88**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v89**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -66,12 +66,17 @@ paste the Drive folder link → it builds the client link, checks the folder is 
 (Manual: `media.html?f=<folder id from drive.google.com/drive/folders/<id>>`.) No site edit needed.
 
 ## Cut review (client notes on a timeline) — `review.html`
-**`review.html?v=<Drive video id / Drive file link / YouTube link>`** — hidden, `noindex`. Made from `link.html` → "02 — Cut review".
+**`review.html?v=<YouTube link or id>`** — hidden, `noindex`. Made from `link.html` → "02 — Cut review".
 Files: `review.html`, `review.js`, styles under "Cut review" in `style.css`. **Zero backend**: notes live in the viewer's
 browser (`localStorage`, keyed by video) and travel inside the link (`&n=` = deflate + base64url JSON). No accounts.
 
-- Player: Drive videos stream natively (`drive.usercontent.google.com/download?…&confirm=t`, same as media.js) — needs
-  H.264 .mp4 or similar the browser can decode; otherwise use an unlisted **YouTube** link (IFrame API, custom timeline).
+- **Video must be an unlisted YouTube upload.** Google Drive returns 403 to *every* cross-site browser request
+  (`Sec-Fetch-Site: cross-site` — `<video>`, fetch, service worker alike; verified 2026-09-21), and Drive's own
+  iframe player doesn't expose the playhead, so timestamped notes on a Drive file are impossible. The page shows a
+  clear message for Drive ids; `link.html` refuses to build a review link from a Drive URL and says why.
+  (This is also why media.js's native player always falls back to Drive's iframe.)
+- Player: YouTube IFrame API with `controls:0`, custom timeline polled every 200 ms. A direct `.mp4` URL on a
+  CORS-friendly host would also work via the native `<video>` path.
 - Client: pause → **+ NOTE** (or `N`) → name once + text → marker on the timeline. Keys: space, ←/→ 5s, shift+←/→ 1 frame, F.
 - **SEND**: WhatsApp / Email (`SITE.email` from clips.js) / Copy — the link carries all notes. Opening it merges them
   into the recipient's storage and cleans `n` from the URL. Same note id → newest "fixed" state wins.

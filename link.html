@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=88" />
+  <link rel="stylesheet" href="style.css?v=89" />
 </head>
 <body class="show-page pool-page" id="top">
   <!-- PIN GATE — the page stays hidden until the code is entered (remembered on this device for 30 days) -->
@@ -62,10 +62,10 @@
     <!-- REVIEW -->
     <div class="lm-block">
       <span class="panel-label">[ 02 — CUT REVIEW ]</span>
-      <p class="pool-status lm-help">Paste a Drive <b>video</b> link (shared “Anyone with the link”) or an unlisted <b>YouTube</b> link. The client gets a player with a timeline and sends notes back.</p>
+      <p class="pool-status lm-help">Upload the cut to YouTube as <b>Unlisted</b> and paste the link. The client gets a player with a timeline and sends notes back. (Google Drive videos can't play here — Drive blocks playback on other sites.)</p>
       <label class="lm-field">
         <span class="lm-label">Video link</span>
-        <input class="lm-input" id="rvIn" type="text" placeholder="https://drive.google.com/file/d/…  or  https://youtu.be/…" autocomplete="off" spellcheck="false" />
+        <input class="lm-input" id="rvIn" type="text" placeholder="https://youtu.be/…" autocomplete="off" spellcheck="false" />
       </label>
       <div class="lm-result" id="rvResult" hidden>
         <span class="lm-label">Send this to the client</span>
@@ -121,7 +121,7 @@
     paint(); inp.focus();
   })();
   </script>
-  <script src="media-config.js?v=88"></script>
+  <script src="media-config.js?v=89"></script>
   <script>
   (function () {
     "use strict";
@@ -144,6 +144,7 @@
         out.textContent = link; open.href = link;
         wa.href = "https://wa.me/?text=" + encodeURIComponent(link);
         res.hidden = false;
+        res.classList.toggle("no-link", !link);
         clearTimeout(timer); timer = setTimeout(() => p.verify(src, check), 400);
       }
       inp.addEventListener("input", update);
@@ -186,19 +187,19 @@
         if (/^[\w-]{20,}$/.test(raw)) return { kind: "drive", id: raw };
         return null;
       },
-      build: (src) => DIR + "review.html?v=" + src.id,
+      build: (src) => src.kind === "yt" ? DIR + "review.html?v=" + src.id : "",
       verify: async (src, check) => {
-        if (src.kind === "yt") { check.textContent = "✓ YouTube — make sure the video is Unlisted (not Private)."; check.classList.add("ok"); return; }
-        check.textContent = "Checking the file…";
-        if (!KEY) { check.textContent = "Can't verify sharing (no API key set)."; return; }
-        try {
-          const r = await driveGet(src.id, "name,mimeType,videoMediaMetadata(width,height)"); if (!r.ok) throw r.status;
-          const f = await r.json();
-          if (f.mimeType === "application/vnd.google-apps.folder") { check.textContent = "⚠ That's a folder. Paste the link of one video file."; return; }
-          if (!f.mimeType.startsWith("video/")) { check.textContent = `⚠ “${f.name}” isn't a video file.`; return; }
-          const m = f.videoMediaMetadata;
-          check.textContent = `✓ “${f.name}”${m && m.width ? ` — ${m.width}×${m.height}` : ""} · shared correctly. Best as an H.264 .mp4; if it won't play, use an unlisted YouTube link.`; check.classList.add("ok");
-        } catch (s) { check.textContent = (s === 404 || s === 403) ? NOT_SHARED : "⚠ Couldn't check the file right now. The link may still work."; }
+        if (src.kind === "yt") {
+          check.textContent = "Checking YouTube…";
+          try {
+            const r = await fetch("https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + src.id));
+            if (!r.ok) throw r.status;
+            const d = await r.json();
+            check.textContent = `✓ “${d.title}” — plays. (Unlisted is fine; Private is not.)`; check.classList.add("ok");
+          } catch (s) { check.textContent = (s === 401 || s === 403 || s === 404) ? "⚠ YouTube can't show this video — it's Private or the link is wrong. Set it to Unlisted." : "✓ YouTube — make sure the video is Unlisted (not Private)."; if (!check.textContent.startsWith("⚠")) check.classList.add("ok"); }
+          return;
+        }
+        check.textContent = "⚠ That's a Google Drive file. Drive blocks video playback on other websites, so the review player can't use it. Upload the cut to YouTube as Unlisted and paste that link.";
       },
     });
   })();
