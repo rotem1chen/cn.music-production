@@ -1,4 +1,4 @@
-/* CN Production — cut review. review.html?v=<YouTube link or id>[&n=<notes>]   (Drive files can't play here — see boot)
+/* CN Production — cut review. review.html?v=<Drive video link / YouTube link>[&n=<notes>]
    Client watches, pins timestamped notes, then SENDS: a link that carries all the notes inside it.
    No server — notes live in the browser (localStorage) and travel in the link. */
 (function () {
@@ -84,7 +84,7 @@
     video.hidden = false; video.src = src;
     let failed = false;
     video.addEventListener("loadedmetadata", () => { ready = true; setAspect(video.videoWidth / video.videoHeight); onReady(); });
-    video.addEventListener("error", () => { if (!failed) { failed = true; statusEl.textContent = "This video can't be played."; } });
+    video.addEventListener("error", () => { if (!failed) { failed = true; statusEl.textContent = SRC.kind === "drive" ? "Can't play this Drive file. Check it's shared “Anyone with the link”, and that it's an .mp4 (H.264) — a ProRes/.mov export won't play in a browser." : "This video can't be played."; } });
     video.addEventListener("timeupdate", tick);
     video.addEventListener("progress", () => { try { const b = video.buffered; if (b.length && video.duration) $("rvBuffer").style.width = (b.end(b.length - 1) / video.duration * 100) + "%"; } catch {} });
     video.addEventListener("play", syncPlay); video.addEventListener("pause", syncPlay); video.addEventListener("ended", syncPlay);
@@ -299,19 +299,16 @@
     else titleEl.textContent = "Review";
 
     if (SRC.kind === "drive") {
-      /* Google Drive refuses to stream files to other websites (403 on every cross-site request),
-         and its own embedded player doesn't report the playhead — so timestamped notes are
-         impossible on a Drive file. Review links must point at an unlisted YouTube upload. */
-      if (KEY && !t) {
+      /* Drive's download/preview hosts refuse cross-site playback (403), but the Drive API's
+         media endpoint streams the file with Range support when called with the site's API key. */
+      if (!KEY) { statusEl.textContent = "Setup needed: the Drive API key is missing (media-config.js)."; return; }
+      if (!t) {
         try {
           const r = await fetch(`https://www.googleapis.com/drive/v3/files/${SRC.id}?fields=name&supportsAllDrives=true&key=${KEY}`);
           if (r.ok) { const f = await r.json(); titleEl.textContent = f.name.replace(/\.\w{2,4}$/, ""); document.title = titleEl.textContent + " — Review"; }
         } catch {}
       }
-      statusEl.textContent = "This video is on Google Drive, which doesn't allow playback here. Ask CN for a YouTube review link.";
-      document.querySelector(".rv-controls").hidden = true; document.querySelector(".rv-compose").hidden = true;
-      $("rvBigPlay").hidden = true;
-      return;
+      nativePlayer(`https://www.googleapis.com/drive/v3/files/${SRC.id}?alt=media&supportsAllDrives=true&key=${KEY}`);
     } else if (SRC.kind === "url") {
       nativePlayer(SRC.id);
     } else {
