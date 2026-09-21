@@ -644,3 +644,5 @@ button.rv-tc:hover { background: var(--accent); color: #000; }
 @keyframes breathe { from { width: 26px; height: 26px; opacity: .55; } to { width: 40px; height: 40px; opacity: 1; } }
 .rv-stage.loading > .corner { animation: breathe 1.6s var(--ease) infinite alternate; }
 @media (prefers-reduced-motion: reduce) { .rv-scan, .rv-load-label, .rv-loader .lc, .rv-stage.loading > .corner { animation: none; } }
+.rv-retry { color: var(--accent); border-bottom: 1px solid rgba(255,212,0,.5); white-space: nowrap; }
+.rv-retry:hover { border-color: var(--accent); }

@@ -80,11 +80,17 @@
   let P = null;   // { play, pause, seek, time, dur, playing }
   let ready = false;
 
-  function nativePlayer(src) {
+  let onFail = null, wired = false;
+  function nativePlayer(src, fail) {
+    onFail = fail || null;
     video.hidden = false; video.src = src;
-    let failed = false;
+    if (wired) return;
+    wired = true;
     video.addEventListener("loadedmetadata", () => { ready = true; setAspect(video.videoWidth / video.videoHeight); onReady(); });
-    video.addEventListener("error", () => { if (!failed) { failed = true; statusEl.textContent = SRC.kind === "drive" ? "לא ניתן לנגן את הקובץ. צריך לוודא שהוא משותף כ״כל מי שיש לו את הקישור״ ושהוא mp4 (H.264) — קובץ ProRes/‎.mov לא מתנגן בדפדפן." : "לא ניתן לנגן את הווידאו."; } });
+    video.addEventListener("error", () => {
+      const f = onFail; onFail = null;
+      if (f) f(); else { hideLoader(); statusEl.textContent = "לא ניתן לנגן את הווידאו."; }
+    });
     video.addEventListener("timeupdate", tick);
     video.addEventListener("progress", () => { try { const b = video.buffered; if (b.length && video.duration) $("rvBuffer").style.width = (b.end(b.length - 1) / video.duration * 100) + "%"; } catch {} });
     video.addEventListener("play", syncPlay); video.addEventListener("pause", syncPlay); video.addEventListener("ended", syncPlay);
@@ -381,8 +387,29 @@
       });
       const dl = driveBlob(mediaUrl, size);
       statusEl.textContent = "";
-      try { nativePlayer(await dl); }
-      catch { nativePlayer(mediaUrl); }
+      const f = await meta;
+      /* download failed or the bytes aren't playable: say which */
+      const failed = () => {
+        hideLoader();
+        if (f && f.name) {
+          /* Drive answered the metadata call but not the media call → Google is throttling this
+             network ("automated queries" 403), not a sharing problem. Offer Drive's own player
+             so the cut can at least be watched; notes need the real player. */
+          statusEl.innerHTML = "";
+          const msg = document.createElement("span");
+          msg.textContent = "Google חוסם זמנית את הרשת הזאת (יותר מדי בקשות). אפשר לצפות בינתיים בנגן של Drive; התגובות יעבדו שוב בעוד כמה דקות, או דרך נתונים סלולריים. ";
+          const again = document.createElement("a"); again.href = location.href; again.textContent = "נסו שוב ↻"; again.className = "rv-retry";
+          statusEl.append(msg, again);
+          video.hidden = true; video.removeAttribute("src");
+          const fr = document.createElement("iframe"); fr.src = `https://drive.google.com/file/d/${SRC.id}/preview`; fr.allow = "autoplay; fullscreen"; fr.allowFullscreen = true;
+          $("rvMedia").appendChild(fr); bigPlay.hidden = true;
+          document.querySelector(".rv-controls").hidden = true; document.querySelector(".rv-compose").hidden = true;
+        } else {
+          statusEl.textContent = "לא ניתן לנגן את הקובץ. צריך לוודא שהוא משותף כ״כל מי שיש לו את הקישור״ ושהוא mp4 (H.264) — קובץ ProRes/‎.mov לא מתנגן בדפדפן.";
+        }
+      };
+      try { nativePlayer(await dl, failed); }
+      catch { failed(); }
     } else if (SRC.kind === "url") {
       showLoader(); pctEl.textContent = ""; nativePlayer(SRC.id);
     } else {
