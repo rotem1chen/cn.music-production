@@ -611,3 +611,36 @@ button.rv-tc:hover { background: var(--accent); color: #000; }
 .rv-form-hint { font-size: 12px; color: var(--muted); }
 .rv-note .rv-tc { min-width: 92px; text-align: center; }
 @media (max-width: 720px) { .rv-add { width: 100%; justify-content: center; } }
+
+/* ---------- Review loader: big viewfinder readout inside the video box ---------- */
+.rv-loader { position: absolute; inset: 0; z-index: 4; background: #000; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; transition: opacity .5s var(--ease); }
+.rv-loader[hidden] { display: none; }
+.rv-loader.done { opacity: 0; pointer-events: none; }
+.rv-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; filter: brightness(.35) saturate(.7);
+  transform: scale(1.04); animation: posterIn 1.2s var(--ease) forwards; }
+.rv-poster[hidden] { display: none; }
+@keyframes posterIn { to { opacity: 1; transform: scale(1); } }
+/* scan line sweeping the frame */
+.rv-scan { position: absolute; left: 0; right: 0; height: 2px; top: -2px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--accent) 30%, var(--accent) 70%, transparent); opacity: .7;
+  box-shadow: 0 0 18px rgba(255,212,0,.55); animation: scan 2.6s cubic-bezier(.45,0,.55,1) infinite; }
+@keyframes scan { 0% { top: -2px; } 100% { top: 100%; } }
+.rv-load-body { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.rv-load-pct { font-family: var(--mono); font-weight: 700; font-size: clamp(64px, 13vw, 150px); line-height: 1; letter-spacing: -0.02em;
+  color: var(--accent); font-variant-numeric: tabular-nums; text-shadow: 0 0 40px rgba(255,212,0,.35); }
+.rv-load-label { font-size: clamp(12px, 1.6vw, 15px); letter-spacing: 0.3em; color: var(--text); animation: blink 1.4s steps(2) infinite; }
+@keyframes blink { to { opacity: .35; } }
+.rv-load-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; color: var(--muted); min-height: 14px; }
+/* progress line along the bottom edge */
+.rv-load-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,212,0,.15); z-index: 2; }
+.rv-load-bar i { display: block; height: 100%; width: 0; background: var(--accent); box-shadow: 0 0 14px var(--accent); transition: width .25s linear; }
+/* inner corner brackets breathe while loading */
+.rv-loader .lc { position: absolute; width: 26px; height: 26px; border: 2px solid var(--accent); z-index: 2; animation: breathe 1.6s var(--ease) infinite alternate; }
+.rv-loader .lc.tl { top: 18px; left: 18px;   border-right: 0; border-bottom: 0; }
+.rv-loader .lc.tr { top: 18px; right: 18px;  border-left: 0;  border-bottom: 0; }
+.rv-loader .lc.bl { bottom: 18px; left: 18px;  border-right: 0; border-top: 0; }
+.rv-loader .lc.br { bottom: 18px; right: 18px; border-left: 0;  border-top: 0; }
+@keyframes breathe { from { width: 26px; height: 26px; opacity: .55; } to { width: 40px; height: 40px; opacity: 1; } }
+.rv-stage.loading > .corner { animation: breathe 1.6s var(--ease) infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .rv-scan, .rv-load-label, .rv-loader .lc, .rv-stage.loading > .corner { animation: none; } }

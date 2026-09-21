@@ -123,28 +123,73 @@
     };
   }
 
-  async function driveBlob(url) {
-    const buffer = $("rvBuffer");
+  /* ---- loader UI (inside the video box) ---- */
+  const loader = $("rvLoader"), pctEl = $("rvPct"), loadMeta = $("rvLoadMeta"), loadFill = $("rvLoadFill"), poster = $("rvPoster");
+  function showLoader(posterUrl) {
+    loader.hidden = false; stage.classList.add("loading"); bigPlay.hidden = true;
+    if (posterUrl) { poster.src = posterUrl; poster.onload = () => { poster.hidden = false; }; }
+  }
+  function loaderProgress(got, total, t0) {
+    const pct = total ? Math.min(100, got / total * 100) : 0;
+    pctEl.textContent = total ? Math.floor(pct) + "%" : Math.round(got / 1e6) + " MB";
+    loadFill.style.width = pct + "%";
+    const secs = (performance.now() - t0) / 1000;
+    const rate = secs > 0.3 ? got / secs / 1e6 : 0;
+    loadMeta.textContent = (total ? Math.round(got / 1e6) + " / " + Math.round(total / 1e6) + " MB" : "") + (rate ? " · " + rate.toFixed(1) + " MB/s" : "");
+  }
+  function hideLoader() {
+    loader.classList.add("done"); stage.classList.remove("loading");
+    setTimeout(() => { loader.hidden = true; loader.classList.remove("done"); }, 500);
+  }
+
+  /* ---- Drive download: whole file into memory, in parallel ranges ---- */
+  const CHUNK = 4 * 1024 * 1024, CONC = 6;
+  async function readAll(r, onBytes) {
+    const reader = r.body.getReader(), parts = []; let n = 0;
+    for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); n += value.length; onBytes(value.length); }
+    const out = new Uint8Array(n); let o = 0; parts.forEach((c) => { out.set(c, o); o += c.length; });
+    return out;
+  }
+  async function driveBlob(url, sizePromise) {
     let cache = null;
     try { cache = await caches.open("cn-review-video"); } catch {}
-    let r = cache && await cache.match(url);
-    if (r) { statusEl.textContent = ""; return URL.createObjectURL(await r.blob()); }
-    r = await fetch(url, { mode: "cors", credentials: "omit" });
-    const type = r.headers.get("content-type") || "";
-    if (!r.ok || !/^(video|audio)\//.test(type)) throw new Error("not video");
-    const total = Number(r.headers.get("content-length")) || 0, chunks = []; let got = 0;
-    const reader = r.body.getReader();
-    for (;;) {
-      const { done, value } = await reader.read(); if (done) break;
-      chunks.push(value); got += value.length;
-      const pct = total ? Math.round(got / total * 100) : 0;
-      statusEl.textContent = "טוען וידאו… " + (total ? pct + "%" : Math.round(got / 1e6) + " MB");
-      buffer.style.width = (total ? pct : 0) + "%";
+    const hit = cache && await cache.match(url);
+    if (hit) { loaderProgress(1, 1, performance.now()); return URL.createObjectURL(await hit.blob()); }
+
+    const t0 = performance.now(); let got = 0, total = 0, type = "video/mp4";
+    const tick = (n) => { got += n; loaderProgress(got, total, t0); };
+    const get = (a, b) => fetch(url, { mode: "cors", credentials: "omit", headers: { Range: `bytes=${a}-${b}` } });
+
+    /* first chunk goes out immediately; the file size (from Drive's metadata) arrives meanwhile */
+    const first = get(0, CHUNK - 1);
+    total = Number(await sizePromise) || 0;
+    const r0 = await first;
+    type = r0.headers.get("content-type") || type;
+    if (!r0.ok || !/^(video|audio)\//.test(type)) throw new Error("not video");
+    if (r0.status === 200 || !total) {                       // server ignored the range → single stream
+      if (!total) total = Number(r0.headers.get("content-length")) || 0;
+      const all = await readAll(r0, tick);
+      return finish(new Blob([all], { type }));
     }
-    const blob = new Blob(chunks, { type });
-    buffer.style.width = "100%"; statusEl.textContent = "";
-    if (cache) cache.put(url, new Response(blob, { headers: { "Content-Type": type, "Content-Length": String(blob.size) } })).catch(() => {});
-    return URL.createObjectURL(blob);
+    const parts = [await readAll(r0, tick)];
+    const ranges = []; for (let a = CHUNK; a < total; a += CHUNK) ranges.push([a, Math.min(a + CHUNK, total) - 1]);
+    let next = 0;
+    async function worker() {
+      while (next < ranges.length) {
+        const i = next++, [a, b] = ranges[i];
+        let r = await get(a, b);
+        if (r.status !== 206) { r = await get(a, b); if (r.status !== 206) throw new Error("range " + r.status); }
+        parts[i + 1] = await readAll(r, tick);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(CONC, ranges.length) }, worker));
+    return finish(new Blob(parts, { type }));
+
+    function finish(blob) {
+      loaderProgress(blob.size, blob.size, t0);
+      if (cache) cache.put(url, new Response(blob, { headers: { "Content-Type": type, "Content-Length": String(blob.size) } })).catch(() => {});
+      return URL.createObjectURL(blob);
+    }
   }
 
   function setAspect(a) { if (a > 0) stage.style.setProperty("--va", a.toFixed(4)); }
@@ -308,7 +353,7 @@
   });
 
   /* ---- boot ---- */
-  function onReady() { render(); tick(); syncPlay(); statusEl.textContent = ""; }
+  function onReady() { hideLoader(); render(); tick(); syncPlay(); statusEl.textContent = ""; }
 
   (async () => {
     load();
@@ -321,27 +366,28 @@
     else titleEl.textContent = "תגובות";
 
     if (SRC.kind === "drive") {
-      /* Drive's download/preview hosts refuse cross-site playback (403), but the Drive API's
-         media endpoint streams the file with Range support when called with the site's API key. */
+      /* Drive's download/preview hosts refuse cross-site playback (403); the Drive API media
+         endpoint allows it with the site's API key but streams badly, so the file is downloaded
+         whole — starting right now, in parallel ranges — and played from memory (cached for next time). */
       if (!KEY) { statusEl.textContent = "חסר מפתח Drive API (media-config.js)."; return; }
-      if (!t) {
-        try {
-          const r = await fetch(`https://www.googleapis.com/drive/v3/files/${SRC.id}?fields=name&supportsAllDrives=true&key=${KEY}`);
-          if (r.ok) { const f = await r.json(); titleEl.textContent = f.name.replace(/\.\w{2,4}$/, ""); document.title = titleEl.textContent + " — תגובות"; }
-        } catch {}
-      }
       const mediaUrl = `https://www.googleapis.com/drive/v3/files/${SRC.id}?alt=media&supportsAllDrives=true&key=${KEY}`;
-      /* Streaming straight from that endpoint stutters (no CDN, ~2 s per seek), so the file is
-         fetched once — with a progress bar — and played from memory. It's kept in the browser's
-         Cache Storage so the next open of the same link is instant. Falls back to streaming. */
-      try { nativePlayer(await driveBlob(mediaUrl)); }
+      showLoader(`https://drive.google.com/thumbnail?id=${SRC.id}&sz=w1600`);
+      const meta = fetch(`https://www.googleapis.com/drive/v3/files/${SRC.id}?fields=name,size,videoMediaMetadata(width,height)&supportsAllDrives=true&key=${KEY}`)
+        .then((r) => r.ok ? r.json() : {}).catch(() => ({}));
+      const size = meta.then((f) => f.size || 0);
+      meta.then((f) => {
+        if (f.name && !t) { titleEl.textContent = f.name.replace(/\.\w{2,4}$/, ""); document.title = titleEl.textContent + " — תגובות"; }
+        const m = f.videoMediaMetadata; if (m && m.width && m.height) setAspect(m.width / m.height);   // right box shape before the video arrives
+      });
+      const dl = driveBlob(mediaUrl, size);
+      statusEl.textContent = "";
+      try { nativePlayer(await dl); }
       catch { nativePlayer(mediaUrl); }
     } else if (SRC.kind === "url") {
-      nativePlayer(SRC.id);
+      showLoader(); pctEl.textContent = ""; nativePlayer(SRC.id);
     } else {
-      ytPlayer(SRC.id);
+      showLoader(); pctEl.textContent = ""; ytPlayer(SRC.id);
     }
-    statusEl.textContent = "טוען וידאו…";
     render();
   })();
 })();

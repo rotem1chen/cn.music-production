@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=92" />
+  <link rel="stylesheet" href="style.css?v=93" />
 </head>
 <body class="show-page pool-page review-page" id="top">
   <!-- NAV -->
@@ -39,6 +39,18 @@
         <div id="rvYt" hidden></div>
       </div>
       <button class="rv-bigplay" id="rvBigPlay" aria-label="Play">▶</button>
+      <!-- LOADER: sits in the video box while the file downloads -->
+      <div class="rv-loader" id="rvLoader" hidden>
+        <img class="rv-poster" id="rvPoster" alt="" hidden />
+        <div class="rv-scan"></div>
+        <div class="rv-load-body">
+          <span class="rv-load-pct" id="rvPct" dir="ltr">0%</span>
+          <span class="rv-load-label">טוען וידאו</span>
+          <span class="rv-load-meta" id="rvLoadMeta" dir="ltr"></span>
+        </div>
+        <div class="rv-load-bar"><i id="rvLoadFill"></i></div>
+        <span class="lc tl"></span><span class="lc tr"></span><span class="lc bl"></span><span class="lc br"></span>
+      </div>
       <span class="corner tl"></span><span class="corner tr"></span>
       <span class="corner bl"></span><span class="corner br"></span>
     </div>
@@ -102,8 +114,8 @@
     </div>
   </section>
 
-  <script src="clips.js?v=92"></script>
-  <script src="media-config.js?v=92"></script>
-  <script src="review.js?v=92"></script>
+  <script src="clips.js?v=93"></script>
+  <script src="media-config.js?v=93"></script>
+  <script src="review.js?v=93"></script>
 </body>
 </html>

@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v92**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v93**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -77,7 +77,8 @@ browser (`localStorage`, keyed by video) and travel inside the link (`&n=` = def
   and Drive's iframe player hides the playhead — verified 2026-09-21, don't retry those. Range/seeking works.
   File must be "Anyone with the link" and browser-decodable (H.264 .mp4; ProRes/.mov won't). media.js uses the same
   URL for its native player, with Drive's iframe as fallback. Unlisted YouTube links also work (IFrame API).
-- Player: Drive files are **fetched whole (CORS) with a progress % and played from a blob**, stored in Cache Storage
+- Player: Drive files are **fetched whole the moment the page opens — 6 parallel 4 MB Range requests — with a big
+  in-box loader (%, MB, speed, scan line, dimmed Drive thumbnail as poster) and played from a blob**, stored in Cache Storage
   (`cn-review-video`) so re-opening is instant; streaming the API endpoint directly stutters (~2 s per seek, no CDN)
   and Google rate-limits repeated hits ("automated queries" 403 — don't hammer it from curl). Falls back to streaming
   if the fetch fails. Direct .mp4 URLs stream natively; YouTube uses the IFrame API, timeline polled every 200 ms.
