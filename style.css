@@ -485,3 +485,23 @@ a { color: inherit; text-decoration: none; }
 .pool-btn.primary { background: var(--accent); color: #000; font-weight: 700; padding: 14px 22px; transition: background .25s, color .25s; }
 .pool-btn.primary .ec { display: none; }
 .pool-btn.primary:hover { background: #fff; color: #000; }
+
+/* ---------- PIN gate (link.html) ---------- */
+.pin { position: fixed; inset: 0; z-index: 300; background: #000; cursor: text;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  transition: opacity .5s var(--ease); }
+.pin[hidden] { display: none; }
+.pin.done { opacity: 0; pointer-events: none; }
+.pin .panel-label { margin: 8px 0 0; }
+.pin-form { position: relative; }
+.pin-boxes { display: flex; gap: 14px; }
+.pin-boxes span { position: relative; width: 52px; height: 64px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); color: var(--accent); font-size: 28px; transition: border-color .25s; }
+.pin-boxes span.on { border-color: var(--accent); }
+.pin-boxes span.on::after { content: ""; width: 1px; height: 26px; background: var(--accent); animation: pinBlink 1s steps(2) infinite; }
+@keyframes pinBlink { to { opacity: 0; } }
+.pin-input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; font-size: 16px; }   /* invisible real input keeps the phone keyboard */
+.pin-msg { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); min-height: 14px; }
+.pin.shake .pin-boxes { animation: pinShake .4s var(--ease); }
+@keyframes pinShake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+body.pin-lock { overflow: hidden; }

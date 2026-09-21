@@ -10,9 +10,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=86" />
+  <link rel="stylesheet" href="style.css?v=87" />
 </head>
 <body class="show-page pool-page" id="top">
+  <!-- PIN GATE — the page stays hidden until the code is entered (remembered on this device for 30 days) -->
+  <div class="pin" id="pin">
+    <img class="intro-logo" src="logo.png?v=12" alt="CN Production" />
+    <span class="panel-label">[ ENTER CODE ]</span>
+    <form class="pin-form" id="pinForm" autocomplete="off">
+      <div class="pin-boxes" id="pinBoxes"><span></span><span></span><span></span><span></span></div>
+      <input class="pin-input" id="pinIn" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autofocus aria-label="4-digit code" />
+    </form>
+    <span class="pin-msg" id="pinMsg"></span>
+  </div>
+
   <header class="nav">
     <a class="nav-mark" href="index.html">CN—PRD</a>
     <nav class="nav-right"><a href="index.html">Work</a></nav>
@@ -46,7 +57,45 @@
     </div>
   </section>
 
-  <script src="media-config.js?v=86"></script>
+  <script>
+  /* ---- PIN gate ---- */
+  (function () {
+    "use strict";
+    const HASH = "a440b549eb77de012fbcb43ae59d95b58e1e4fc73409186803ce271c4e40c470";   // sha256("cn-link:" + code)
+    const KEY = "cn-link-ok", DAYS = 30;
+    const gate = document.getElementById("pin"), inp = document.getElementById("pinIn");
+    const boxes = document.getElementById("pinBoxes").children, msg = document.getElementById("pinMsg");
+    document.body.classList.add("pin-lock");
+
+    function unlock() { gate.classList.add("done"); document.body.classList.remove("pin-lock"); setTimeout(() => { gate.hidden = true; document.getElementById("lmIn").focus(); }, 500); }
+    try { if (Number(localStorage.getItem(KEY)) > Date.now()) { gate.hidden = true; document.body.classList.remove("pin-lock"); return; } } catch {}
+
+    async function sha(s) {
+      const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+      return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+    }
+    function paint() {
+      const v = inp.value;
+      for (let i = 0; i < 4; i++) { boxes[i].textContent = v[i] ? "•" : ""; boxes[i].classList.toggle("on", i === v.length); }
+    }
+    async function check() {
+      const v = inp.value;
+      if (v.length < 4) return;
+      if (await sha("cn-link:" + v) === HASH) {
+        try { localStorage.setItem(KEY, String(Date.now() + DAYS * 864e5)); } catch {}
+        unlock();
+      } else {
+        gate.classList.add("shake"); msg.textContent = "Wrong code";
+        setTimeout(() => { gate.classList.remove("shake"); inp.value = ""; paint(); }, 450);
+      }
+    }
+    inp.addEventListener("input", () => { inp.value = inp.value.replace(/\D/g, "").slice(0, 4); msg.textContent = ""; paint(); check(); });
+    document.getElementById("pinForm").addEventListener("submit", (e) => { e.preventDefault(); check(); });
+    gate.addEventListener("click", () => inp.focus());
+    paint(); inp.focus();
+  })();
+  </script>
+  <script src="media-config.js?v=87"></script>
   <script>
   (function () {
     "use strict";
@@ -103,7 +152,7 @@
       catch { const r = document.createRange(); r.selectNodeContents(out); getSelection().removeAllRanges(); getSelection().addRange(r); copyLabel.textContent = "Select & copy"; }
       setTimeout(() => { copyLabel.textContent = "Copy link"; }, 1800);
     });
-    inp.focus();
+    if (document.getElementById("pin").hidden) inp.focus();
   })();
   </script>
 </body>
