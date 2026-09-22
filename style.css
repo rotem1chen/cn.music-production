@@ -100,7 +100,7 @@ a { color: inherit; text-decoration: none; }
   -webkit-mask: url("logo.svg") center / contain no-repeat;
           mask: url("logo.svg") center / contain no-repeat;
 }
-.logo-word { display: block; margin-top: 12px; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--text); }
+.logo-word { display: block; margin-top: 12px; font-weight: 400; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--text); }
 
 /* ---------- Viewfinder chrome ---------- */
 .chrome { position: fixed; inset: 0; z-index: 30; pointer-events: none; transition: opacity .45s var(--ease); }
