@@ -269,7 +269,8 @@ a { color: inherit; text-decoration: none; }
 .go-more:hover .ar, .go-more:focus-visible .ar { animation: none; }
 @media (prefers-reduced-motion: reduce) { .go-more .ar { animation: none; } }
 @media (max-width: 760px) {
-  .go-more { top: auto; bottom: calc(var(--pad) + env(safe-area-inset-bottom, 0px)); transform: none; }
+  /* sits above the HUD readout (bottom:16px, ~13px tall), not on top of it */
+  .go-more { top: auto; bottom: calc(var(--pad) + 26px + env(safe-area-inset-bottom, 0px)); transform: none; }
   .go-more.gone { transform: translateX(8px); }
 }
 
@@ -385,6 +386,10 @@ a { color: inherit; text-decoration: none; }
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {
   .skip-stills { top: 84px; font-size: 10px; padding: 13px 14px; letter-spacing: 0.13em; }
+  /* .go-more carries .skip-stills too, so the line above would put a `top` back on it;
+     with the `bottom` set at 760px that stretches it to full height and it eats taps.
+     Keep it bottom-anchored. */
+  .go-more { top: auto; }
   .deco-circle, .deco-bars { display: none; }
   .hud { grid-template-columns: 1fr 1fr; gap: 6px 0; bottom: 16px; }
   .hud-title { text-align: left; } .hud-artist { text-align: right; }
