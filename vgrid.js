@@ -1,6 +1,8 @@
-/* CN Production — social subpage. Grid of the vertical videos in social.js, tap to play. */
+/* CN PROD — shared grid subpage (social.html, restaurant.html).
+   The page sets window.VGRID = { items, ratio, min } before loading this. */
 (function () {
   "use strict";
+  var CFG = (typeof window.VGRID === "object" && window.VGRID) ? window.VGRID : {};
   function esc(s) { return String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])); }
 
   // Same link → embed rules as app.js, trimmed to what vertical posts use.
@@ -27,7 +29,9 @@
 
   const grid = document.getElementById("socialGrid");
   const countEl = document.getElementById("socialCount");
-  countEl.textContent = items.length ? String(items.length).padStart(2, "0") + " · vertical" : "";
+  grid.style.setProperty("--tile-ratio", CFG.ratio || "9 / 16");
+  grid.style.setProperty("--tile-min", CFG.min || "180px");
+  countEl.textContent = items.length ? String(items.length).padStart(2, "0") + (CFG.unit ? " · " + CFG.unit : "") : "";
 
   if (!items.length) {
     const p = document.createElement("p"); p.className = "social-empty"; p.textContent = "Nothing here yet — coming soon.";
@@ -40,7 +44,7 @@
     tile.setAttribute("role", "button"); tile.tabIndex = 0;
     tile.setAttribute("aria-label", "Play " + (c.title || "clip"));
 
-    const img = document.createElement("img"); img.loading = "lazy"; img.alt = c.title || "social";
+    const img = document.createElement("img"); img.loading = "lazy"; img.alt = c.title || "still";
     const srcs = (c.thumb ? [c.thumb] : []).concat(c.v.thumbs);
     let k = 0;
     // YouTube answers a 120x90 placeholder (not a 404) for sizes it hasn't made — skip those too

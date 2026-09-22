@@ -172,7 +172,7 @@
     try {
       const folder = await api(`${API}/${FID}?fields=id,name,mimeType&supportsAllDrives=true&key=${KEY}`);
       titleEl.textContent = folder.name;
-      document.title = folder.name + " — CN Production";
+      document.title = folder.name + " — CN PROD";
       document.getElementById("poolZip").href = `https://drive.google.com/uc?export=download&id=${FID}`;
       document.getElementById("poolDrive").href = `https://drive.google.com/drive/folders/${FID}`;
       actions.hidden = false;

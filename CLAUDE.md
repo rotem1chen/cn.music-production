@@ -1,11 +1,11 @@
 # CN Production — project brief (read me first)
 
-Music-video + concert-photography portfolio for **CN Production**.
+Music-video + concert-photography portfolio for **CN PROD**.
 Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` branch, custom domain via `CNAME`).
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v95**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v102**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -16,6 +16,8 @@ After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` ta
 - **`clips.js`** — CONFIG for films: `SITE` (name/tagline/contact/socials) + `CLIPS` array
 - **`photos.js`** — CONFIG for stills: `CONCERTS` array
 - **`social.js`** — CONFIG for vertical work (Reels/TikTok/Shorts): `SOCIAL` array → shown on `social.html`
+- **`restaurant.js`** — CONFIG for restaurant/venue films: `RESTAURANT` array → shown on `restaurant.html`
+- `vgrid.js` — the grid+player logic BOTH subpages share; each page sets `window.VGRID = { items, ratio, min, unit }` before loading it
 - `logo.png` (metal CN mark), `intro.mp4` (intro video w/ audio), `photos/<concert>/` (full-res + `thumb/` thumbnails)
 
 ## How to add a FILM
@@ -26,13 +28,18 @@ vertical one. The tile keeps the same height as the rest of the reel and just ge
 so nothing is letterboxed. Omit it for normal films. Works in the reel and the opened player.
 Then bump `?v` in `index.html` and push. (YouTube video must be Public + embeddable.)
 
-A `{ link: "social.html", title: "SOCIAL", format: "VERTICAL" }` entry (no `url`) is a **link tile**: a solid
-yellow block the size of a film that opens that page instead of a video. That's how the SOCIAL tile at the top works.
+## Sub-page tiles (SOCIAL / RESTAURANT)
+`CLIPS` is **films only** — the reel paginates 5 music clips at a time. The other kinds of work are
+**`SUBPAGES`** in `clips.js`: clip-sized yellow tiles rendered *below* the reel, under a `[ MORE ]` label.
+`{ link: "restaurant.html", title: "RESTAURANT", sub: "Commercial" }` — add a line to add a tile.
+Long titles shrink to fit automatically (the size is `150cqw / <title length>`, so it scales off the tile, not the viewport).
 
-## How to add a SOCIAL video (vertical)
-Add a line to `SOCIAL` in `social.js`: `{ url: "<YouTube Shorts / youtu.be / .mp4 link>", title: "...", artist: "..." }`.
+## How to add a SOCIAL / RESTAURANT video
+Add a line to `SOCIAL` in `social.js` or `RESTAURANT` in `restaurant.js`:
+`{ url: "<YouTube / Shorts / youtu.be / .mp4 link>", title: "...", artist: "..." }`.
 Covers come from YouTube automatically (`oar2.jpg` = original aspect, no black bars); `.mp4` needs a `thumb:`.
-`social.html` shows them as a 9:16 grid, tap → vertical player, ←/→ to move between them. Bump `?v` in `social.html`, push.
+Tile shape is per page — social is `9 / 16`, restaurant is `16 / 9` (set in the `window.VGRID` line in each HTML);
+a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that page, push.
 
 ## How to add a CONCERT (stills)
 1. Put shots in `photos/<name>/` (compress to ~2000px: `sips -Z 2000 -s formatOptions 80`).

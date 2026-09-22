@@ -1,0 +1,10 @@
+# CN PROD — https://music.cn-production.com
+User-agent: *
+Allow: /
+
+# client-only tools, not for search
+Disallow: /media.html
+Disallow: /link.html
+Disallow: /review.html
+
+Sitemap: https://music.cn-production.com/sitemap.xml
