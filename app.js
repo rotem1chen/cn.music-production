@@ -107,7 +107,7 @@
 
   const items = (Array.isArray(CLIPS) ? CLIPS : [])
     .map((c) => ({ ...c, v: parseVideo(c.url) }))
-    .filter((c) => c.v);
+    .filter((c) => c.v || c.link);            // a `link:` tile opens a page instead of a video
 
   /* ---------- Build reel — 5 films at a time, button swaps in the next 5 ---------- */
   const reel = document.getElementById("work");
@@ -143,12 +143,29 @@
       el.style.width = "auto";
     }
     el.setAttribute("role", "button");
-    el.setAttribute("aria-label", "Play " + (c.title || "clip"));
+    el.setAttribute("aria-label", (c.link ? "Open " : "Play ") + (c.title || "clip"));
 
     const poster = document.createElement("div");
     poster.className = "poster";
     el.appendChild(poster);
     el._poster = poster;
+
+    // link tile (e.g. SOCIAL): a designed block that goes to another page, no video behind it
+    if (c.link) {
+      el.classList.add("link-tile");
+      if (c.thumb) poster.style.backgroundImage = `url("${c.thumb}")`;
+      const lab = document.createElement("div");
+      lab.className = "link-label";
+      lab.innerHTML = '<span class="ll-title">' + esc(c.title || "") + '</span>' +
+                      '<span class="ll-sub">' + esc(c.artist || c.format || "") + ' <span class="ar">\u2197</span></span>';
+      el.appendChild(lab);
+      el.addEventListener("mouseenter", () => { cursor.classList.add("big"); hoverIdx = i; refresh(); });
+      el.addEventListener("mouseleave", () => { cursor.classList.remove("big"); if (hoverIdx === i) { hoverIdx = -1; refresh(); } });
+      el.addEventListener("click", () => { location.href = c.link; });
+      el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); location.href = c.link; } });
+      return el;
+    }
+
     (function setPoster() {
       const primary = c.thumb || c.v.thumb, fb = c.v.thumbFallback;
       function fail() {                                   // no thumbnail available → clean titled tile

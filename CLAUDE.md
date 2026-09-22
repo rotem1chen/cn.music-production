@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v94**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v95**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -15,6 +15,7 @@ After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` ta
 - `show.js` — gallery-subpage logic
 - **`clips.js`** — CONFIG for films: `SITE` (name/tagline/contact/socials) + `CLIPS` array
 - **`photos.js`** — CONFIG for stills: `CONCERTS` array
+- **`social.js`** — CONFIG for vertical work (Reels/TikTok/Shorts): `SOCIAL` array → shown on `social.html`
 - `logo.png` (metal CN mark), `intro.mp4` (intro video w/ audio), `photos/<concert>/` (full-res + `thumb/` thumbnails)
 
 ## How to add a FILM
@@ -24,6 +25,14 @@ Optional `ratio:` sets a non-16:9 shape — `"1/1"` for a square social post, `"
 vertical one. The tile keeps the same height as the rest of the reel and just gets narrower,
 so nothing is letterboxed. Omit it for normal films. Works in the reel and the opened player.
 Then bump `?v` in `index.html` and push. (YouTube video must be Public + embeddable.)
+
+A `{ link: "social.html", title: "SOCIAL", format: "VERTICAL" }` entry (no `url`) is a **link tile**: a solid
+yellow block the size of a film that opens that page instead of a video. That's how the SOCIAL tile at the top works.
+
+## How to add a SOCIAL video (vertical)
+Add a line to `SOCIAL` in `social.js`: `{ url: "<YouTube Shorts / youtu.be / .mp4 link>", title: "...", artist: "..." }`.
+Covers come from YouTube automatically (`oar2.jpg` = original aspect, no black bars); `.mp4` needs a `thumb:`.
+`social.html` shows them as a 9:16 grid, tap → vertical player, ←/→ to move between them. Bump `?v` in `social.html`, push.
 
 ## How to add a CONCERT (stills)
 1. Put shots in `photos/<name>/` (compress to ~2000px: `sips -Z 2000 -s formatOptions 80`).

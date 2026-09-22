@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CN Production — Stills</title>
-  <meta name="description" content="Concert photography — CN Production." />
+  <title>CN Production — Social</title>
+  <meta name="description" content="Vertical work — Reels, TikTok and Shorts by CN Production." />
   <link rel="icon" type="image/png" href="favicon.png?v=1" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,19 +22,19 @@
     </nav>
   </header>
 
-  <!-- GALLERY -->
+  <!-- VERTICAL GRID -->
   <section class="show" id="show">
-    <span class="panel-label">[ STILLS ]</span>
-    <h1 class="show-title" id="showTitle"></h1>
-    <div class="concert-grid" id="showGrid"></div>
+    <span class="panel-label">[ SOCIAL ]</span>
+    <h1 class="show-title"><span class="concert-artist">Social</span> <span class="concert-meta" id="socialCount"></span></h1>
+    <div class="social-grid" id="socialGrid"></div>
   </section>
 
-  <!-- PHOTO LIGHTBOX -->
+  <!-- VERTICAL PLAYER -->
   <div class="plight" id="plight" hidden>
     <button class="plight-nav prev" id="plightPrev" aria-label="Previous">‹</button>
     <button class="plight-nav next" id="plightNext" aria-label="Next">›</button>
     <div class="plight-stage" id="plightStage">
-      <img class="plight-img" id="plightImg" alt="" />
+      <div class="plight-video" id="plightVideo"></div>
       <span class="corner tl"></span><span class="corner tr"></span>
       <span class="corner bl"></span><span class="corner br"></span>
     </div>
@@ -42,7 +42,7 @@
     <div class="plight-meta"><span id="plightCaption"></span><span id="plightCount"></span></div>
   </div>
 
-  <script src="photos.js?v=95"></script>
-  <script src="show.js?v=95"></script>
+  <script src="social.js?v=95"></script>
+  <script src="social-page.js?v=95"></script>
 </body>
 </html>

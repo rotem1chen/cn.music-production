@@ -26,12 +26,14 @@ const SITE = {
    artist:   shown centre-right of the HUD
    format:   left of the HUD (e.g. DIGITAL, 16MM, 4K). Optional.
    thumb:    cover image URL — optional for YouTube (auto), needed for Vimeo/mp4.
+   link:     instead of url — the tile opens that page (e.g. social.html) rather than a video.
    ratio:    OPTIONAL shape, e.g. "1/1" for a square social post, "9/16" for a
              vertical one. Leave it out for normal 16:9 films. The tile keeps the
              same height as the others and just gets narrower — no black bars.
    ============================================================ */
 
 const CLIPS = [
+  { link: "social.html",                                title: "SOCIAL",      artist: "",                 format: "VERTICAL" },
   { url: "https://youtu.be/gItPFC-qhic",                 title: "דרעק",        artist: "ayubii",           format: "DIGITAL" },
   { url: "https://youtu.be/HeRs2D2EXSk",                 title: "פוקוס",       artist: "עדן מניוב, ירין",  format: "DIGITAL", thumb: "thumbs/fokus.jpg" },
   { url: "https://www.youtube.com/watch?v=p14Mww6wgkk",  title: "גברת קארמה",  artist: "סיד",              format: "DIGITAL", thumb: "thumbs/gveret-karma.jpg" },
