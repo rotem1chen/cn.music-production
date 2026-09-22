@@ -1,11 +1,11 @@
 # CN Production — project brief (read me first)
 
-Music-video + concert-photography portfolio for **CN Production**.
+Music-video + concert-photography portfolio for **CN PROD**.
 Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` branch, custom domain via `CNAME`).
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v86**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v104**.
 
 ## Files
 - `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
@@ -15,6 +15,9 @@ After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` ta
 - `show.js` — gallery-subpage logic
 - **`clips.js`** — CONFIG for films: `SITE` (name/tagline/contact/socials) + `CLIPS` array
 - **`photos.js`** — CONFIG for stills: `CONCERTS` array
+- **`social.js`** — CONFIG for vertical work (Reels/TikTok/Shorts): `SOCIAL` array → shown on `social.html`
+- **`restaurant.js`** — CONFIG for restaurant/venue films: `RESTAURANT` array → shown on `restaurant.html`
+- `vgrid.js` — the grid+player logic BOTH subpages share; each page sets `window.VGRID = { items, ratio, min, unit }` before loading it
 - `logo.png` (metal CN mark), `intro.mp4` (intro video w/ audio), `photos/<concert>/` (full-res + `thumb/` thumbnails)
 
 ## How to add a FILM
@@ -24,6 +27,19 @@ Optional `ratio:` sets a non-16:9 shape — `"1/1"` for a square social post, `"
 vertical one. The tile keeps the same height as the rest of the reel and just gets narrower,
 so nothing is letterboxed. Omit it for normal films. Works in the reel and the opened player.
 Then bump `?v` in `index.html` and push. (YouTube video must be Public + embeddable.)
+
+## Sub-page tiles (SOCIAL / RESTAURANT)
+`CLIPS` is **films only** — the reel paginates 5 music clips at a time. The other kinds of work are
+**`SUBPAGES`** in `clips.js`: clip-sized yellow tiles rendered *below* the reel, under a `[ MORE ]` label.
+`{ link: "restaurant.html", title: "RESTAURANT", sub: "Commercial" }` — add a line to add a tile.
+Long titles shrink to fit automatically (the size is `150cqw / <title length>`, so it scales off the tile, not the viewport).
+
+## How to add a SOCIAL / RESTAURANT video
+Add a line to `SOCIAL` in `social.js` or `RESTAURANT` in `restaurant.js`:
+`{ url: "<YouTube / Shorts / youtu.be / .mp4 link>", title: "...", artist: "..." }`.
+Covers come from YouTube automatically (`oar2.jpg` = original aspect, no black bars); `.mp4` needs a `thumb:`.
+Tile shape is per page — social is `9 / 16`, restaurant is `16 / 9` (set in the `window.VGRID` line in each HTML);
+a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that page, push.
 
 ## How to add a CONCERT (stills)
 1. Put shots in `photos/<name>/` (compress to ~2000px: `sips -Z 2000 -s formatOptions 80`).
@@ -61,6 +77,32 @@ Files: `media.html`, `media.js`, `media-config.js` (holds the Drive API key), st
    (add `localhost/*` too if testing locally); API restrictions → restrict to **Google Drive API**. Save.
 5. Paste the key into `media-config.js` (`apiKey: "..."`), bump `?v`, push.
 
-**Per client:** upload to a Drive folder → Share → Anyone with the link → open **`link.html`** (hidden helper page),
+**Per client:** upload to a Drive folder → Share → Anyone with the link → open **`link.html`** (hidden helper page, 4-digit code gate — hash in the page, remembered 30 days per device),
 paste the Drive folder link → it builds the client link, checks the folder is shared, copy / WhatsApp / preview.
 (Manual: `media.html?f=<folder id from drive.google.com/drive/folders/<id>>`.) No site edit needed.
+
+## Cut review (client notes on a timeline) — `review.html`
+**`review.html?v=<Drive video link / id, or YouTube link>`** — hidden, `noindex`. Made from `link.html` → "02 — Cut review".
+Files: `review.html`, `review.js`, styles under "Cut review" in `style.css`. **Zero backend**: notes live in the viewer's
+browser (`localStorage`, keyed by video) and travel inside the link (`&n=` = deflate + base64url JSON). No accounts.
+
+- **Drive videos stream through the Drive API media endpoint**:
+  `https://www.googleapis.com/drive/v3/files/<id>?alt=media&supportsAllDrives=true&key=<API key>` — the only Drive URL
+  that plays in a `<video>` on another site. Drive's download/preview hosts (`drive.google.com/uc`,
+  `drive.usercontent.google.com/download`) answer **403 to every cross-site browser request** (`Sec-Fetch-Site`),
+  and Drive's iframe player hides the playhead — verified 2026-09-21, don't retry those. Range/seeking works.
+  File must be "Anyone with the link" and browser-decodable (H.264 .mp4; ProRes/.mov won't). media.js uses the same
+  URL for its native player, with Drive's iframe as fallback. Unlisted YouTube links also work (IFrame API).
+- Player: Drive files are **fetched whole the moment the page opens — 6 parallel 4 MB Range requests — with a big
+  in-box loader (%, MB, speed, scan line, dimmed Drive thumbnail as poster) and played from a blob**, stored in Cache Storage
+  (`cn-review-video`) so re-opening is instant; streaming the API endpoint directly stutters (~2 s per seek, no CDN)
+  and Google rate-limits repeated hits per IP ("automated queries" 403 for hours — **never test it in a loop from
+  curl/puppeteer; it blocked the home network on 2026-09-21**). If metadata works but media fails, the page says
+  Google is throttling, offers נסו שוב, and embeds Drive's iframe player view-only (no timeline). Direct .mp4 URLs stream natively; YouTube uses the IFrame API, timeline polled every 200 ms.
+- Ask for review exports at **1080p H.264 ~8–10 Mbps** — the 2160×2160 / 25 Mbps master was too heavy to stream.
+- Client UI is **Hebrew** (RTL text blocks, LTR player row; no name field). Pause → big **תגובה** button (or `N`) → text → marker on the timeline. Keys: space, ←/→ 5s, shift+←/→ 1 frame, F.
+- **SEND**: WhatsApp / Email (`SITE.email` from clips.js) / Copy — the link carries all notes. Opening it merges them
+  into the recipient's storage and cleans `n` from the URL. Same note id → newest "fixed" state wins.
+- CN side: click a marker/timecode to jump; ✓ **Fixed** per note; **export** → Resolve markers `.edl` (CMX3600 with
+  `|M:` marker lines, record TC from 01:00:00:00, FPS selector) or a `.txt` list. Timecodes shown as mm:ss:ff.
+- Limitation of zero-backend: two reviewers = two links; the client must press SEND. Upgrade path: Firebase (free) if needed.

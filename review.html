@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CN PROD — תגובות</title>
+  <meta name="description" content="Cut review — CN PROD." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/png" href="favicon.png?v=1" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=94" />
+</head>
+<body class="show-page pool-page review-page" id="top">
+  <!-- NAV -->
+  <header class="nav">
+    <a class="nav-mark" href="index.html">CN—PRD</a>
+    <nav class="nav-right">
+      <a href="index.html">Work</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+  </header>
+
+  <section class="pool review" id="review">
+    <div class="pool-head rv-head" dir="rtl">
+      <img class="pool-logo" src="logo.png?v=12" alt="CN PROD" />
+      <span class="panel-label">[ תגובות ]</span>
+      <h1 class="show-title pool-title" id="rvTitle">טוען…</h1>
+      <p class="pool-status rv-help" id="rvHelp">עוצרים במקום שצריך שינוי, לוחצים <b>תגובה</b> וכותבים. בסיום לוחצים <b>שליחה</b>.</p>
+      <div class="pool-status" id="rvStatus"></div>
+    </div>
+
+    <!-- PLAYER -->
+    <div class="rv-stage" id="rvStage" tabindex="0">
+      <div class="rv-media" id="rvMedia">
+        <video id="rvVideo" playsinline preload="metadata" hidden></video>
+        <div id="rvYt" hidden></div>
+      </div>
+      <button class="rv-bigplay" id="rvBigPlay" aria-label="Play">▶</button>
+      <!-- LOADER: sits in the video box while the file downloads -->
+      <div class="rv-loader" id="rvLoader" hidden>
+        <img class="rv-poster" id="rvPoster" alt="" hidden />
+        <div class="rv-scan"></div>
+        <div class="rv-load-body">
+          <span class="rv-load-pct" id="rvPct" dir="ltr">0%</span>
+          <span class="rv-load-label">טוען וידאו</span>
+          <span class="rv-load-meta" id="rvLoadMeta" dir="ltr"></span>
+        </div>
+        <div class="rv-load-bar"><i id="rvLoadFill"></i></div>
+        <span class="lc tl"></span><span class="lc tr"></span><span class="lc bl"></span><span class="lc br"></span>
+      </div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+
+    <!-- CONTROLS + TIMELINE -->
+    <div class="rv-controls">
+      <button class="rv-btn" id="rvPlay" aria-label="Play / pause">▶</button>
+      <span class="rv-time"><span id="rvCur">00:00</span><span class="rv-sep"> / </span><span id="rvDur">00:00</span></span>
+      <div class="rv-track" id="rvTrack" aria-label="Timeline">
+        <div class="rv-buffer" id="rvBuffer"></div>
+        <div class="rv-progress" id="rvProgress"></div>
+        <div class="rv-marks" id="rvMarks"></div>
+        <div class="rv-head-pin" id="rvHeadPin"></div>
+      </div>
+      <button class="rv-btn rv-step" id="rvBack" title="Back 1 frame (Shift+←)">‹</button>
+      <button class="rv-btn rv-step" id="rvFwd" title="Forward 1 frame (Shift+→)">›</button>
+      <button class="rv-btn" id="rvFull" title="Fullscreen">⛶</button>
+    </div>
+
+    <!-- ADD NOTE -->
+    <div class="rv-compose" dir="rtl">
+      <button class="pool-btn primary rv-add" id="rvAdd" type="button"><span class="rv-add-plus">+</span><span>תגובה</span><span class="rv-add-at" id="rvAddAt" dir="ltr">00:00:00</span></button>
+      <form class="rv-form" id="rvForm" hidden>
+        <div class="rv-form-row">
+          <span class="rv-tc" id="rvFormAt" dir="ltr">00:00:00</span>
+          <span class="rv-form-hint">מה לשנות בנקודה הזאת?</span>
+        </div>
+        <textarea class="lm-input rv-text" id="rvText" dir="auto" rows="3" placeholder="כתבו כאן…" maxlength="1000"></textarea>
+        <div class="pool-actions">
+          <button class="pool-btn primary" id="rvSave" type="submit">שמירה</button>
+          <button class="pool-btn ghost" id="rvCancel" type="button">ביטול</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- NOTES -->
+    <div class="pool-section rv-notes-wrap" dir="rtl">
+      <div class="concert-head"><span class="concert-artist">תגובות</span><span class="concert-meta" id="rvCount">00</span></div>
+      <div class="rv-notes" id="rvNotes"></div>
+      <p class="pool-status" id="rvEmpty">אין תגובות עדיין.</p>
+    </div>
+
+    <!-- SEND / EXPORT -->
+    <div class="rv-send" id="rvSend" dir="rtl">
+      <span class="lm-label">סיימתם? שולחים את התגובות ל-CN</span>
+      <div class="pool-actions">
+        <a class="pool-btn primary" id="rvWa" href="#" target="_blank" rel="noopener"><span>שליחה בוואטסאפ</span><span class="ar">↗</span></a>
+        <a class="pool-btn ghost" id="rvMail" href="#"><span>אימייל</span><span class="ar">↗</span></a>
+        <button class="pool-btn ghost" id="rvCopy" type="button"><span id="rvCopyLabel">העתקת קישור</span></button>
+      </div>
+      <details class="rv-export">
+        <summary class="lm-label">ל-CN — ייצוא מרקרים</summary>
+        <div class="pool-actions">
+          <label class="rv-fps">FPS
+            <select id="rvFps"><option>23.976</option><option>24</option><option selected>25</option><option>29.97</option><option>30</option><option>50</option><option>60</option></select>
+          </label>
+          <button class="pool-btn ghost" id="rvEdl" type="button"><span>מרקרים ל-DaVinci Resolve (.edl)</span><span class="ar">↓</span></button>
+          <button class="pool-btn ghost" id="rvTxt" type="button"><span>רשימת טקסט</span><span class="ar">↓</span></button>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <script src="clips.js?v=94"></script>
+  <script src="media-config.js?v=94"></script>
+  <script src="review.js?v=94"></script>
+</body>
+</html>

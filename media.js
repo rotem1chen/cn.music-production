@@ -172,7 +172,7 @@
     try {
       const folder = await api(`${API}/${FID}?fields=id,name,mimeType&supportsAllDrives=true&key=${KEY}`);
       titleEl.textContent = folder.name;
-      document.title = folder.name + " — CN Production";
+      document.title = folder.name + " — CN PROD";
       document.getElementById("poolZip").href = `https://drive.google.com/uc?export=download&id=${FID}`;
       document.getElementById("poolDrive").href = `https://drive.google.com/drive/folders/${FID}`;
       actions.hidden = false;
@@ -191,9 +191,9 @@
   const vstage = document.getElementById("vplayStage");
   const vframe = document.getElementById("vplayFrame");
   const vvideo = document.getElementById("vplayVideo");
-  /* Direct byte stream. Unlike uc?export=download this skips Drive's virus-scan
-     interstitial on large files, so a <video> gets video instead of a web page. */
-  const streamUrl = (id) => `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`;
+  /* Drive API media endpoint: the only Drive URL that streams to a <video> on another
+     site (download/preview hosts answer 403 to cross-site requests). Supports Range. */
+  const streamUrl = (id) => `https://www.googleapis.com/drive/v3/files/${id}?alt=media&supportsAllDrives=true&key=${KEY}`;
   let vTimer = null;
 
   /* Drive's own player: last resort. Its controls are fixed-size and live in a

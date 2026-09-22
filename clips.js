@@ -4,11 +4,11 @@
    ============================================================ */
 
 const SITE = {
-  name: "CN PRODUCTION",
+  name: "CN PROD",
   mark: "CN—PRD",                 // small wordmark, top-left (viewfinder style)
   tagline: "Directing · Production · Post-production",
   about:
-    "CN Production is a music video and clip production studio — producing, " +
+    "CN Prod is a music video and clip production studio — producing, " +
     "directing and post-producing cinematic work for artists and labels.",
   email: "rotem1chen@gmail.com",
   socials: {
@@ -41,4 +41,19 @@ const CLIPS = [
   { url: "https://youtu.be/qu7cYF-YV8M",                 title: "אני ואור",    artist: "רון עשהל",         format: "DIGITAL" },
   { url: "https://youtu.be/RKI861xIfTA",                 title: "genesis",     artist: "בלולו",            format: "DIGITAL" },
   { url: "https://youtu.be/D7eYTmT5DbY",                 title: "גנסיס",       artist: "אביהו פנחסוב",     format: "DIGITAL" },
+];
+
+/* ============================================================
+   SUB-PAGES — the tiles that sit UNDER the films, not among them.
+   Each one is a clip-sized yellow block that opens its own page.
+
+   link:   the page it opens
+   title:  the big word on the tile
+   sub:    the small line under it
+   thumb:  optional cover image, sits dimmed behind the word
+   ============================================================ */
+
+const SUBPAGES = [
+  { link: "social.html",     title: "SOCIAL",     sub: "Vertical" },
+  { link: "restaurant.html", title: "RESTAURANT", sub: "Commercial" },
 ];

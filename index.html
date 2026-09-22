@@ -3,14 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CN Production</title>
+  <title>CN PROD — Music Video Production</title>
   <meta name="description" content="Music video & clip production studio — directing, production, post-production." />
+  <link rel="canonical" href="https://music.cn-production.com/" />
+
+  <!-- how the name shows up in search results and when the link is shared -->
+  <meta property="og:site_name" content="CN PROD" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://music.cn-production.com/" />
+  <meta property="og:title" content="CN PROD" />
+  <meta property="og:description" content="Music video &amp; clip production studio — directing, production, post-production." />
+  <meta property="og:image" content="https://music.cn-production.com/intro-poster.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CN PROD" />
+  <meta name="twitter:description" content="Music video &amp; clip production studio — directing, production, post-production." />
+  <meta name="twitter:image" content="https://music.cn-production.com/intro-poster.jpg" />
+  <script type="application/ld+json">
+  [
+    { "@context": "https://schema.org", "@type": "WebSite",
+      "name": "CN PROD", "alternateName": "CN Production", "url": "https://music.cn-production.com/" },
+    { "@context": "https://schema.org", "@type": "Organization",
+      "name": "CN PROD", "alternateName": "CN Production",
+      "url": "https://music.cn-production.com/",
+      "logo": "https://music.cn-production.com/logo.png",
+      "image": "https://music.cn-production.com/intro-poster.jpg",
+      "email": "rotem1chen@gmail.com",
+      "description": "Music video and clip production studio — directing, production and post-production for artists and labels.",
+      "sameAs": ["https://instagram.com/chen1rotem"] }
+  ]
+  </script>
   <link rel="icon" type="image/png" href="favicon.png?v=1" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=86" />
+  <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=104" />
 </head>
 <body id="top">
   <!-- INTRO (plays once per session, then fades into the site) -->
@@ -19,7 +48,7 @@
       <source src="intro.mp4?v=18" type="video/mp4" />
     </video>
     <div class="intro-gate" id="introGate">
-      <img class="intro-logo" src="logo.png?v=12" alt="CN Production" />
+      <img class="intro-logo" src="logo.png?v=12" alt="CN PROD" />
       <button class="intro-enter" id="introEnter">
         <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
         <span class="ec-label">Enter</span>
@@ -40,10 +69,17 @@
 
   <!-- LOGO (fixed, fades on scroll) -->
   <div class="logo-hero" id="logoHero">
-    <img class="logo-photo" id="logoPhoto" src="logo.png?v=12" alt="CN Production" />
-    <span class="logo-mark" id="logoFallback" role="img" aria-label="CN Production"></span>
-    <span class="logo-word" data-brand>CN PRODUCTION</span>
+    <img class="logo-photo" id="logoPhoto" src="logo.png?v=12" alt="CN PROD" />
+    <span class="logo-mark" id="logoFallback" role="img" aria-label="CN PROD"></span>
+    <h1 class="logo-word" data-brand>CN PROD</h1>
   </div>
+
+  <!-- jump straight to the vertical + restaurant work -->
+  <a class="skip-stills go-more" id="goMore" href="#subpagesWrap">
+    <span class="ss-label">Scroll for other work</span>
+    <span class="ar" aria-hidden="true">↓</span>
+    <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
+  </a>
 
   <!-- skip past the films -->
   <a class="skip-stills" id="skipStills" href="#stills">
@@ -60,7 +96,6 @@
       <i style="width:6px"></i><i style="width:9px"></i><i style="width:13px"></i>
       <i style="width:18px"></i><i style="width:24px"></i><i style="width:30px"></i>
     </div>
-    <div class="deco-squares" id="squares"><i></i><i class="on"></i><i></i></div>
     <div class="target" id="target">
       <span class="corner tl"></span><span class="corner tr"></span>
       <span class="corner bl"></span><span class="corner br"></span>
@@ -69,6 +104,12 @@
 
   <!-- REEL -->
   <main class="reel" id="work"></main>
+
+  <!-- SUB-PAGES — the other kinds of work, under the films -->
+  <section class="subpages-wrap" id="subpagesWrap">
+    <span class="panel-label">[ MORE ]</span>
+    <div class="subpages" id="subpages"></div>
+  </section>
 
   <!-- BOTTOM HUD READOUT (fixed) -->
   <div class="hud" id="hud">
@@ -93,15 +134,15 @@
   <!-- ABOUT / CONTACT -->
   <section class="panel about" id="about">
     <span class="panel-label">[ ABOUT ]</span>
-    <p class="panel-text" data-about></p>
+    <p class="panel-text" data-about>CN Prod is a music video and clip production studio — producing, directing and post-producing cinematic work for artists and labels.</p>
   </section>
   <section class="panel contact" id="contact">
     <span class="panel-label">[ CONTACT ]</span>
-    <a class="contact-email" href="#" data-email-link>hello@cnproduction.com</a>
+    <a class="contact-email" href="mailto:rotem1chen@gmail.com" data-email-link>rotem1chen@gmail.com</a>
     <div class="socials" id="socials"></div>
     <div class="colophon">
-      <span>© <span data-year></span> <span data-brand>CN PRODUCTION</span></span>
-      <span data-tagline></span>
+      <span>© <span data-year>2026</span> <span data-brand>CN PROD</span></span>
+      <span data-tagline>Directing · Production · Post-production</span>
     </div>
   </section>
 
@@ -135,9 +176,9 @@
   <!-- cursor ring (follows the mouse) -->
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="clips.js?v=86"></script>
-  <script src="photos.js?v=86"></script>
-  <script src="artists.js?v=86"></script>
-  <script src="app.js?v=86"></script>
+  <script src="clips.js?v=104"></script>
+  <script src="photos.js?v=104"></script>
+  <script src="artists.js?v=104"></script>
+  <script src="app.js?v=104"></script>
 </body>
 </html>

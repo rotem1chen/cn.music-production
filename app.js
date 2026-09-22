@@ -117,6 +117,13 @@
   let page = 0;
   const clipEls = [];        // elements currently on screen (one page's worth)
   const pageItems = [];      // the clip data behind them, same order
+  const subEls = [], subItems = [];   // the SOCIAL / RESTAURANT tiles under the reel
+
+  /* The viewfinder targets the films AND the tiles below them, as one list:
+     films first, tiles after, so a page swap never renumbers the tiles. */
+  function targetCount() { return clipEls.length + subEls.length; }
+  function elAt(i)   { return i < clipEls.length ? clipEls[i]   : subEls[i - clipEls.length]; }
+  function itemAt(i) { return i < clipEls.length ? pageItems[i] : subItems[i - clipEls.length]; }
 
   /* A clip may declare its own shape, e.g. ratio: "1/1" for a square social post
      or "9/16" for a vertical one. Returns height / width; 16:9 when unset. */
@@ -240,7 +247,6 @@
   const target = document.getElementById("target");
   const cursor = document.getElementById("cursor");
   const logoHero = document.getElementById("logoHero");
-  const squares = document.getElementById("squares").querySelectorAll("i");
   const hudFormat = document.querySelector("[data-hud-format]");
   const hudTitle = document.querySelector("[data-hud-title]");
   const hudArtist = document.querySelector("[data-hud-artist]");
@@ -275,7 +281,8 @@
   }
 
   function positionTarget(i) {
-    const r = clipEls[i].getBoundingClientRect();
+    const el = elAt(i); if (!el) return;
+    const r = el.getBoundingClientRect();
     const pad = 10;
     target.style.left = (r.left - pad) + "px";
     target.style.top = (r.top - pad) + "px";
@@ -284,17 +291,19 @@
   }
 
   function setActive(i) {
-    if (clipEls[activeIdx]) { clipEls[activeIdx].classList.remove("active"); stopPreview(clipEls[activeIdx]); }
+    const prev = elAt(activeIdx);
+    if (prev) { prev.classList.remove("active"); stopPreview(prev); }
     activeIdx = i;
-    const el = clipEls[i], c = pageItems[i];
-    if (!el) return;
+    const el = elAt(i), c = itemAt(i);
+    if (!el || !c) return;
     el.classList.add("active");
+    const isSub = i >= clipEls.length;
     // reel shows the still thumbnail only — the video plays when opened
-    hudFormat.textContent = c.format || "DIGITAL";
+    hudFormat.textContent = isSub ? (c.sub || "") : (c.format || "DIGITAL");
     hudTitle.textContent = c.title || "Untitled";
-    hudArtist.textContent = c.artist || "";
-    hudIndex.textContent = String(page * PAGE_SIZE + i + 1).padStart(2, "0") + " — " + total;
-    bars.forEach((b, j) => b.classList.toggle("on", j === i));
+    hudArtist.textContent = isSub ? "" : (c.artist || "");
+    hudIndex.textContent = isSub ? "" : String(page * PAGE_SIZE + i + 1).padStart(2, "0") + " — " + total;
+    bars.forEach((b, j) => b.classList.toggle("on", !isSub && j === i));
     target.classList.remove("lock"); void target.offsetWidth; target.classList.add("lock");
   }
 
@@ -317,8 +326,8 @@
   function nearestToCenter() {
     const fy = window.innerHeight / 2;
     let best = -1, bestD = Infinity;
-    for (let i = 0; i < clipEls.length; i++) {
-      const r = clipEls[i].getBoundingClientRect();
+    for (let i = 0; i < targetCount(); i++) {
+      const r = elAt(i).getBoundingClientRect();
       const d = Math.abs(r.top + r.height / 2 - fy);
       if (d < bestD) { bestD = d; best = i; }
     }
@@ -340,10 +349,6 @@
       positionTarget(a);
     }
 
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    const frac = max > 0 ? window.scrollY / max : 0;
-    const on = Math.min(squares.length - 1, Math.floor(frac * squares.length));
-    squares.forEach((s, i) => s.classList.toggle("on", i === on));
   }
 
   let ticking = false;
@@ -576,6 +581,40 @@
     });
   }
 
+  /* ---------- SUB-PAGES: clip-sized tiles under the films (SOCIAL, RESTAURANT) ---------- */
+  (function subPages() {
+    const wrap = document.getElementById("subpagesWrap");
+    const host = document.getElementById("subpages");
+    const data = (typeof SUBPAGES !== "undefined" && Array.isArray(SUBPAGES)) ? SUBPAGES : [];
+    if (!wrap || !host) return;
+    if (!data.length) { wrap.hidden = true; return; }
+
+    data.forEach((c) => {
+      const el = document.createElement("a");
+      el.className = "clip link-tile";
+      el.href = c.link;
+      el.setAttribute("aria-label", "Open " + (c.title || "page"));
+      const poster = document.createElement("div");
+      poster.className = "poster";
+      if (c.thumb) poster.style.backgroundImage = `url("${c.thumb}")`;
+      el.appendChild(poster);
+      const lab = document.createElement("div");
+      lab.className = "link-label";
+      lab.innerHTML = '<span class="ll-title">' + esc(c.title || "") + '</span>' +
+                      '<span class="ll-sub">' + esc(c.sub || "") + ' <span class="ar">\u2197</span></span>';
+      // long words (RESTAURANT) have to shrink or they run off the tile
+      lab.style.setProperty("--len", String((c.title || "").length || 6));
+      el.appendChild(lab);
+      const idx = () => clipEls.length + subEls.indexOf(el);
+      el.addEventListener("mouseenter", () => { cursor.classList.add("big"); hoverIdx = idx(); refresh(); });
+      el.addEventListener("mouseleave", () => { cursor.classList.remove("big"); if (hoverIdx === idx()) { hoverIdx = -1; refresh(); } });
+      host.appendChild(el);
+      subEls.push(el);
+      subItems.push(c);
+    });
+    refresh();                 // the brackets can reach the tiles from now on
+  })();
+
   /* ---------- ARTISTS: everyone we've worked with ---------- */
   (function artistList() {
     const wrap = document.getElementById("artistList");
@@ -598,6 +637,52 @@
       row.appendChild(links);
       wrap.appendChild(row);
     });
+  })();
+
+  /* ---------- Scroll cue: names whatever section is next, so nothing below looks like the end ---------- */
+  (function scrollCue() {
+    const btn = document.getElementById("goMore");
+    if (!btn) return;
+    const label = btn.querySelector(".ss-label");
+
+    const hasTiles = typeof SUBPAGES !== "undefined" && Array.isArray(SUBPAGES) && SUBPAGES.length;
+    const stops = [
+      hasTiles ? { el: document.getElementById("subpagesWrap"), text: "Scroll for other work" } : null,
+      { el: document.getElementById("stills"), text: "Scroll for stills" },
+    ].filter((s) => s && s.el);
+    if (!stops.length) { btn.remove(); return; }
+
+    let stop = null;
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (!stop) return;
+      const root = document.documentElement;
+      const prevSnap = root.style.scrollSnapType;
+      root.style.scrollSnapType = "none";
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const r = stop.el.getBoundingClientRect();
+      // centre the tiles; land on the top edge of a full section like the stills
+      const dest = stop.el.id === "stills"
+        ? r.top + window.scrollY
+        : r.top + window.scrollY + r.height / 2 - window.innerHeight / 2;
+      window.scrollTo({ top: Math.max(0, dest), behavior: reduce ? "instant" : "smooth" });
+      setTimeout(() => { root.style.scrollSnapType = prevSnap; }, 1100);
+    });
+
+    // the next stop is the first one whose top is still below the fold
+    function sync() {
+      const edge = window.scrollY + window.innerHeight * 0.75;
+      const next = stops.find((s) => s.el.offsetTop > edge) || null;
+      if (next !== stop) {
+        stop = next;
+        if (stop) { label.textContent = stop.text; btn.href = "#" + stop.el.id; }
+      }
+      btn.classList.toggle("gone", !stop);
+    }
+    window.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync);
+    sync();
   })();
 
   /* ---------- Corner button: "Skip to stills" going down, "Back to top" once you're there ---------- */

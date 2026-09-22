@@ -12,7 +12,7 @@
 
   const meta = [CON.venue, CON.date].filter(Boolean).map(esc).join(" · ");
   titleEl.innerHTML = `<span class="concert-artist">${esc(CON.artist || "")}</span>` + (meta ? ` <span class="concert-meta">${meta}</span>` : "");
-  document.title = (CON.artist || "Show") + " — CN Production";
+  document.title = (CON.artist || "Show") + " — CN PROD";
 
   const shots = CON.shots || [];
   shots.forEach((file, si) => {

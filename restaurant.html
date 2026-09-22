@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CN PROD — Stills</title>
-  <meta name="description" content="Concert photography — CN PROD." />
+  <title>CN PROD — Restaurant</title>
+  <meta name="description" content="Restaurant and venue films by CN PROD." />
   <meta property="og:site_name" content="CN PROD" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="CN PROD — Stills" />
-  <meta property="og:description" content="Concert photography — CN PROD." />
+  <meta property="og:title" content="CN PROD — Restaurant" />
+  <meta property="og:description" content="Restaurant and venue films by CN PROD." />
   <meta property="og:image" content="https://music.cn-production.com/intro-poster.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="favicon.png?v=1" />
@@ -28,19 +28,19 @@
     </nav>
   </header>
 
-  <!-- GALLERY -->
+  <!-- VERTICAL GRID -->
   <section class="show" id="show">
-    <span class="panel-label">[ STILLS ]</span>
-    <h1 class="show-title" id="showTitle"></h1>
-    <div class="concert-grid" id="showGrid"></div>
+    <span class="panel-label">[ RESTAURANT ]</span>
+    <h1 class="show-title"><span class="concert-artist">Restaurant</span> <span class="concert-meta" id="socialCount"></span></h1>
+    <div class="social-grid" id="socialGrid"></div>
   </section>
 
-  <!-- PHOTO LIGHTBOX -->
+  <!-- VERTICAL PLAYER -->
   <div class="plight" id="plight" hidden>
     <button class="plight-nav prev" id="plightPrev" aria-label="Previous">‹</button>
     <button class="plight-nav next" id="plightNext" aria-label="Next">›</button>
     <div class="plight-stage" id="plightStage">
-      <img class="plight-img" id="plightImg" alt="" />
+      <div class="plight-video" id="plightVideo"></div>
       <span class="corner tl"></span><span class="corner tr"></span>
       <span class="corner bl"></span><span class="corner br"></span>
     </div>
@@ -48,7 +48,8 @@
     <div class="plight-meta"><span id="plightCaption"></span><span id="plightCount"></span></div>
   </div>
 
-  <script src="photos.js?v=104"></script>
-  <script src="show.js?v=104"></script>
+  <script src="restaurant.js?v=104"></script>
+  <script>window.VGRID = { items: RESTAURANT, ratio: "16 / 9", min: "300px", unit: "films" };</script>
+  <script src="vgrid.js?v=104"></script>
 </body>
 </html>
