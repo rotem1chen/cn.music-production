@@ -47,6 +47,14 @@
   <div class="vplay" id="vplay" hidden>
     <div class="vplay-stage" id="vplayStage">
       <video id="vplayVideo" class="vplay-video" playsinline controls preload="metadata" hidden></video>
+      <div class="vload" id="vLoad" hidden>
+        <img class="vload-poster" id="vLoadPoster" alt="" hidden />
+        <div class="vload-box">
+          <span class="vload-pct" id="vLoadPct">0%</span>
+          <div class="vload-bar"><i id="vLoadFill"></i></div>
+          <span class="vload-meta" id="vLoadMeta"></span>
+        </div>
+      </div>
       <iframe id="vplayFrame" allow="autoplay; fullscreen" allowfullscreen title="Video" hidden></iframe>
       <span class="corner tl"></span><span class="corner tr"></span>
       <span class="corner bl"></span><span class="corner br"></span>

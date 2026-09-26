@@ -204,16 +204,97 @@
     vframe.hidden = false; vframe.src = playUrl(f.id);
   }
 
-  function useNative(f) {
+  /* ---- loader UI (inside the video box) ---- */
+  const vload = document.getElementById("vLoad"), vPct = document.getElementById("vLoadPct"),
+        vFill = document.getElementById("vLoadFill"), vMeta = document.getElementById("vLoadMeta"),
+        vPoster = document.getElementById("vLoadPoster");
+  function showLoader(posterUrl) {
+    vload.hidden = false; vload.classList.remove("done");
+    vPct.textContent = "0%"; vFill.style.width = "0%"; vMeta.textContent = "";
+    if (posterUrl) { vPoster.src = posterUrl; vPoster.onload = () => { vPoster.hidden = false; }; }
+  }
+  function loaderProgress(got, total, t0) {
+    const pct = total ? Math.min(100, got / total * 100) : 0;
+    vPct.textContent = total ? Math.floor(pct) + "%" : Math.round(got / 1e6) + " MB";
+    vFill.style.width = pct + "%";
+    const secs = (performance.now() - t0) / 1000, rate = secs > 0.3 ? got / secs / 1e6 : 0;
+    vMeta.textContent = (total ? Math.round(got / 1e6) + " / " + Math.round(total / 1e6) + " MB" : "")
+                      + (rate ? " · " + rate.toFixed(1) + " MB/s" : "");
+  }
+  function hideLoader() {
+    vload.classList.add("done");
+    setTimeout(() => { vload.hidden = true; vload.classList.remove("done"); vPoster.hidden = true; }, 500);
+  }
+
+  /* ---- Drive download: whole file into memory, in parallel ranges ----
+     Same approach review.js uses. Streaming the API endpoint straight into a <video>
+     stutters (~2s per seek, no CDN) and invites Google's per-IP rate limiting, so the
+     file is pulled once, cached, and played from a blob. */
+  const CHUNK = 4 * 1024 * 1024, CONC = 6;
+  async function readAll(r, onBytes) {
+    const reader = r.body.getReader(), parts = []; let n = 0;
+    for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); n += value.length; onBytes(value.length); }
+    const out = new Uint8Array(n); let o = 0; parts.forEach((c) => { out.set(c, o); o += c.length; });
+    return out;
+  }
+  async function driveBlob(url, size) {
+    let cache = null;
+    try { cache = await caches.open("cn-media-video"); } catch (_) {}
+    const hit = cache && await cache.match(url);
+    if (hit) { loaderProgress(1, 1, performance.now()); return URL.createObjectURL(await hit.blob()); }
+
+    const t0 = performance.now(); let got = 0, total = Number(size) || 0, type = "video/mp4";
+    const tick = (n) => { got += n; loaderProgress(got, total, t0); };
+    const get = (a, b) => fetch(url, { mode: "cors", credentials: "omit", headers: { Range: `bytes=${a}-${b}` } });
+
+    const r0 = await get(0, CHUNK - 1);
+    type = r0.headers.get("content-type") || type;
+    if (!r0.ok || !/^(video|audio)\//.test(type)) throw new Error("not video");   // HTML error page → fall back
+    if (r0.status === 200 || !total) {                       // server ignored the range → single stream
+      if (!total) total = Number(r0.headers.get("content-length")) || 0;
+      return finish(new Blob([await readAll(r0, tick)], { type }));
+    }
+    const parts = [await readAll(r0, tick)];
+    const ranges = []; for (let a = CHUNK; a < total; a += CHUNK) ranges.push([a, Math.min(a + CHUNK, total) - 1]);
+    let next = 0;
+    async function worker() {
+      while (next < ranges.length) {
+        const i = next++, [a, b] = ranges[i];
+        let r = await get(a, b);
+        if (r.status !== 206) { r = await get(a, b); if (r.status !== 206) throw new Error("range " + r.status); }
+        parts[i + 1] = await readAll(r, tick);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(CONC, ranges.length) }, worker));
+    return finish(new Blob(parts, { type }));
+
+    function finish(blob) {
+      loaderProgress(blob.size, blob.size, t0);
+      if (cache) cache.put(url, new Response(blob, { headers: { "Content-Type": type, "Content-Length": String(blob.size) } })).catch(() => {});
+      return URL.createObjectURL(blob);
+    }
+  }
+
+  let blobUrl = null;
+  function dropBlob() { if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; } }
+
+  async function useNative(f) {
     vframe.hidden = true; vframe.src = "about:blank";
     vvideo.hidden = false;
+    showLoader(f.thumb || f.v && f.v.thumb || thumb(f.id, 800));
     let settled = false;
-    const giveUp = () => { if (!settled) { settled = true; useDriveFrame(f); } };
-    vvideo.onloadedmetadata = () => { settled = true; clearTimeout(vTimer); };
-    vvideo.onerror = giveUp;                      // HTML instead of video → fires at once
-    vTimer = setTimeout(giveUp, 5000);            // backstop for a stream that never starts
-    vvideo.src = streamUrl(f.id);
-    vvideo.play && vvideo.play().catch(() => {}); // autoplay refusal is fine, controls are there
+    const giveUp = () => { if (!settled) { settled = true; hideLoader(); useDriveFrame(f); } };
+    vvideo.onerror = giveUp;
+    vvideo.onloadedmetadata = () => { settled = true; hideLoader(); };
+    try {
+      dropBlob();
+      blobUrl = await driveBlob(streamUrl(f.id), f.size);
+      if (settled) return;                        // closed or already fell back while downloading
+      vvideo.src = blobUrl;
+      vvideo.play && vvideo.play().catch(() => {});   // autoplay refusal is fine, controls are there
+    } catch (_) {
+      giveUp();
+    }
   }
 
   function openVideo(f) {
@@ -225,7 +306,7 @@
     useNative(f);
   }
   function closeVideo() {
-    clearTimeout(vTimer);
+    clearTimeout(vTimer); hideLoader(); dropBlob();
     vplay.hidden = true;
     vframe.src = "about:blank"; vframe.hidden = true;
     vvideo.pause && vvideo.pause(); vvideo.removeAttribute("src"); vvideo.load(); vvideo.hidden = true;
