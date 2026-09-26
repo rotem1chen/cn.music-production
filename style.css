@@ -506,6 +506,18 @@ a { color: inherit; text-decoration: none; }
    file; falls back to the iframe below when it will not. */
 .vplay-video { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; display: block; }
 .vplay-video[hidden], .vplay-stage iframe[hidden] { display: none; }
+/* loader shown while the file downloads (see media.js driveBlob) */
+.vload { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center;
+  background: #000; transition: opacity .4s var(--ease); }
+.vload[hidden] { display: none; }
+.vload.done { opacity: 0; }
+.vload-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .22; }
+.vload-box { position: relative; display: flex; flex-direction: column; align-items: center; gap: 9px;
+  font-family: var(--ui); color: var(--accent); letter-spacing: .14em; text-transform: uppercase; }
+.vload-pct { font-size: 20px; }
+.vload-bar { width: min(240px, 50vw); height: 2px; background: rgba(255,212,0,.22); overflow: hidden; }
+.vload-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s linear; }
+.vload-meta { font-size: 10px; color: var(--muted); letter-spacing: .1em; }
 .vplay-stage .corner { position: absolute; width: 22px; height: 22px; }
 .vplay-stage .tl { top: -10px; left: -10px; }
 .vplay-stage .tr { top: -10px; right: -10px; }
