@@ -14,7 +14,7 @@
       files.src = 'treatment-files.js?v=1';
       files.onload = () => {
         const script = document.createElement('script');
-        script.src = 'treatment.js?v=5';
+        script.src = 'treatment.js?v=6';
         document.body.appendChild(script);
       };
       files.onerror = () => { document.querySelector('#save-state').textContent = 'Could not load editor. Please refresh.'; };
