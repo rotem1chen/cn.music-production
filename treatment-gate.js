@@ -18,7 +18,7 @@
         fonts.src = 'treatment-fonts.js?v=1';
         fonts.onload = fonts.onerror = () => {
           const script = document.createElement('script');
-          script.src = 'treatment.js?v=8';
+          script.src = 'treatment.js?v=9';
           document.body.appendChild(script);
         };
         document.body.appendChild(fonts);
