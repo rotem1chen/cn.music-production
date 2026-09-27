@@ -13,9 +13,15 @@
       const files = document.createElement('script');
       files.src = 'treatment-files.js?v=1';
       files.onload = () => {
-        const script = document.createElement('script');
-        script.src = 'treatment.js?v=6';
-        document.body.appendChild(script);
+        // fonts first: exported treatments inline them, so they must be here before export
+        const fonts = document.createElement('script');
+        fonts.src = 'treatment-fonts.js?v=1';
+        fonts.onload = fonts.onerror = () => {
+          const script = document.createElement('script');
+          script.src = 'treatment.js?v=8';
+          document.body.appendChild(script);
+        };
+        document.body.appendChild(fonts);
       };
       files.onerror = () => { document.querySelector('#save-state').textContent = 'Could not load editor. Please refresh.'; };
       document.body.appendChild(files);

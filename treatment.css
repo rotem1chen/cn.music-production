@@ -77,8 +77,17 @@ aside { padding: 30px 20px; border-right: 1px solid var(--line); display: flex; 
 .aside-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px }
 .plus { font-size: 22px; line-height: 1; padding: 2px 12px; color: var(--yellow); letter-spacing: 0 }
 
-/* draft list — these are buttons, but they read as a list, so no brackets */
-.draft { width: 100%; text-align: left; padding: 15px 12px; display: block;
+/* draft list — a row is the draft button plus its delete control */
+.draft-row { position: relative }
+.draft-del { position: absolute; top: 8px; right: 6px; z-index: 1;
+  padding: 4px 7px; border: 0; font-size: 11px; letter-spacing: 0; line-height: 1;
+  color: var(--muted); background: transparent; opacity: 0; transition: opacity .2s, color .2s }
+.draft-del::before, .draft-del::after { content: none }
+.draft-row:hover .draft-del, .draft-del:focus-visible { opacity: 1 }
+.draft-del:hover { color: var(--yellow); border-color: transparent }
+
+/* the draft itself is a button, but it reads as a list item, so no brackets */
+.draft { width: 100%; text-align: left; padding: 15px 26px 15px 12px; display: block;
   border: 0; border-left: 2px solid transparent; margin-bottom: 8px; letter-spacing: normal }
 .draft::before, .draft::after { content: none }
 .draft:hover { color: var(--ink); border-color: transparent; background: rgba(244,244,242,.04) }
