@@ -4,4 +4,4 @@
 
 #folder-status{margin-top:12px;overflow-wrap:anywhere}@media(max-width:780px){.aside-foot{flex-wrap:wrap}.aside-foot #folder-status{display:block;flex-basis:100%;margin:4px 0}}
 
-.cover-label .cover-logo{display:block;width:60px;height:64px;color:#fff;margin-bottom:12px}.cover-label{align-self:flex-start;padding:12px;background:rgba(0,0,0,.65)}
+.cover-label .cover-logo{display:block;width:60px;height:64px;color:#fff;margin-bottom:12px}.cover-label{align-self:flex-start}
