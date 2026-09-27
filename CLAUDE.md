@@ -106,3 +106,18 @@ browser (`localStorage`, keyed by video) and travel inside the link (`&n=` = def
 - CN side: click a marker/timecode to jump; ✓ **Fixed** per note; **export** → Resolve markers `.edl` (CMX3600 with
   `|M:` marker lines, record TC from 01:00:00:00, FPS selector) or a `.txt` list. Timecodes shown as mm:ss:ff.
 - Limitation of zero-backend: two reviewers = two links; the client must press SEND. Upgrade path: Firebase (free) if needed.
+
+## Director's treatments — `treatment.html`
+Opened from the Link Maker (`link.html`) or directly. Uses `treatment.css` and
+`treatment.js` with independent `?v=1` assets; no build or backend. The public
+portfolio navigation is unchanged, and the editor is `noindex, nofollow`.
+
+- Project details, editable/reorderable treatment sections, a cover, and captioned
+  reference images. Images are resized to 1800 px and embedded in client exports.
+- Drafts use this browser's IndexedDB (`cn-director-treatments`), not cloud sync.
+  JSON backup/import moves drafts between devices; import makes new copies.
+- Client preview omits empty sections. Export downloads a standalone HTML
+  presentation; Preview → Print / Save PDF uses the browser print dialog.
+- English and Hebrew/RTL text are supported. No client content is committed or
+  uploaded by the editor. The page itself is public; it does not provide server
+  authentication, client accounts, or hosted treatment share links.
