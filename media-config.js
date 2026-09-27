@@ -8,5 +8,5 @@ const MEDIA = {
   /* OAuth client id — only for "Export as link" in the treatment editor, which
      uploads to YOUR Drive. Clients never sign in: they open t.html, which reads
      the shared file with the public apiKey above. See CLAUDE.md. */
-  clientId: "",
+  clientId: "103939211951-4g389hsf7d31ntelemgcqam2prai0f2j.apps.googleusercontent.com",
 };
