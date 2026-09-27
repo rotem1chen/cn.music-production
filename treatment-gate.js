@@ -11,7 +11,7 @@
         document.querySelector('.tool-link').hidden = true;
       }
       const script = document.createElement('script');
-      script.src = 'treatment.js?v=1';
+      script.src = 'treatment.js?v=2';
       document.body.appendChild(script);
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, {once:true});
