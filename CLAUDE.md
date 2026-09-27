@@ -108,7 +108,7 @@ browser (`localStorage`, keyed by video) and travel inside the link (`&n=` = def
 - Limitation of zero-backend: two reviewers = two links; the client must press SEND. Upgrade path: Firebase (free) if needed.
 
 ## Director's treatments — `treatment.html`
-Opened from the Link Maker (`link.html`) or directly. Uses `treatment.css` and
+Embedded inside the locked Link Maker (`link.html`). Direct `treatment.html` links redirect to `link.html?tool=treatment`. The editor script loads only after the unlocked parent confirms access through a same-origin message; this reuses the existing browser-only PIN gate, not server authentication. Uses `treatment.css` and
 `treatment.js` with independent `?v=1` assets; no build or backend. The public
 portfolio navigation is unchanged, and the editor is `noindex, nofollow`.
 
