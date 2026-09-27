@@ -121,3 +121,15 @@ portfolio navigation is unchanged, and the editor is `noindex, nofollow`.
 - English and Hebrew/RTL text are supported. No client content is committed or
   uploaded by the editor. The page itself is public; it does not provide server
   authentication, client accounts, or hosted treatment share links.
+
+### Treatment file destinations
+`treatment-files.js` lets the user explicitly choose a local Treatment directory
+using the File System Access API. The handle is remembered in the separate
+`cn-treatment-folders` IndexedDB database. Finished HTML saves at its root;
+editable JSON backups save under `backup/`, matching the user's existing folder.
+Each file has a timestamp and random suffix to preserve earlier versions.
+Permission denial/write failure is reported without claiming success. Browsers
+without directory-picker support retain ordinary downloads. Browser Print / Save
+PDF still requires choosing the destination in the OS print/save dialog.
+The supplied simple CN mark is embedded on the export cover and closing footer,
+and shown on the editor cover; it remains present alongside cover photography.

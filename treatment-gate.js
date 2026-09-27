@@ -10,9 +10,15 @@
       if (window.parent !== window) {
         document.querySelector('.tool-link').hidden = true;
       }
-      const script = document.createElement('script');
-      script.src = 'treatment.js?v=2';
-      document.body.appendChild(script);
+      const files = document.createElement('script');
+      files.src = 'treatment-files.js?v=1';
+      files.onload = () => {
+        const script = document.createElement('script');
+        script.src = 'treatment.js?v=4';
+        document.body.appendChild(script);
+      };
+      files.onerror = () => { document.querySelector('#save-state').textContent = 'Could not load editor. Please refresh.'; };
+      document.body.appendChild(files);
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, {once:true});
     else load();
