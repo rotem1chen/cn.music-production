@@ -81,6 +81,26 @@ Files: `media.html`, `media.js`, `media-config.js` (holds the Drive API key), st
 paste the Drive folder link → it builds the client link, checks the folder is shared, copy / WhatsApp / preview.
 (Manual: `media.html?f=<folder id from drive.google.com/drive/folders/<id>>`.) No site edit needed.
 
+## Sending a treatment — `t.html`
+**`t.html?f=<Drive file id / link>`** — hidden, `noindex`. Built from `link.html` → "03 — Treatment link".
+Files: `t.html`, `t.js`.
+
+**Why it exists:** Instagram, WhatsApp and the rest accept a *link* but refuse a file attachment, and an
+exported `.html` opened from Files on a phone is just a file. This turns an export into a sendable URL.
+
+Flow: editor → **Export treatment ↓** → upload the `.html` to Drive → share it **Anyone with the link →
+Viewer** → paste that link into `link.html` → get `music.cn-production.com/t.html?f=<id>` → send it.
+The viewer fetches the file through the Drive media endpoint (same one `review.html` uses) and drops it
+into an iframe.
+
+- **The iframe is sandboxed without `allow-scripts`.** `t.html?f=` is a public URL, so anyone can point it
+  at a file we did not write; an opaque origin with scripts disabled stops a hostile document reaching
+  this origin. Don't add `allow-scripts` — the exported treatment has no scripts and doesn't need it.
+- Exported treatments **embed their fonts** as woff2 data URIs (`treatment-fonts.js`), so they render the
+  same over `file://`, from an email attachment and offline. A Google Fonts `<link>` cannot load over
+  `file://` — that was the original "the fonts are gone on my phone" bug.
+- Errors are named rather than generic: not shared, throttled (429), not an exported treatment, no id.
+
 ## Cut review (client notes on a timeline) — `review.html`
 **`review.html?v=<Drive video link / id, or YouTube link>`** — hidden, `noindex`. Made from `link.html` → "02 — Cut review".
 Files: `review.html`, `review.js`, styles under "Cut review" in `style.css`. **Zero backend**: notes live in the viewer's

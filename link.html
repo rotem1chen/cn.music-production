@@ -88,6 +88,29 @@
         <div class="pool-status" id="rvCheck"></div>
       </div>
     </div>
+
+    <!-- TREATMENT LINK -->
+    <div class="lm-block">
+      <span class="panel-label">[ 03 — TREATMENT LINK ]</span>
+      <p class="pool-status lm-help">Export a treatment, upload the <b>.html</b> to Drive, share it “Anyone with the link”, then paste it here. You get a link that opens the treatment itself — send it on <b>Instagram</b>, WhatsApp, anywhere. Apps refuse file attachments; they all take a link.</p>
+      <label class="lm-field">
+        <span class="lm-label">Drive link to the exported .html</span>
+        <input class="lm-input" id="tmIn" type="text" placeholder="https://drive.google.com/file/d/…" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="lm-result" id="tmResult" hidden>
+        <span class="lm-label">Send this to the client</span>
+        <div class="lm-out" id="tmOut"></div>
+        <div class="pool-actions">
+          <button class="pool-btn" id="tmCopy" type="button">
+            <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
+            <span id="tmCopyLabel">Copy link</span>
+          </button>
+          <a class="pool-btn ghost" id="tmOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
+          <a class="pool-btn ghost" id="tmWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+        </div>
+        <div class="pool-status" id="tmCheck"></div>
+      </div>
+    </div>
   </section>
 
   <section id="treatmentWorkspace" hidden style="padding:0 16px 32px">
@@ -214,6 +237,29 @@
           const n = l.ok ? ((await l.json()).files || []).length : 0;
           check.textContent = `✓ “${f.name}” — ${n} item${n === 1 ? "" : "s"} · shared correctly`; check.classList.add("ok");
         } catch (s) { check.textContent = (s === 404 || s === 403) ? NOT_SHARED : "⚠ Couldn't check the folder right now. The link may still work."; }
+      },
+    });
+
+    /* 03 — treatment: an exported .html sitting in Drive */
+    wire({
+      in: "tmIn", out: "tmOut", res: "tmResult", copy: "tmCopy", copyLabel: "tmCopyLabel", open: "tmOpen", wa: "tmWa", check: "tmCheck",
+      parse: (raw) => {
+        const m = raw.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)([\w-]{20,})/) || raw.match(/[?&]id=([\w-]{20,})/) || raw.match(/^([\w-]{20,})$/);
+        return m ? m[1] : "";
+      },
+      build: (id) => DIR + "t.html?f=" + id,
+      verify: async (id, check) => {
+        check.textContent = "Checking the file…";
+        if (!KEY) { check.textContent = "Can't verify sharing (no API key set)."; return; }
+        try {
+          const r = await driveGet(id, "name,mimeType"); if (!r.ok) throw r.status;
+          const f = await r.json();
+          if (f.mimeType === "application/vnd.google-apps.folder") { check.textContent = "⚠ That's a folder. Paste the link to the exported .html file."; return; }
+          if (!/html/i.test(f.mimeType || "") && !/\.html?$/i.test(f.name || "")) {
+            check.textContent = `⚠ “${f.name}” isn't an exported treatment (.html).`; return;
+          }
+          check.textContent = `✓ “${f.name}” — shared correctly`; check.classList.add("ok");
+        } catch (s) { check.textContent = (s === 404 || s === 403) ? NOT_SHARED : "⚠ Couldn't check the file right now. The link may still work."; }
       },
     });
 
