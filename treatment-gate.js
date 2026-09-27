@@ -17,9 +17,14 @@
         const fonts = document.createElement('script');
         fonts.src = 'treatment-fonts.js?v=1';
         fonts.onload = fonts.onerror = () => {
-          const script = document.createElement('script');
-          script.src = 'treatment.js?v=9';
-          document.body.appendChild(script);
+          const share = document.createElement('script');
+          share.src = 'treatment-share.js?v=1';
+          share.onload = share.onerror = () => {
+            const script = document.createElement('script');
+            script.src = 'treatment.js?v=10';
+            document.body.appendChild(script);
+          };
+          document.body.appendChild(share);
         };
         document.body.appendChild(fonts);
       };

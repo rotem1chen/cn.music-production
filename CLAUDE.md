@@ -81,6 +81,28 @@ Files: `media.html`, `media.js`, `media-config.js` (holds the Drive API key), st
 paste the Drive folder link → it builds the client link, checks the folder is shared, copy / WhatsApp / preview.
 (Manual: `media.html?f=<folder id from drive.google.com/drive/folders/<id>>`.) No site edit needed.
 
+## Export as link (one click) — `treatment-share.js`
+The editor's **Export as link ↗** uploads the treatment to Drive and hands back a `t.html` link, so
+nothing has to be uploaded or shared by hand. Files land in a Drive folder called **CN PROD — Treatments**.
+
+**Only you ever sign in.** The client opens the link and reads it with the public `apiKey`; there is no
+login, no Google account and no permission prompt on their side.
+
+Scope is **`drive.file`** — the narrowest that works. This page can create files and manage the ones it
+created; it cannot see anything else in the Drive. It is also a *non-sensitive* scope, so Google does
+**not** require app verification.
+
+**One-time setup (OAuth client id)**
+1. https://console.cloud.google.com → the same project as the API key.
+2. APIs & Services → **OAuth consent screen** → External → app name `CN PROD`, your email twice → Save.
+   Add the scope `.../auth/drive.file`. Then **Publish app** — in *Testing* mode sign-ins expire after 7 days.
+3. Credentials → Create credentials → **OAuth client ID** → *Web application*.
+   Authorized **JavaScript origins**: `https://music.cn-production.com` (add `http://127.0.0.1:8765` to test locally).
+   No redirect URI is needed — this uses the GIS token flow, not a redirect.
+4. Copy the **Client ID** into `media-config.js` (`clientId: "..."`), bump `?v`, push.
+
+Until a client id is set the button says so rather than failing silently.
+
 ## Sending a treatment — `t.html`
 **`t.html?f=<Drive file id / link>`** — hidden, `noindex`. Built from `link.html` → "03 — Treatment link".
 Files: `t.html`, `t.js`.

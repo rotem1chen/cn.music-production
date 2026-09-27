@@ -113,6 +113,16 @@ h1 { margin: 12px 0 0; font: 700 clamp(38px,4.2vw,72px)/1 var(--display);
 #save-state { width: 100%; text-align: right; font: 600 9.5px var(--ui); letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--muted) }
 
+/* the link you just made, sitting above the editor until you leave the page */
+.share-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 22px; padding: 14px 16px; border: 1px solid var(--yellow); background: rgba(255,212,0,.05) }
+.share-row[hidden] { display: none }
+.share-link { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; color: var(--yellow);
+  font: 400 13px/1.5 var(--prose) }
+.share-link:hover { text-decoration: underline }
+.share-row .eyebrow { color: var(--yellow) }
+@media (max-width: 780px) { .share-row { padding: 12px } }
+
 .editor { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; border-top: 1px solid var(--line); padding-top: 24px }
 .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px }
 h2 { margin: 0; font: 600 12px var(--ui); letter-spacing: 0.2em; text-transform: uppercase }
