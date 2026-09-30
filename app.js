@@ -639,6 +639,42 @@
     });
   })();
 
+  /* ---------- Structured data for the work itself ----------
+     The films and artists live in clips.js / artists.js, so the only way to put
+     them in front of a crawler without keeping a second copy in the HTML is to
+     build the JSON-LD from the same arrays at runtime. Google renders the page
+     before indexing, so it reads this; it is a second pass, which is why the
+     brand's own Organization block stays static in index.html. */
+  (function workSchema() {
+    const films = (Array.isArray(CLIPS) ? CLIPS : []).filter((c) => c.url && c.title);
+    if (!films.length) return;
+    const artists = (typeof ARTISTS !== "undefined" && Array.isArray(ARTISTS)) ? ARTISTS : [];
+
+    const data = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "Music videos by " + SITE.name,
+      itemListElement: films.map((c, i) => {
+        const work = { "@type": "CreativeWork", name: c.title, url: c.url,
+          genre: "Music video", producer: { "@type": "Organization", name: SITE.name } };
+        if (c.artist) work.creator = { "@type": "Person", name: c.artist };
+        return { "@type": "ListItem", position: i + 1, item: work };
+      }),
+    };
+    if (artists.length) {
+      data.about = artists.filter((a) => a.name).map((a) => {
+        const p = { "@type": "Person", name: a.name };
+        const links = [a.spotify, a.instagram, a.youtube].filter(Boolean);
+        if (links.length) p.sameAs = links;
+        return p;
+      });
+    }
+    const el = document.createElement("script");
+    el.type = "application/ld+json";
+    el.textContent = JSON.stringify(data);
+    document.head.appendChild(el);
+  })();
+
   /* ---------- Scroll cue: names whatever section is next, so nothing below looks like the end ---------- */
   (function scrollCue() {
     const btn = document.getElementById("goMore");
