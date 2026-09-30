@@ -12,7 +12,7 @@ const SITE = {
     "directing and post-producing cinematic work for artists and labels.",
   email: "rotem1chen@gmail.com",
   socials: {
-    instagram: "https://instagram.com/chen1rotem",
+    instagram: "https://www.instagram.com/cn__prod/",
     youtube: "",
     vimeo: "",
     email: "rotem1chen@gmail.com",
