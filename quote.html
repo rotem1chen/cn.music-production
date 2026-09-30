@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>html{visibility:hidden}</style>
+<script src="quote-gate.js?v=1"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quotations — CN PROD</title>
+<link rel="icon" href="favicon.png?v=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Heebo:wght@300;400;700&display=swap">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="media-config.js?v=3"></script>
+<link rel="stylesheet" href="treatment.css?v=8">
+<link rel="stylesheet" href="quote.css?v=1">
+</head>
+<body>
+<header class="top">
+  <a class="wordmark" href="https://music.cn-production.com" target="_blank" rel="noopener">CN—PRD</a>
+  <span class="workspace">DIRECTOR’S WORKSPACE</span>
+  <a class="tool-link" href="link.html">CLIENT TOOLS ↗</a>
+  <a class="back" href="https://music.cn-production.com" target="_blank" rel="noopener">MUSIC SITE ↗</a>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="aside-head"><span class="eyebrow">[ QUOTATIONS ]</span><button id="new" class="plus" aria-label="New quotation">+</button></div>
+    <div id="drafts"></div>
+    <div class="aside-foot">
+      <p>The deal, on one page.</p>
+      <small>Saved in this browser.<br>Download a backup to keep a copy.</small>
+      <button id="choose-folder">Choose save folder</button>
+      <small id="folder-status" role="status">Choose camera/Treatment to connect your folder.</small>
+      <button id="backup">Save backup</button>
+      <label class="file-button">Import backup<input id="import" type="file" accept="application/json,.json"></label>
+    </div>
+  </aside>
+
+  <main>
+    <div class="toolbar">
+      <div><span class="eyebrow">[ PROPOSAL & QUOTATION ]</span><h1>WHAT IT COSTS.</h1></div>
+      <div class="actions">
+        <span id="save-state" role="status">Opening quotations…</span>
+        <button id="preview">Client preview ↗</button>
+        <button id="share" title="Uploads to your Drive and gives you a link the client can just open">Export as link ↗</button>
+        <button id="export" class="primary">Export quotation ↓</button>
+      </div>
+    </div>
+
+    <div class="share-row" id="share-row" hidden>
+      <span class="eyebrow">[ SEND THIS ]</span>
+      <a class="share-link" id="share-link" href="#" target="_blank" rel="noopener"></a>
+      <button id="share-copy">Copy link</button>
+      <a class="file-button" id="share-wa" target="_blank" rel="noopener">WhatsApp ↗</a>
+    </div>
+
+    <!-- 01 — who and when -->
+    <div class="section-heading"><h2>01 / THE DEAL</h2><span class="eyebrow">WHO, WHAT, WHEN</span></div>
+    <div class="fields q-fields">
+      <label class="wide">Project / film<input id="title" placeholder="What is being quoted" dir="auto"></label>
+      <label>Client / company<input id="client" placeholder="Who it’s for" dir="auto"></label>
+      <label>Client contact<input id="clientDetail" placeholder="Email, phone or ID" dir="auto"></label>
+      <label>Quotation no.<input id="number" placeholder="Q-001" dir="auto"></label>
+      <label>Date<input id="date" type="date"></label>
+      <label>Valid for (days)<input id="valid" type="number" min="0" step="1" placeholder="14"></label>
+      <label>Currency<select id="currency">
+        <option value="₪">₪ Shekel</option><option value="$">$ Dollar</option><option value="€">€ Euro</option><option value="£">£ Pound</option>
+      </select></label>
+      <label>VAT %<input id="vat" type="number" min="0" max="100" step="0.1" placeholder="18"></label>
+      <label>Text direction<select id="direction">
+        <option value="auto">Automatic / English</option><option value="rtl">Hebrew / Right to left</option><option value="ltr">Left to right</option>
+      </select></label>
+      <label class="wide">Summary<textarea id="summary" rows="2" placeholder="One or two lines on what this covers." dir="auto"></textarea></label>
+    </div>
+
+    <!-- 02 — line items -->
+    <div class="section-heading story-heading"><div><span class="eyebrow">[ WHAT IT INCLUDES ]</span><h2>THE LINES.</h2></div><button id="add-item">+ Add line</button></div>
+    <div class="q-table" id="items-head">
+      <span class="q-h q-h-desc">Description</span><span class="q-h">Qty</span><span class="q-h">Unit price</span><span class="q-h q-h-sum">Amount</span><span></span>
+    </div>
+    <div id="items"></div>
+
+    <div class="q-totals">
+      <label class="q-disc">Discount<input id="discount" type="number" min="0" step="any" placeholder="0"></label>
+      <dl id="totals"></dl>
+    </div>
+
+    <!-- 03 — the words -->
+    <div class="section-heading story-heading"><div><span class="eyebrow">[ THE TERMS ]</span><h2>THE SMALL PRINT.</h2></div></div>
+    <div class="fields q-fields">
+      <label class="wide">Included<textarea id="includes" rows="4" placeholder="One per line — e.g.&#10;Full day shoot, up to 10 hours&#10;Director, DOP and gaffer&#10;Two rounds of revisions" dir="auto"></textarea></label>
+      <label class="wide">Not included<textarea id="excludes" rows="3" placeholder="One per line — e.g.&#10;Talent and location fees&#10;Music licensing" dir="auto"></textarea></label>
+      <label class="wide">Payment terms<textarea id="terms" rows="3" placeholder="e.g. 50% on signing, 50% on delivery. Invoice within 14 days." dir="auto"></textarea></label>
+      <label class="wide">Conditions<textarea id="notes" rows="3" placeholder="Anything else the client is agreeing to." dir="auto"></textarea></label>
+      <label>Client signer name<input id="signName" placeholder="Printed under the signature line" dir="auto"></label>
+      <label>Signed on behalf of CN PROD<input id="signUs" placeholder="Rotem Chen" dir="auto"></label>
+    </div>
+  </main>
+</div>
+
+<dialog id="preview-dialog">
+  <div class="preview-toolbar"><span>CLIENT PREVIEW</span>
+    <button id="print" title="Opens the browser dialog — set the destination to Save as PDF">Save PDF ↓</button>
+    <button id="close-preview">Close ×</button></div>
+  <iframe id="preview-frame" title="Client quotation preview" sandbox="allow-same-origin allow-modals"></iframe>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

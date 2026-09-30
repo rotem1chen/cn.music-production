@@ -1,0 +1,49 @@
+/* CN PROD — quotation editor. Sits on top of treatment.css, which carries the
+   tokens, buttons, fields and type. Only the money parts live here. */
+
+.q-fields { margin-bottom: 8px }
+.q-fields textarea { min-height: 78px }
+
+/* ---------- line items ---------- */
+.q-table, .q-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 78px 122px 128px 40px;
+  gap: 10px; align-items: start;
+}
+.q-table { padding: 0 2px 10px; border-bottom: 1px solid var(--line) }
+.q-h { font: 600 9.5px var(--ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted) }
+.q-h-sum, .q-row .q-sum { text-align: right }
+
+.q-row { padding: 14px 2px; border-bottom: 1px solid var(--line) }
+.q-row input, .q-row textarea { margin-top: 0 }
+.q-row .q-desc { display: grid; gap: 7px }
+.q-row .q-note { font-size: 13px; min-height: 0; padding: 8px 10px }
+.q-row .q-num { text-align: right; font-variant-numeric: tabular-nums }
+.q-row .q-sum { padding-top: 12px; font: 400 15px var(--prose); font-variant-numeric: tabular-nums; overflow-wrap: anywhere }
+.q-row .q-del { padding: 9px 10px; font-size: 11px; letter-spacing: 0; align-self: start }
+
+/* ---------- totals ---------- */
+.q-totals { display: flex; gap: 24px; justify-content: space-between; align-items: flex-start;
+  flex-wrap: wrap; margin-top: 20px; padding-top: 4px }
+.q-disc { max-width: 190px }
+#totals { display: grid; grid-template-columns: auto auto; gap: 9px 28px; margin: 0;
+  min-width: 260px; justify-content: end; align-items: baseline }
+#totals dt { font: 600 10px var(--ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted) }
+#totals dd { margin: 0; text-align: right; font: 400 15px var(--prose); font-variant-numeric: tabular-nums }
+#totals .q-grand-t { color: var(--yellow) }
+#totals .q-grand-d { font: 700 clamp(22px,3vw,32px)/1 var(--display); letter-spacing: 0.03em; color: var(--yellow) }
+
+@media (max-width: 1150px) {
+  .q-table, .q-row { grid-template-columns: minmax(0,1fr) 62px 100px 106px 36px; gap: 8px }
+}
+@media (max-width: 780px) {
+  /* the table stops being a table — each line becomes its own stacked card */
+  .q-table { display: none }
+  .q-row { grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px 0 }
+  .q-row .q-desc { grid-column: 1 / -1 }
+  .q-row .q-sum { grid-column: 1 / -1; text-align: left; padding-top: 0;
+    font: 600 11px var(--ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--yellow) }
+  .q-row .q-del { grid-column: 2; justify-self: end }
+  .q-totals { flex-direction: column }
+  #totals { width: 100%; min-width: 0 }
+}

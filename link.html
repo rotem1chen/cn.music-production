@@ -44,6 +44,13 @@
       <div class="pool-actions"><button class="pool-btn ghost" id="openTreatment" type="button"><span>Open treatment editor</span><span class="ar">↓</span></button></div>
     </div>
 
+    <!-- QUOTATIONS -->
+    <div class="lm-block">
+      <span class="panel-label">[ PROPOSALS &amp; QUOTATIONS ]</span>
+      <p class="pool-status lm-help">Price the job: what it includes, line by line, with VAT, terms and a signature block. Export a PDF for the client to sign, or send it as a link.</p>
+      <div class="pool-actions"><button class="pool-btn ghost" id="openQuote" type="button"><span>Open quotation editor</span><span class="ar">↓</span></button></div>
+    </div>
+
     <!-- DELIVERY -->
     <div class="lm-block">
       <span class="panel-label">[ 01 — DELIVERY ]</span>
@@ -113,6 +120,14 @@
     </div>
   </section>
 
+  <section id="quoteWorkspace" hidden style="padding:0 16px 32px">
+    <div class="pool-actions" style="justify-content:space-between;margin:0 0 12px">
+      <span class="panel-label">[ PROPOSAL &amp; QUOTATION ]</span>
+      <button class="pool-btn ghost" id="closeQuote" type="button">Back to client tools ↑</button>
+    </div>
+    <iframe id="quoteEditor" title="Quotation editor" style="width:100%;height:85vh;border:1px solid #333;background:#080808" allow="clipboard-write"></iframe>
+  </section>
+
   <section id="treatmentWorkspace" hidden style="padding:0 16px 32px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <span class="panel-label">[ DIRECTOR’S TREATMENT ]</span>
@@ -140,9 +155,19 @@
       if (!frame.getAttribute('src')) frame.src = 'treatment.html?embedded=1&v=11';
       document.getElementById('treatmentWorkspace').scrollIntoView({block:'start'});
     }
+    function openQuote() {
+      if (!unlocked) return;
+      document.querySelector('.linkmaker').hidden = true;
+      document.getElementById('quoteWorkspace').hidden = false;
+      const frame = document.getElementById('quoteEditor');
+      if (!frame.getAttribute('src')) frame.src = 'quote.html?embedded=1&v=1';
+      document.getElementById('quoteWorkspace').scrollIntoView({block:'start'});
+    }
     function ready() {
       unlocked = true;
-      if (new URLSearchParams(location.search).get('tool') === 'treatment') openTreatment();
+      const tool = new URLSearchParams(location.search).get('tool');
+      if (tool === 'treatment') openTreatment();
+      if (tool === 'quote') openQuote();
     }
     document.getElementById('openTreatment').addEventListener('click', openTreatment);
     document.getElementById('closeTreatment').addEventListener('click', () => {
@@ -150,11 +175,22 @@
       document.querySelector('.linkmaker').hidden = false;
       document.getElementById('openTreatment').focus();
     });
-    // The existing browser-only PIN gate also gates creation of the editor iframe.
+    document.getElementById('openQuote').addEventListener('click', openQuote);
+    document.getElementById('closeQuote').addEventListener('click', () => {
+      document.getElementById('quoteWorkspace').hidden = true;
+      document.querySelector('.linkmaker').hidden = false;
+      document.getElementById('openQuote').focus();
+    });
+    // The existing browser-only PIN gate also gates creation of the editor iframes.
     window.addEventListener('message', (event) => {
-      const frame = document.getElementById('treatmentEditor');
-      if (unlocked && event.origin === location.origin && event.source === frame.contentWindow && event.data === 'cn-treatment-check') {
-        frame.contentWindow.postMessage('cn-treatment-unlocked', location.origin);
+      if (!unlocked || event.origin !== location.origin) return;
+      const tFrame = document.getElementById('treatmentEditor');
+      const qFrame = document.getElementById('quoteEditor');
+      if (event.source === tFrame.contentWindow && event.data === 'cn-treatment-check') {
+        tFrame.contentWindow.postMessage('cn-treatment-unlocked', location.origin);
+      }
+      if (event.source === qFrame.contentWindow && event.data === 'cn-quote-check') {
+        qFrame.contentWindow.postMessage('cn-quote-unlocked', location.origin);
       }
     });
     function unlock() { ready(); gate.classList.add("done"); document.body.classList.remove("pin-lock"); setTimeout(() => { gate.hidden = true; document.getElementById("lmIn").focus(); }, 500); }

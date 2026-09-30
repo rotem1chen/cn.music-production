@@ -81,6 +81,28 @@ Files: `media.html`, `media.js`, `media-config.js` (holds the Drive API key), st
 paste the Drive folder link → it builds the client link, checks the folder is shared, copy / WhatsApp / preview.
 (Manual: `media.html?f=<folder id from drive.google.com/drive/folders/<id>>`.) No site edit needed.
 
+## Proposals & quotations — `quote.html`
+Second tool inside the locked Link Maker (`link.html` → "Open quotation editor"; direct links redirect to
+`link.html?tool=quote`). Files: `quote.html`, `quote.js`, `quote.css`, `quote-gate.js`. Shares
+`treatment.css` for chrome, `treatment-files.js` for saving, `treatment-fonts.js` for the embedded export
+fonts and `treatment-share.js` for **Export as link** — so a quotation sends exactly like a treatment, and
+`t.html` renders it with no extra work.
+
+- Line items (description, optional detail, qty, unit price) → subtotal, flat discount, VAT %, total.
+  Currency and VAT are per quotation; VAT defaults to **18%** (Israel) and currency to **₪**.
+- `Valid until` is computed from the date plus the days you enter — it is not a second field to keep in sync.
+- **Included / Not included / Payment terms / Conditions** are free text; the first two split on newlines
+  into bullets, so one item per line.
+- The export ends in an **Agreement** block: ruled lines for client and CN PROD, each with a date.
+  This is a *printed* agreement — a place to sign, not a digital signature. Nothing here verifies a
+  signer, and doing so properly would need a backend. Don't describe the PDF as binding proof of signing.
+- Drafts live in IndexedDB **`cn-quotations`** (store `quotes`) — separate from the treatments database.
+  JSON backup/import is shared in shape; import always makes new copies.
+- **Print CSS gotcha:** any colour set explicitly for the dark screen must be overridden at equal or
+  higher specificity in `@media print`, or it prints invisible. `.ref b` (white) and
+  `.tot .grand span:first-child/:last-child` (yellow) both needed their own print rules — a plain
+  `.tot .grand span{color:#111}` lost the specificity fight and the total printed yellow on white.
+
 ## Export as link (one click) — `treatment-share.js`
 The editor's **Export as link ↗** uploads the treatment to Drive and hands back a `t.html` link, so
 nothing has to be uploaded or shared by hand. Files land in a Drive folder called **CN PROD — Treatments**.
