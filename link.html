@@ -9,8 +9,8 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=94" />
+  <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Heebo:wght@300;400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=107" />
 </head>
 <body class="show-page pool-page" id="top">
   <!-- PIN GATE — the page stays hidden until the code is entered (remembered on this device for 30 days) -->
@@ -34,89 +34,117 @@
       <img class="pool-logo" src="logo.png?v=12" alt="CN PROD" />
       <span class="panel-label">[ LINK MAKER ]</span>
       <h1 class="show-title pool-title">Client link</h1>
-      <p class="pool-status lm-help">Share the Drive folder or file as “Anyone with the link”, then paste the link here.</p>
+      <p class="pool-status lm-help">Everything you send a client, in one place. Share the Drive folder or file as “Anyone with the link” first, then paste it in.</p>
     </div>
 
-    <!-- TREATMENTS -->
-    <div class="lm-block">
-      <span class="panel-label">[ DIRECTOR’S TREATMENTS ]</span>
-      <p class="pool-status lm-help">Create a treatment with your concept, narrative, visual references, and direction. Export a client presentation or PDF.</p>
-      <div class="pool-actions"><button class="pool-btn ghost" id="openTreatment" type="button"><span>Open treatment editor</span><span class="ar">↓</span></button></div>
-    </div>
+    <div class="lm-wrap">
 
-    <!-- QUOTATIONS -->
-    <div class="lm-block">
-      <span class="panel-label">[ PROPOSALS &amp; QUOTATIONS ]</span>
-      <p class="pool-status lm-help">Price the job: what it includes, line by line, with VAT, terms and a signature block. Export a PDF for the client to sign, or send it as a link.</p>
-      <div class="pool-actions"><button class="pool-btn ghost" id="openQuote" type="button"><span>Open quotation editor</span><span class="ar">↓</span></button></div>
-    </div>
+      <!-- ===== SEND A LINK ===== -->
+      <div class="lm-group">
+        <span class="panel-label">[ SEND A LINK ]</span>
+        <div class="lm-grid">
 
-    <!-- DELIVERY -->
-    <div class="lm-block">
-      <span class="panel-label">[ 01 — DELIVERY ]</span>
-      <label class="lm-field">
-        <span class="lm-label">Drive folder link</span>
-        <input class="lm-input" id="lmIn" type="text" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off" spellcheck="false" />
-      </label>
-      <div class="lm-result" id="lmResult" hidden>
-        <span class="lm-label">Send this to the client</span>
-        <div class="lm-out" id="lmOut"></div>
-        <div class="pool-actions">
-          <button class="pool-btn" id="lmCopy" type="button">
-            <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
-            <span id="lmCopyLabel">Copy link</span>
-          </button>
-          <a class="pool-btn ghost" id="lmOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
-          <a class="pool-btn ghost" id="lmWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+          <!-- DELIVERY -->
+          <div class="lm-card">
+            <span class="lm-num">01</span>
+            <span class="lm-name">Delivery</span>
+            <p>Hand over the finished files. Paste a <b>Drive folder</b> shared “Anyone with the link” and the client gets a gallery they can watch and download from.</p>
+            <label class="lm-field">
+              <span class="lm-label">Drive folder link</span>
+              <input class="lm-input" id="lmIn" type="text" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off" spellcheck="false" />
+            </label>
+            <div class="lm-result" id="lmResult" hidden>
+              <span class="lm-label">Send this to the client</span>
+              <div class="lm-out" id="lmOut"></div>
+              <div class="pool-actions">
+                <button class="pool-btn" id="lmCopy" type="button">
+                  <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
+                  <span id="lmCopyLabel">Copy link</span>
+                </button>
+                <a class="pool-btn ghost" id="lmOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
+                <a class="pool-btn ghost" id="lmWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+              </div>
+              <div class="pool-status" id="lmCheck"></div>
+            </div>
+          </div>
+
+          <!-- CUT REVIEW -->
+          <div class="lm-card">
+            <span class="lm-num">02</span>
+            <span class="lm-name">Cut review</span>
+            <p>Get notes on a timeline. Paste a Drive <b>video</b> (shared, .mp4) or an unlisted <b>YouTube</b> link — the client gets a player and sends comments back.</p>
+            <label class="lm-field">
+              <span class="lm-label">Video link</span>
+              <input class="lm-input" id="rvIn" type="text" placeholder="https://drive.google.com/file/d/…  or  https://youtu.be/…" autocomplete="off" spellcheck="false" />
+            </label>
+            <div class="lm-result" id="rvResult" hidden>
+              <span class="lm-label">Send this to the client</span>
+              <div class="lm-out" id="rvOut"></div>
+              <div class="pool-actions">
+                <button class="pool-btn" id="rvCopy" type="button">
+                  <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
+                  <span id="rvCopyLabel">Copy link</span>
+                </button>
+                <a class="pool-btn ghost" id="rvOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
+                <a class="pool-btn ghost" id="rvWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+              </div>
+              <div class="pool-status" id="rvCheck"></div>
+            </div>
+          </div>
+
+          <!-- TREATMENT / QUOTATION LINK -->
+          <div class="lm-card">
+            <span class="lm-num">03</span>
+            <span class="lm-name">Document link</span>
+            <p>Turn an exported treatment or quotation into a link you can send on Instagram or WhatsApp. Upload the <b>.html</b> to Drive, share it, paste it here.</p>
+            <label class="lm-field">
+              <span class="lm-label">Drive link to the exported .html</span>
+              <input class="lm-input" id="tmIn" type="text" placeholder="https://drive.google.com/file/d/…" autocomplete="off" spellcheck="false" />
+            </label>
+            <div class="lm-result" id="tmResult" hidden>
+              <span class="lm-label">Send this to the client</span>
+              <div class="lm-out" id="tmOut"></div>
+              <div class="pool-actions">
+                <button class="pool-btn" id="tmCopy" type="button">
+                  <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
+                  <span id="tmCopyLabel">Copy link</span>
+                </button>
+                <a class="pool-btn ghost" id="tmOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
+                <a class="pool-btn ghost" id="tmWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+              </div>
+              <div class="pool-status" id="tmCheck"></div>
+            </div>
+          </div>
+
         </div>
-        <div class="pool-status" id="lmCheck"></div>
       </div>
-    </div>
 
-    <!-- REVIEW -->
-    <div class="lm-block">
-      <span class="panel-label">[ 02 — CUT REVIEW ]</span>
-      <p class="pool-status lm-help">Paste a Drive <b>video</b> link (shared “Anyone with the link”, .mp4) or an unlisted <b>YouTube</b> link. The client gets a player with a timeline and sends notes back.</p>
-      <label class="lm-field">
-        <span class="lm-label">Video link</span>
-        <input class="lm-input" id="rvIn" type="text" placeholder="https://drive.google.com/file/d/…  or  https://youtu.be/…" autocomplete="off" spellcheck="false" />
-      </label>
-      <div class="lm-result" id="rvResult" hidden>
-        <span class="lm-label">Send this to the client</span>
-        <div class="lm-out" id="rvOut"></div>
-        <div class="pool-actions">
-          <button class="pool-btn" id="rvCopy" type="button">
-            <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
-            <span id="rvCopyLabel">Copy link</span>
-          </button>
-          <a class="pool-btn ghost" id="rvOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
-          <a class="pool-btn ghost" id="rvWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
-        </div>
-        <div class="pool-status" id="rvCheck"></div>
-      </div>
-    </div>
+      <!-- ===== MAKE A DOCUMENT ===== -->
+      <div class="lm-group">
+        <span class="panel-label">[ MAKE A DOCUMENT ]</span>
+        <div class="lm-grid">
 
-    <!-- TREATMENT LINK -->
-    <div class="lm-block">
-      <span class="panel-label">[ 03 — TREATMENT LINK ]</span>
-      <p class="pool-status lm-help">Export a treatment, upload the <b>.html</b> to Drive, share it “Anyone with the link”, then paste it here. You get a link that opens the treatment itself — send it on <b>Instagram</b>, WhatsApp, anywhere. Apps refuse file attachments; they all take a link.</p>
-      <label class="lm-field">
-        <span class="lm-label">Drive link to the exported .html</span>
-        <input class="lm-input" id="tmIn" type="text" placeholder="https://drive.google.com/file/d/…" autocomplete="off" spellcheck="false" />
-      </label>
-      <div class="lm-result" id="tmResult" hidden>
-        <span class="lm-label">Send this to the client</span>
-        <div class="lm-out" id="tmOut"></div>
-        <div class="pool-actions">
-          <button class="pool-btn" id="tmCopy" type="button">
-            <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
-            <span id="tmCopyLabel">Copy link</span>
-          </button>
-          <a class="pool-btn ghost" id="tmOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
-          <a class="pool-btn ghost" id="tmWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
+          <div class="lm-card go">
+            <div>
+              <span class="lm-num">Treatment</span>
+              <span class="lm-name">The pitch</span>
+              <p>Concept, narrative, references and direction. Export a client presentation, a PDF, or send it as a link.</p>
+            </div>
+            <button class="pool-btn ghost" id="openTreatment" type="button"><span>Open treatment editor</span><span class="ar">↓</span></button>
+          </div>
+
+          <div class="lm-card go">
+            <div>
+              <span class="lm-num">Quotation</span>
+              <span class="lm-name">The price</span>
+              <p>What the job includes, line by line, with VAT, payment terms and a place to sign. Export the PDF or send it as a link.</p>
+            </div>
+            <button class="pool-btn ghost" id="openQuote" type="button"><span>Open quotation editor</span><span class="ar">↓</span></button>
+          </div>
+
         </div>
-        <div class="pool-status" id="tmCheck"></div>
       </div>
+
     </div>
   </section>
 
