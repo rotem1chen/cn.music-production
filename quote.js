@@ -211,21 +211,18 @@ td .note{display:block;color:rgba(244,244,242,.42);font-size:13.5px;margin-top:4
 .sign p{max-width:70ch;color:rgba(244,244,242,.42);font-size:13.5px}
 footer{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-top:26px;margin-top:34px;border-top:1px solid rgba(244,244,242,.16);font:600 10px Oswald,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:rgba(244,244,242,.42)}
 @media print{
- @page{size:A4;margin:14mm}
- body{background:#fff;color:#111;font-size:10.5pt}
- .sheet{padding:0;max-width:none}
- .brand{color:#111}.cn-logo{color:#111}
- h2{color:#111}
- .head,.block,footer,.tot .grand{border-color:#ccc}
- td{border-color:#eee}
- th,.ref,.who b,td .note,.rule-l,.sign p,.tot span:first-child,footer{color:#555}
- /* these two carry an explicit colour on screen, so the override has to match
-    their specificity or the values print white-on-white / yellow-on-white */
- .ref b{color:#111}
- .tot .grand span:first-child,.tot .grand span:last-child{color:#111}
- .rule{border-color:#111}
- h1{font-size:30pt}
- .block{padding:18px 0}
+ /* the PDF keeps the dark design — it is a document to read on a screen, not
+    something to run off on paper. margin:0 + explicit background is what makes
+    the black reach the page edge; print-color-adjust stops the browser
+    helpfully dropping it. */
+ @page{size:A4;margin:0}
+ html,body{background:#000;color:#f4f4f2;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body{font-size:10.5pt}
+ .sheet{max-width:none;padding:16mm 14mm}
+ h1{font-size:32pt;margin-top:10mm}
+ .block{padding:9mm 0;break-inside:avoid}
+ table,tr,.sign,.sign-grid,footer{break-inside:avoid}
+ .tot{margin-top:8mm}
 }
 </style></head><body><div class="sheet">
 <div class="head">

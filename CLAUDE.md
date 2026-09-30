@@ -98,10 +98,12 @@ fonts and `treatment-share.js` for **Export as link** — so a quotation sends e
   signer, and doing so properly would need a backend. Don't describe the PDF as binding proof of signing.
 - Drafts live in IndexedDB **`cn-quotations`** (store `quotes`) — separate from the treatments database.
   JSON backup/import is shared in shape; import always makes new copies.
-- **Print CSS gotcha:** any colour set explicitly for the dark screen must be overridden at equal or
-  higher specificity in `@media print`, or it prints invisible. `.ref b` (white) and
-  `.tot .grand span:first-child/:last-child` (yellow) both needed their own print rules — a plain
-  `.tot .grand span{color:#111}` lost the specificity fight and the total printed yellow on white.
+- **The PDF keeps the dark design** — it is meant to be read on a screen, not run off on paper.
+  `@page{margin:0}` plus an explicit `background` on `html,body` is what takes the black to the page
+  edge (page margins are outside the body box, so they stay white otherwise), and
+  `print-color-adjust:exact` is what stops the browser dropping the background. Verified with headless
+  `--print-to-pdf`, which has background printing **off** by default — the page still came out black,
+  so it does not depend on the "Background graphics" checkbox in anyone's print dialog.
 
 ## Export as link (one click) — `treatment-share.js`
 The editor's **Export as link ↗** uploads the treatment to Drive and hands back a `t.html` link, so
