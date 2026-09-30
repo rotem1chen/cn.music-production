@@ -77,6 +77,10 @@ Files: `media.html`, `media.js`, `media-config.js` (holds the Drive API key), st
    (add `localhost/*` too if testing locally); API restrictions → restrict to **Google Drive API**. Save.
 5. Paste the key into `media-config.js` (`apiKey: "..."`), bump `?v`, push.
 
+`link.html` is a **tool grid**: MAKE A DOCUMENT (the two editors, kept at the top because they are opened
+daily) then SEND A LINK (01 Delivery, 02 Cut review). Card descriptions are Heebo prose, not the
+site's uppercase micro-labels — this page is used, not admired.
+
 **Per client:** upload to a Drive folder → Share → Anyone with the link → open **`link.html`** (hidden helper page, 4-digit code gate — hash in the page, remembered 30 days per device),
 paste the Drive folder link → it builds the client link, checks the folder is shared, copy / WhatsApp / preview.
 (Manual: `media.html?f=<folder id from drive.google.com/drive/folders/<id>>`.) No site edit needed.
@@ -128,16 +132,16 @@ created; it cannot see anything else in the Drive. It is also a *non-sensitive* 
 Until a client id is set the button says so rather than failing silently.
 
 ## Sending a treatment — `t.html`
-**`t.html?f=<Drive file id / link>`** — hidden, `noindex`. Built from `link.html` → "03 — Treatment link".
-Files: `t.html`, `t.js`.
+**`t.html?f=<Drive file id / link>`** — hidden, `noindex`. Files: `t.html`, `t.js`.
+Produced by **Export as link ↗** in the treatment and quotation editors; there is no longer a manual
+"paste a Drive link" card in `link.html`, because Export as link does the upload, the sharing and the
+link in one press. For a file already sitting in Drive, `t.html?f=<id>` still works typed by hand.
 
 **Why it exists:** Instagram, WhatsApp and the rest accept a *link* but refuse a file attachment, and an
 exported `.html` opened from Files on a phone is just a file. This turns an export into a sendable URL.
 
-Flow: editor → **Export treatment ↓** → upload the `.html` to Drive → share it **Anyone with the link →
-Viewer** → paste that link into `link.html` → get `music.cn-production.com/t.html?f=<id>` → send it.
-The viewer fetches the file through the Drive media endpoint (same one `review.html` uses) and drops it
-into an iframe.
+Flow: editor → **Export as link ↗** → the link is on the clipboard. The viewer fetches the file through
+the Drive media endpoint (same one `review.html` uses) and drops it into an iframe.
 
 - **The iframe is sandboxed without `allow-scripts`.** `t.html?f=` is a public URL, so anyone can point it
   at a file we did not write; an opaque origin with scripts disabled stops a hostile document reaching

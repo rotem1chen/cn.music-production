@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Heebo:wght@300;400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=107" />
+  <link rel="stylesheet" href="style.css?v=108" />
 </head>
 <body class="show-page pool-page" id="top">
   <!-- PIN GATE — the page stays hidden until the code is entered (remembered on this device for 30 days) -->
@@ -38,6 +38,21 @@
     </div>
 
     <div class="lm-wrap">
+
+      <!-- ===== the two you open every day, kept within reach ===== -->
+      <div class="lm-group">
+        <span class="panel-label">[ MAKE A DOCUMENT ]</span>
+        <div class="lm-quick">
+          <button class="lm-go" id="openTreatment" type="button">
+            <span class="lm-go-t"><b>The pitch</b><small>Treatment — concept, references, direction</small></span>
+            <span class="ar">↓</span>
+          </button>
+          <button class="lm-go" id="openQuote" type="button">
+            <span class="lm-go-t"><b>The price</b><small>Quotation — line items, VAT, terms, signature</small></span>
+            <span class="ar">↓</span>
+          </button>
+        </div>
+      </div>
 
       <!-- ===== SEND A LINK ===== -->
       <div class="lm-group">
@@ -92,58 +107,9 @@
             </div>
           </div>
 
-          <!-- TREATMENT / QUOTATION LINK -->
-          <div class="lm-card">
-            <span class="lm-num">03</span>
-            <span class="lm-name">Document link</span>
-            <p>Turn an exported treatment or quotation into a link you can send on Instagram or WhatsApp. Upload the <b>.html</b> to Drive, share it, paste it here.</p>
-            <label class="lm-field">
-              <span class="lm-label">Drive link to the exported .html</span>
-              <input class="lm-input" id="tmIn" type="text" placeholder="https://drive.google.com/file/d/…" autocomplete="off" spellcheck="false" />
-            </label>
-            <div class="lm-result" id="tmResult" hidden>
-              <span class="lm-label">Send this to the client</span>
-              <div class="lm-out" id="tmOut"></div>
-              <div class="pool-actions">
-                <button class="pool-btn" id="tmCopy" type="button">
-                  <span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>
-                  <span id="tmCopyLabel">Copy link</span>
-                </button>
-                <a class="pool-btn ghost" id="tmOpen" href="#" target="_blank" rel="noopener"><span>Preview</span><span class="ar">↗</span></a>
-                <a class="pool-btn ghost" id="tmWa" href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span class="ar">↗</span></a>
-              </div>
-              <div class="pool-status" id="tmCheck"></div>
-            </div>
-          </div>
-
         </div>
       </div>
 
-      <!-- ===== MAKE A DOCUMENT ===== -->
-      <div class="lm-group">
-        <span class="panel-label">[ MAKE A DOCUMENT ]</span>
-        <div class="lm-grid">
-
-          <div class="lm-card go">
-            <div>
-              <span class="lm-num">Treatment</span>
-              <span class="lm-name">The pitch</span>
-              <p>Concept, narrative, references and direction. Export a client presentation, a PDF, or send it as a link.</p>
-            </div>
-            <button class="pool-btn ghost" id="openTreatment" type="button"><span>Open treatment editor</span><span class="ar">↓</span></button>
-          </div>
-
-          <div class="lm-card go">
-            <div>
-              <span class="lm-num">Quotation</span>
-              <span class="lm-name">The price</span>
-              <p>What the job includes, line by line, with VAT, payment terms and a place to sign. Export the PDF or send it as a link.</p>
-            </div>
-            <button class="pool-btn ghost" id="openQuote" type="button"><span>Open quotation editor</span><span class="ar">↓</span></button>
-          </div>
-
-        </div>
-      </div>
 
     </div>
   </section>
@@ -301,29 +267,6 @@
           const n = l.ok ? ((await l.json()).files || []).length : 0;
           check.textContent = `✓ “${f.name}” — ${n} item${n === 1 ? "" : "s"} · shared correctly`; check.classList.add("ok");
         } catch (s) { check.textContent = (s === 404 || s === 403) ? NOT_SHARED : "⚠ Couldn't check the folder right now. The link may still work."; }
-      },
-    });
-
-    /* 03 — treatment: an exported .html sitting in Drive */
-    wire({
-      in: "tmIn", out: "tmOut", res: "tmResult", copy: "tmCopy", copyLabel: "tmCopyLabel", open: "tmOpen", wa: "tmWa", check: "tmCheck",
-      parse: (raw) => {
-        const m = raw.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)([\w-]{20,})/) || raw.match(/[?&]id=([\w-]{20,})/) || raw.match(/^([\w-]{20,})$/);
-        return m ? m[1] : "";
-      },
-      build: (id) => DIR + "t.html?f=" + id,
-      verify: async (id, check) => {
-        check.textContent = "Checking the file…";
-        if (!KEY) { check.textContent = "Can't verify sharing (no API key set)."; return; }
-        try {
-          const r = await driveGet(id, "name,mimeType"); if (!r.ok) throw r.status;
-          const f = await r.json();
-          if (f.mimeType === "application/vnd.google-apps.folder") { check.textContent = "⚠ That's a folder. Paste the link to the exported .html file."; return; }
-          if (!/html/i.test(f.mimeType || "") && !/\.html?$/i.test(f.name || "")) {
-            check.textContent = `⚠ “${f.name}” isn't an exported treatment (.html).`; return;
-          }
-          check.textContent = `✓ “${f.name}” — shared correctly`; check.classList.add("ok");
-        } catch (s) { check.textContent = (s === 404 || s === 403) ? NOT_SHARED : "⚠ Couldn't check the file right now. The link may still work."; }
       },
     });
 

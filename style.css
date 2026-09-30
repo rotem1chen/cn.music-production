@@ -620,9 +620,23 @@ body.pin-lock { overflow: hidden; }
   color: rgba(244,244,242,0.55) }
 .lm-card .pool-status.ok { color: var(--accent) }
 
-/* the two editors are destinations rather than forms — give them the solid tile */
-.lm-card.go { display: flex; flex-direction: column; justify-content: space-between }
-.lm-card.go .pool-btn { align-self: flex-start; padding-left: 0 }
+/* The two editors are destinations you open daily, not forms to fill, so they
+   sit above the link makers as one short row instead of two tall cards at the
+   bottom of the page. */
+.lm-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px }
+.lm-go { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  width: 100%; text-align: left; cursor: pointer;
+  border: 1px solid rgba(255,212,0,.4); background: rgba(255,212,0,.05); color: var(--text);
+  padding: 16px 18px; font-family: inherit; transition: border-color .25s, background .25s }
+.lm-go:hover, .lm-go:focus-visible { border-color: var(--accent); background: rgba(255,212,0,.1) }
+.lm-go:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px }
+.lm-go-t { display: grid; gap: 3px; min-width: 0 }
+.lm-go b { font-family: var(--display); font-weight: 700; font-size: clamp(21px, 2.2vw, 27px);
+  line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent) }
+.lm-go small { font-family: "Heebo", system-ui, -apple-system, sans-serif; font-weight: 300;
+  font-size: 12.5px; letter-spacing: 0; text-transform: none; color: rgba(244,244,242,0.68) }
+.lm-go .ar { color: var(--accent); flex: none; transition: transform .25s var(--ease) }
+.lm-go:hover .ar { transform: translateY(3px) }
 
 /* the page intro had the same unreadable treatment as the cards did */
 .lm-help { max-width: 52ch; font-family: "Heebo", system-ui, -apple-system, sans-serif; font-weight: 300;
