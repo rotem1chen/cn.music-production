@@ -15,13 +15,15 @@
   document.title = (CON.artist || "Show") + " — CN PROD";
 
   const shots = CON.shots || [];
+  const shotEls = [];
   shots.forEach((file, si) => {
     const shot = document.createElement("div"); shot.className = "shot";
     const img = document.createElement("img"); img.loading = "lazy"; img.alt = CON.artist || "still";
     img.src = (CON.dir || "") + "thumb/" + file;                        // light thumbnail for the grid
     img.onerror = () => { img.onerror = null; img.src = (CON.dir || "") + file; };  // fallback to full if no thumb
     shot.append(img);
-    shot.addEventListener("click", () => openPhoto(si));
+    shot.addEventListener("click", () => openPhoto(si, shot));
+    shotEls.push(shot);
     grid.appendChild(shot);
   });
 
@@ -32,24 +34,32 @@
   const plightCount = document.getElementById("plightCount");
   let pShot = 0;
 
+  function full(i) { return (CON.dir || "") + shots[((i % shots.length) + shots.length) % shots.length]; }
   function showPhoto() {
     if (!shots.length) return;
     pShot = ((pShot % shots.length) + shots.length) % shots.length;
-    plightImg.src = (CON.dir || "") + shots[pShot];
+    plightImg.src = full(pShot);
     plightCaption.textContent = [CON.artist, CON.venue, CON.date].filter(Boolean).join(" · ");
     plightCount.textContent = String(pShot + 1).padStart(2, "0") + " / " + String(shots.length).padStart(2, "0");
+    [pShot + 1, pShot - 1].forEach((i) => { new Image().src = full(i); });   // neighbours ready before the swipe
   }
-  function openPhoto(si) { pShot = si; showPhoto(); plight.hidden = false; document.body.style.overflow = "hidden"; }
-  function closePhoto() { plight.hidden = true; plightImg.src = ""; document.body.style.overflow = ""; }
+  const fx = PlightFX({
+    root: plight, stage: document.getElementById("plightStage"), img: plightImg,
+    step: (dir) => { pShot += dir; showPhoto(); },
+    count: () => shots.length,
+    sourceEl: () => shotEls[pShot],
+    onClosed: () => { plightImg.src = ""; document.body.style.overflow = ""; },
+  });
+  function openPhoto(si, el) { pShot = si; showPhoto(); document.body.style.overflow = "hidden"; fx.open(el); }
 
-  document.getElementById("plightPrev").addEventListener("click", () => { pShot--; showPhoto(); });
-  document.getElementById("plightNext").addEventListener("click", () => { pShot++; showPhoto(); });
-  document.getElementById("plightClose").addEventListener("click", closePhoto);
-  plight.addEventListener("click", (e) => { if (e.target === plight) closePhoto(); });
+  document.getElementById("plightPrev").addEventListener("click", () => fx.go(-1));
+  document.getElementById("plightNext").addEventListener("click", () => fx.go(1));
+  document.getElementById("plightClose").addEventListener("click", () => fx.close());
+  plight.addEventListener("click", (e) => { if (e.target === plight) fx.close(); });
   document.addEventListener("keydown", (e) => {
     if (plight.hidden) return;
-    if (e.key === "Escape") closePhoto();
-    else if (e.key === "ArrowLeft") { pShot--; showPhoto(); }
-    else if (e.key === "ArrowRight") { pShot++; showPhoto(); }
+    if (e.key === "Escape") fx.close();
+    else if (e.key === "ArrowLeft") fx.go(-1);
+    else if (e.key === "ArrowRight") fx.go(1);
   });
 })();

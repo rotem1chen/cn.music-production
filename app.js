@@ -514,6 +514,8 @@
   /* ---------- STILLS: concert contact sheets + photo lightbox ---------- */
   const concertsData = (typeof CONCERTS !== "undefined" && Array.isArray(CONCERTS)) ? CONCERTS : [];
   const concertsWrap = document.getElementById("concerts");
+  const shotEls = {};                                   // "ci:si" → visible preview tile
+  let openPhoto = function () {};                       // set up below once the lightbox exists
   function esc(s) { return String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])); }
 
   if (concertsWrap) {
@@ -543,7 +545,8 @@
           const more = document.createElement("div"); more.className = "shot-more"; more.textContent = "+" + (shots.length - 3);
           shot.appendChild(more);
         }
-        shot.addEventListener("click", () => { if (seeAll) location.href = "show.html?c=" + ci; else openPhoto(ci, si); });
+        if (!seeAll) shotEls[ci + ":" + si] = shot;
+        shot.addEventListener("click", () => { if (seeAll) location.href = "show.html?c=" + ci; else openPhoto(ci, si, shot); });
         grid.appendChild(shot);
       });
       block.appendChild(grid);
@@ -560,24 +563,32 @@
   function showPhoto() {
     const con = concertsData[pCon]; if (!con) return;
     const shots = con.shots || []; if (!shots.length) return;
-    pShot = ((pShot % shots.length) + shots.length) % shots.length;
+    const wrap = (i) => ((i % shots.length) + shots.length) % shots.length;
+    pShot = wrap(pShot);
     plightImg.src = (con.dir || "") + shots[pShot];
     plightCaption.textContent = [con.artist, con.venue, con.date].filter(Boolean).join(" · ");
     plightCount.textContent = String(pShot + 1).padStart(2, "0") + " / " + String(shots.length).padStart(2, "0");
+    [pShot + 1, pShot - 1].forEach((i) => { new Image().src = (con.dir || "") + shots[wrap(i)]; });   // neighbours ready before the swipe
   }
-  function openPhoto(ci, si) { pCon = ci; pShot = si; showPhoto(); plight.hidden = false; document.body.style.overflow = "hidden"; }
-  function closePhoto() { plight.hidden = true; plightImg.src = ""; document.body.style.overflow = ""; }
 
   if (plight) {
-    document.getElementById("plightPrev").addEventListener("click", () => { pShot--; showPhoto(); });
-    document.getElementById("plightNext").addEventListener("click", () => { pShot++; showPhoto(); });
-    document.getElementById("plightClose").addEventListener("click", closePhoto);
-    plight.addEventListener("click", (e) => { if (e.target === plight) closePhoto(); });
+    const fx = PlightFX({
+      root: plight, stage: document.getElementById("plightStage"), img: plightImg,
+      step: (dir) => { pShot += dir; showPhoto(); },
+      count: () => ((concertsData[pCon] || {}).shots || []).length,
+      sourceEl: () => shotEls[pCon + ":" + pShot] || null,
+      onClosed: () => { plightImg.src = ""; document.body.style.overflow = ""; },
+    });
+    openPhoto = function (ci, si, el) { pCon = ci; pShot = si; showPhoto(); document.body.style.overflow = "hidden"; fx.open(el); };
+    document.getElementById("plightPrev").addEventListener("click", () => fx.go(-1));
+    document.getElementById("plightNext").addEventListener("click", () => fx.go(1));
+    document.getElementById("plightClose").addEventListener("click", () => fx.close());
+    plight.addEventListener("click", (e) => { if (e.target === plight) fx.close(); });
     document.addEventListener("keydown", (e) => {
       if (plight.hidden) return;
-      if (e.key === "Escape") closePhoto();
-      else if (e.key === "ArrowLeft") { pShot--; showPhoto(); }
-      else if (e.key === "ArrowRight") { pShot++; showPhoto(); }
+      if (e.key === "Escape") fx.close();
+      else if (e.key === "ArrowLeft") fx.go(-1);
+      else if (e.key === "ArrowRight") fx.go(1);
     });
   }
 

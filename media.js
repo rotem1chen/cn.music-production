@@ -72,6 +72,7 @@
 
   /* ---- render ---- */
   const photos = [];   // flat list for the lightbox, in page order
+  const photoEls = []; // their tiles, so the lightbox can open from / close into them
 
   function dlButton(f) {
     const a = document.createElement("a");
@@ -123,6 +124,7 @@
       img.onerror = () => { img.remove(); shot.classList.add("no-thumb"); shot.insertAdjacentHTML("afterbegin", `<span class="shot-name"></span>`); shot.firstChild.textContent = f.name; };
       const n = document.createElement("span"); n.className = "sidx"; n.textContent = String(idx + 1).padStart(2, "0");
       shot.append(img, n, dlButton(f));
+      photoEls[idx] = shot;
       shot.addEventListener("click", () => openPhoto(idx));
       grid.appendChild(shot);
     });
@@ -334,27 +336,24 @@
     /* warm the neighbours so arrows feel instant */
     [pShot + 1, pShot - 1].forEach((i) => { const n = photos[((i % photos.length) + photos.length) % photos.length]; if (n) new Image().src = thumb(n.id, 2400); });
   }
-  function openPhoto(i) { pShot = i; showPhoto(); plight.hidden = false; document.body.style.overflow = "hidden"; }
-  function closePhoto() { plight.hidden = true; plightImg.src = ""; document.body.style.overflow = ""; }
+  const fx = PlightFX({
+    root: plight, stage: document.getElementById("plightStage"), img: plightImg,
+    step: (dir) => { pShot += dir; showPhoto(); },
+    count: () => photos.length,
+    sourceEl: () => photoEls[pShot] || null,
+    onClosed: () => { plightImg.src = ""; document.body.style.overflow = ""; },
+  });
+  function openPhoto(i) { pShot = i; showPhoto(); document.body.style.overflow = "hidden"; fx.open(photoEls[i]); }
 
-  document.getElementById("plightPrev").addEventListener("click", () => { pShot--; showPhoto(); });
-  document.getElementById("plightNext").addEventListener("click", () => { pShot++; showPhoto(); });
-  document.getElementById("plightClose").addEventListener("click", closePhoto);
-  plight.addEventListener("click", (e) => { if (e.target === plight) closePhoto(); });
+  document.getElementById("plightPrev").addEventListener("click", () => fx.go(-1));
+  document.getElementById("plightNext").addEventListener("click", () => fx.go(1));
+  document.getElementById("plightClose").addEventListener("click", () => fx.close());
+  plight.addEventListener("click", (e) => { if (e.target === plight) fx.close(); });
   document.addEventListener("keydown", (e) => {
     if (!vplay.hidden && e.key === "Escape") { closeVideo(); return; }
     if (plight.hidden) return;
-    if (e.key === "Escape") closePhoto();
-    else if (e.key === "ArrowLeft") { pShot--; showPhoto(); }
-    else if (e.key === "ArrowRight") { pShot++; showPhoto(); }
-  });
-
-  /* swipe between photos on touch */
-  let tx = null;
-  plight.addEventListener("touchstart", (e) => { tx = e.touches[0].clientX; }, { passive: true });
-  plight.addEventListener("touchend", (e) => {
-    if (tx === null) return;
-    const dx = e.changedTouches[0].clientX - tx; tx = null;
-    if (Math.abs(dx) > 50) { pShot += dx < 0 ? 1 : -1; showPhoto(); }
+    if (e.key === "Escape") fx.close();
+    else if (e.key === "ArrowLeft") fx.go(-1);
+    else if (e.key === "ArrowRight") fx.go(1);
   });
 })();
