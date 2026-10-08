@@ -1,6 +1,7 @@
 /* CN Production — cursor-driven viewfinder reel (SITE + CLIPS from clips.js). */
 (function () {
   "use strict";
+  document.addEventListener("touchstart", () => {}, { passive: true });   // lets iOS Safari show :active press states
 
   /* ---------- Intro (Enter to play with sound, once per session) ---------- */
   (function intro() {

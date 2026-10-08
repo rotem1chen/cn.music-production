@@ -1,6 +1,7 @@
 /* CN Production — client media pool. Shows one Google Drive folder (?f=<folder id or Drive link>)
    as videos / photos / files in the site's look. The folder must be shared "Anyone with the link". */
 (function () {
+  document.addEventListener("touchstart", () => {}, { passive: true });   // lets iOS Safari show :active press states
   "use strict";
   const API = "https://www.googleapis.com/drive/v3/files";
   const KEY = (typeof MEDIA !== "undefined" && MEDIA.apiKey) ? MEDIA.apiKey : "";

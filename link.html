@@ -131,6 +131,7 @@
   </section>
 
   <script>
+  document.addEventListener("touchstart", () => {}, { passive: true });   // lets iOS Safari show :active press states
   /* ---- PIN gate ---- */
   (function () {
     "use strict";

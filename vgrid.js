@@ -2,6 +2,7 @@
    The page sets window.VGRID = { items, ratio, min } before loading this. */
 (function () {
   "use strict";
+  document.addEventListener("touchstart", () => {}, { passive: true });   // lets iOS Safari show :active press states
   var CFG = (typeof window.VGRID === "object" && window.VGRID) ? window.VGRID : {};
   function esc(s) { return String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])); }
 

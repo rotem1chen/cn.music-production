@@ -823,3 +823,14 @@ button.rv-tc:hover { background: var(--accent); color: #000; }
   .social-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .plight-video { height: auto; width: min(92vw, 78vh * 9 / 16); }
 }
+
+/* ---------- Press feedback (apple-design: respond on the press, not the release) ----------
+   Touch screens have no hover, so this is the only sign a tap landed until the next thing loads.
+   `scale` is its own property, so it stacks on top of any existing transform. */
+:is(.clip, .shot, .vid, .svid, .lm-card, .lm-go):active { scale: .975; transition: scale .08s ease-out; }
+:is(.intro-enter, .reel-more, .concert-all, .skip-stills, .pool-btn, .plight-nav, .plight-close, .viewer-close, .dl, .a-link, .rv-tc):active {
+  scale: .95; color: var(--accent); transition: scale .08s ease-out, color 0s;
+}
+:is(.clip, .shot, .vid, .svid, .lm-card, .lm-go, .intro-enter, .reel-more, .concert-all, .skip-stills, .pool-btn, .plight-nav, .plight-close, .viewer-close, .dl, .a-link, .rv-tc) {
+  -webkit-tap-highlight-color: transparent;   /* our own press state replaces the grey iOS flash */
+}

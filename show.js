@@ -1,6 +1,7 @@
 /* CN Production — stills subpage. Shows all photos of one concert (?c=<index>). */
 (function () {
   "use strict";
+  document.addEventListener("touchstart", () => {}, { passive: true });   // lets iOS Safari show :active press states
   function esc(s) { return String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])); }
 
   const ci = parseInt(new URLSearchParams(location.search).get("c"), 10);
