@@ -351,32 +351,56 @@
   };
   loadYTApi();
 
-  function mountPlayer(c) {
+  /* The film starts loading the moment you click, hidden and muted, so it buffers during the
+     grid + grow animation instead of after it. It is shown only once the stage has grown AND the
+     film is actually playing; until then the poster shows a liquid loading state (.waiting). */
+  let play = { token: 0 };
+  function settle(t) {                                  // called whenever "grown" or "ready" changes
+    if (t !== play.token || !play.grown || !play.ready || play.revealed) return;
+    play.revealed = true;
+    clearTimeout(play.waitT); clearTimeout(play.safety);
+    if (play.start) play.start();                       // rewind, sound on, play — then show
+    viewer.classList.remove("waiting");
+    viewer.classList.add("loaded");
+  }
+  function ready(t) { if (t === play.token) { play.ready = true; settle(t); } }
+
+  function mountPlayer(c, t) {
     if (c.v.type === "youtube") {
-      if (isTouch) {                                    // mobile: plain iframe, reveal now, tap to play (mobile blocks autoplay)
+      if (isTouch) {                                    // mobile: plain iframe; it needs a tap to play anyway
         mediaBox.innerHTML = `<iframe src="https://www.youtube.com/embed/${c.v.id}?autoplay=1&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
-        viewer.classList.add("loaded");
+        mediaBox.querySelector("iframe").addEventListener("load", () => ready(t), { once: true });
         return;
       }
-      if (!ytApiReady) { pendingMount = () => mountPlayer(c); return; }
+      if (!ytApiReady) { pendingMount = () => mountPlayer(c, t); return; }
       mediaBox.innerHTML = '<div id="ytHost"></div>';
+      let primed = false;
       ytPlayer = new YT.Player("ytHost", {
         videoId: c.v.id, width: "100%", height: "100%",
-        playerVars: { autoplay: 1, controls: 1, modestbranding: 1, rel: 0, playsinline: 1, fs: 1, iv_load_policy: 3 },
+        playerVars: { autoplay: 1, mute: 1, controls: 1, modestbranding: 1, rel: 0, playsinline: 1, fs: 1, iv_load_policy: 3 },
         events: {
-          onReady: (e) => { try { e.target.playVideo(); } catch (_) {} },
-          onStateChange: (e) => { if (e.data === YT.PlayerState.PLAYING) viewer.classList.add("loaded"); },
+          onReady: (e) => { try { e.target.mute(); e.target.playVideo(); } catch (_) {} },
+          onStateChange: (e) => {
+            if (e.data !== YT.PlayerState.PLAYING || primed || t !== play.token) return;
+            primed = true;                              // it plays: buffered and decoding. Hold it until we show it.
+            const p = e.target;
+            if (!play.grown) { try { p.pauseVideo(); } catch (_) {} }
+            play.start = () => { try { p.seekTo(0, true); p.unMute(); p.setVolume(100); p.playVideo(); } catch (_) {} };
+            ready(t);
+          },
         },
       });
-      setTimeout(() => viewer.classList.add("loaded"), 2000);   // safety fallback
     } else if (c.v.type === "vimeo") {
-      mediaBox.innerHTML = `<iframe src="${c.v.player}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
-      setTimeout(() => viewer.classList.add("loaded"), 1000);
+      // Vimeo would autoplay with sound while still hidden, so it is mounted when the stage has grown
+      play.mountLater = () => {
+        mediaBox.innerHTML = `<iframe src="${c.v.player}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+        mediaBox.querySelector("iframe").addEventListener("load", () => setTimeout(() => ready(t), 400), { once: true });
+      };
     } else {
-      mediaBox.innerHTML = `<video src="${c.v.player}" controls autoplay playsinline></video>`;
+      mediaBox.innerHTML = `<video src="${c.v.player}" controls playsinline preload="auto" muted></video>`;
       const v = mediaBox.querySelector("video");
-      v.addEventListener("playing", () => viewer.classList.add("loaded"), { once: true });
-      setTimeout(() => viewer.classList.add("loaded"), 1500);
+      v.addEventListener("canplay", () => ready(t), { once: true });
+      play.start = () => { v.currentTime = 0; v.muted = false; const pr = v.play(); if (pr && pr.catch) pr.catch(() => { v.muted = true; v.play(); }); };
     }
   }
 
@@ -413,7 +437,7 @@
 
     cursor.classList.remove("show", "big"); cursorShown = false;   // hide the ring over the player
     viewer.hidden = false;
-    viewer.classList.remove("loaded");
+    viewer.classList.remove("loaded", "waiting");
     void viewer.offsetWidth;         // commit the edge start frame
     viewer.classList.add("open");
     document.body.style.overflow = "hidden";
@@ -429,8 +453,21 @@
       setLines(B.y, B.y + B.h, B.x, B.x + B.w);
     }, GRID_HOLD);
 
-    // BEAT 3: reveal the video once it has grown (poster stays until it's actually playing)
-    stage._timer = setTimeout(() => mountPlayer(c), GRID_HOLD + 1250);
+    // the film starts loading now, hidden, so it buffers while the grid and the grow play
+    const t = ++play.token;
+    play = { token: t };
+    mountPlayer(c, t);
+
+    // BEAT 3 (same moment as always): the stage has grown — show the film if it's ready,
+    // otherwise the poster gets the liquid loading state until it is
+    stage._timer = setTimeout(() => {
+      if (t !== play.token) return;
+      play.grown = true;
+      if (play.mountLater) play.mountLater();
+      play.waitT = setTimeout(() => { if (t === play.token && !play.revealed) viewer.classList.add("waiting"); }, 200);
+      play.safety = setTimeout(() => ready(t), 9000);   // never strand anyone on the poster
+      settle(t);
+    }, GRID_HOLD + 1250);
 
     closeBtn.focus();
   }
@@ -439,6 +476,8 @@
     if (viewer.hidden) return;
     clearTimeout(stage._timer);
     clearTimeout(stage._grow);
+    clearTimeout(play.waitT); clearTimeout(play.safety);
+    play = { token: play.token + 1 };                  // anything still loading for this film is ignored
     pendingMount = null;
     if (ytPlayer && ytPlayer.destroy) { try { ytPlayer.destroy(); } catch (_) {} ytPlayer = null; }
     mediaBox.innerHTML = "";
@@ -446,7 +485,7 @@
     // reverse: shrink back to wherever the clip now sits, lines close in
     const r = lastFocused ? lastFocused.getBoundingClientRect() : null;
     if (r) { setStage(r.left, r.top, r.width, r.height); setLines(r.top, r.bottom, r.left, r.right); }
-    viewer.classList.remove("open", "loaded");
+    viewer.classList.remove("open", "loaded", "waiting");
     document.body.style.overflow = "";
 
     setTimeout(() => {

@@ -40,10 +40,15 @@
   </script>
   <link rel="icon" type="image/png" href="favicon.png?v=1" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1" />
+  <!-- the films live on YouTube: open those connections early so a film starts faster -->
+  <link rel="preconnect" href="https://www.youtube.com" />
+  <link rel="preconnect" href="https://i.ytimg.com" />
+  <link rel="preconnect" href="https://s.ytimg.com" />
+  <link rel="preconnect" href="https://www.google.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=124" />
+  <link rel="stylesheet" href="style.css?v=125" />
   <!-- opening: decide before first paint, so nothing flashes in its final place (opening.js plays it) -->
   <script>
     try {
@@ -150,6 +155,8 @@
     <span class="v-lead v-lead-r" id="vLeadR"></span>
     <div class="viewer-stage" id="viewerStage">
       <div class="viewer-media" id="viewerMedia"></div>
+      <span class="v-edge" aria-hidden="true"></span>
+      <div class="v-wait" role="status" aria-live="polite"><span class="v-ring" aria-hidden="true"></span><span class="v-wait-t">Loading film</span></div>
       <span class="corner tl"></span><span class="corner tr"></span>
       <span class="corner bl"></span><span class="corner br"></span>
     </div>
@@ -176,7 +183,7 @@
   <script src="photos.js?v=111"></script>
   <script src="artists.js?v=111"></script>
   <script src="plight-fx.js?v=121"></script>
-  <script src="app.js?v=120"></script>
+  <script src="app.js?v=125"></script>
   <script src="fx.js?v=122"></script>
   <script src="opening.js?v=119"></script>
 </body>
