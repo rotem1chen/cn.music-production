@@ -373,7 +373,7 @@
   });
   window.addEventListener("mouseout", (e) => { if (!e.relatedTarget) { cursorShown = false; cursor.classList.remove("show"); } });
   (function cursorLoop() {
-    cx += (tx - cx) * 0.2; cy += (ty - cy) * 0.2;
+    cx += (tx - cx) * 0.32; cy += (ty - cy) * 0.32;   // still trails the mouse, but closes the gap faster
     cursor.style.transform = "translate(" + cx + "px," + cy + "px) translate(-50%,-50%)";
     requestAnimationFrame(cursorLoop);
   })();
