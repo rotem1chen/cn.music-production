@@ -986,3 +986,6 @@ body.unlocking .linkmaker { animation: pageIn 1s var(--ease) .35s both; }
 }
 /* phones: the glass nav's STILLS / CN—PRD already do this, and the pill would sit against the logo */
 @media (max-width: 760px) { #skipStills { display: none; } }
+
+/* opening (opening.js): hidden only until the script hands them to their animations */
+html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .ambient) { opacity: 0; }

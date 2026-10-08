@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v118**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v119**.
 
 ## Files
 - `index.html` — main page: films reel, STILLS preview (3 shots/concert). Opens straight onto the films — there is no intro
@@ -18,6 +18,7 @@ After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` ta
 - **`social.js`** — CONFIG for vertical work (Reels/TikTok/Shorts): `SOCIAL` array → shown on `social.html`
 - **`restaurant.js`** — CONFIG for restaurant/venue films: `RESTAURANT` array → shown on `restaurant.html`
 - `fx.js` — the "liquid" layer (home + gallery pages): ambient light from the active film/concert, the glass nav droplet, reel depth/tilt, scroll reveals. Glass refraction is an SVG lens it injects; Chromium only, others get frosted blur
+- `opening.js` — the home page's opening (once per visit): the metal CN mark materialises in the centre, the light blooms, the mark settles into place, the glass nav forms, the films rise. Any scroll/click/tap/key fast-forwards it. A tiny script in `index.html`'s `<head>` decides before first paint (skipped for reduced motion, a `#hash` link, or a page reopened mid-scroll)
 - `plight-fx.js` — the fluid photo lightbox (open from thumbnail, swipe/flick, drag down to close), used by index, show and media
 - `vgrid.js` — the grid+player logic BOTH subpages share; each page sets `window.VGRID = { items, ratio, min, unit }` before loading it
 - `logo.svg` (the CN mark, shown everywhere — filled with a metal gradient in CSS, so no background box), `logo.png` (only for the search-engine logo), `intro-poster.jpg` (the link-preview image — keep it), `photos/<concert>/` (full-res + `thumb/` thumbnails)
