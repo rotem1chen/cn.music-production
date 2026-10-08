@@ -40,16 +40,45 @@
   function project(v, rate) { rate = rate || 0.998; return (v / 1000) * rate / (1 - rate); }
   function rubberband(over, dim) { const c = 0.55; return (over * dim * c) / (dim + c * Math.abs(over)); }
 
+  const noGlass = window.matchMedia && window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
+
   window.PlightFX = function (o) {
     const root = o.root, stage = o.stage, img = o.img;
-    const S = { x: new Spring(0, 0.5), y: new Spring(0, 0.5), s: new Spring(1, 0.002), a: new Spring(0, 0.004), o: new Spring(1, 0.004) };
+    // sp = how far the yellow beams have spread out toward the screen edges (1) vs locked on the photo (0)
+    const S = { x: new Spring(0, 0.5), y: new Spring(0, 0.5), s: new Spring(1, 0.002), a: new Spring(0, 0.004), o: new Spring(1, 0.004), sp: new Spring(1, 0.002) };
+
+    /* the photo's own colours light the frosted backdrop; four beams of yellow light frame it */
+    const amb = document.createElement("div"); amb.className = "p-amb"; amb.setAttribute("aria-hidden", "true");
+    root.prepend(amb);
+    const beams = ["t", "b", "l", "r"].map((k) => {
+      const b = document.createElement("span"); b.className = "p-lead p-lead-" + k; b.setAttribute("aria-hidden", "true");
+      root.appendChild(b); return b;
+    });
+    function lightFrom() { const u = img.currentSrc || img.src; if (u) amb.style.backgroundImage = `url("${u}")`; }
+    function sheen() { stage.classList.remove("sheen"); void stage.offsetWidth; stage.classList.add("sheen"); }
     let raf = null, last = 0, closing = false, source = null, pendingSwap = 0, justDragged = false;
 
     function render() {
       stage.style.transform = `translate3d(${S.x.x}px, ${S.y.x}px, 0) scale(${S.s.x})`;
       stage.style.opacity = Math.max(0, Math.min(1, S.o.x));
       const a = Math.max(0, Math.min(1, S.a.x));
-      root.style.backgroundColor = `rgba(0,0,0,${(0.96 * a).toFixed(3)})`;
+      if (noGlass) root.style.backgroundColor = `rgba(0,0,0,${(0.96 * a).toFixed(3)})`;
+      else {
+        root.style.backgroundColor = `rgba(0,0,0,${(0.6 * a).toFixed(3)})`;
+        root.style.backdropFilter = root.style.webkitBackdropFilter = `blur(${(26 * a).toFixed(1)}px) saturate(${(1 + 0.6 * a).toFixed(2)})`;
+      }
+      amb.style.opacity = (0.85 * a).toFixed(3);
+      // beams ride the photo's edges (wherever it is: zooming, swiping, dragging), spread out when sp → 1
+      const r = stage.getBoundingClientRect(), W = window.innerWidth, H = window.innerHeight, sp = Math.max(0, Math.min(1, S.sp.x));
+      if (r.width > 2) {
+        const lerp = (p, q) => p + (q - p) * sp;
+        beams[0].style.transform = `translateY(${lerp(r.top, 0).toFixed(1)}px)`;
+        beams[1].style.transform = `translateY(${lerp(r.bottom, H).toFixed(1)}px)`;
+        beams[2].style.transform = `translateX(${lerp(r.left, 0).toFixed(1)}px)`;
+        beams[3].style.transform = `translateX(${lerp(r.right, W).toFixed(1)}px)`;
+      }
+      const bo = (a * (1 - sp * 0.5)).toFixed(3);
+      beams.forEach((b) => { b.style.opacity = bo; });
       root.style.setProperty("--pa", a.toFixed(3));   // chrome (arrows, close, caption) fades with the backdrop
     }
     function loop(now) {
@@ -102,13 +131,15 @@
       }
       const wasHidden = root.hidden;
       root.hidden = false;
+      lightFrom(); sheen();
       if (wasHidden) {
-        S.a.jump(0); S.o.jump(1);
+        S.a.jump(0); S.o.jump(1); S.sp.jump(1);
         const r = thumbRect();
         if (!(r && flipFrom(r))) { S.x.jump(0); S.y.jump(24); S.s.jump(0.94); S.o.jump(0); }
       }
       S.x.to(0); S.y.to(0); S.s.to(1); S.o.to(1);
       S.a.to(1, { response: 0.3 });
+      S.sp.to(0, { response: 0.6 });                  // the beams glide in from the screen edges and lock on
       render(); kick();
     }
 
@@ -132,13 +163,14 @@
         S.s.to(0.9); S.o.to(0, { response: 0.3 });
       }
       S.a.to(0, { response: 0.3 });
+      S.sp.to(1, { response: 0.45 });                 // and retreat back out
       kick();
     }
     function finishClose() {
       closing = false;
       root.hidden = true;
       root.style.pointerEvents = "";
-      S.x.jump(0); S.y.jump(0); S.s.jump(1); S.o.jump(1); render();
+      S.x.jump(0); S.y.jump(0); S.s.jump(1); S.o.jump(1); S.sp.jump(1); render();
       if (o.onClosed) o.onClosed();
     }
 
@@ -160,6 +192,7 @@
     function swap() {
       const dir = pendingSwap; pendingSwap = 0;
       o.step(dir);
+      lightFrom(); sheen();
       const v = S.x.v;
       S.x.jump(dir * width() * 0.6);                 // enter from the side it was thrown toward
       S.x.to(0, { response: 0.36, velocity: v * 0.6 });
