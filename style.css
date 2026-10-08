@@ -42,7 +42,8 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Logo (yellow, fades on scroll) ---------- */
 .logo-hero {
-  position: absolute; top: 7vh; left: 50%; transform: translateX(-50%);
+  /* starts below the floating glass nav (14px + 50px tall) with breathing room */
+  position: absolute; top: max(84px, 7vh); left: 50%; transform: translateX(-50%);
   z-index: 25; text-align: center; pointer-events: none;
 }
 /* the CN mark is logo.svg used as a stencil, filled with brushed metal — no box behind it */
@@ -60,7 +61,7 @@ a { color: inherit; text-decoration: none; }
   background-size: 250% 100%; background-position: 120% 0; animation: logoSheen 1.6s var(--ease) .5s both; }
 @keyframes logoSheen { to { background-position: -120% 0; } }
 @media (prefers-reduced-motion: reduce) { .logo-svg::after { animation: none; opacity: 0; } }
-.logo-hero-mark { width: clamp(80px, 10.5vw, 140px); }
+.logo-hero-mark { width: clamp(80px, min(10.5vw, 14vh), 140px); }   /* shorter screens get a smaller mark so it clears the first film */
 .logo-svg.pin-logo { width: clamp(64px, 8vw, 96px); }
 .logo-svg.pool-logo { width: clamp(80px, 10vw, 130px); height: auto; margin: 0 0 30px; }
 .logo-word { display: block; margin-top: 12px; font-weight: 400; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--text); }
@@ -981,3 +982,5 @@ body.unlocking .linkmaker { animation: pageIn 1s var(--ease) .35s both; }
   .pin.done { transform: none; filter: none; }
   .pin.done .pin-boxes span { translate: none; scale: none; }
 }
+/* phones: the glass nav's STILLS / CN—PRD already do this, and the pill would sit against the logo */
+@media (max-width: 760px) { #skipStills { display: none; } }
