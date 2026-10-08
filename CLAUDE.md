@@ -5,10 +5,10 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v128**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v130**.
 
 ## Files
-- `index.html` — main page: films reel, STILLS preview (3 shots/concert). Opens straight onto the films — there is no intro
+- `index.html` — main page: films reel, STILLS as one cover card per concert (opens `show.html`; the cover flies into the gallery via a view transition). Opens straight onto the films — there is no intro
 - `show.html` — per-concert full gallery, opened as `show.html?c=<concert index>`
 - `style.css` — all styling. Theme: pure black + brand **yellow `#ffd400`**, mono font (Space Mono), "camera viewfinder" look (corner target-brackets)
 - `app.js` — main-page logic (reel, video viewer, stills grid + lightbox)
@@ -50,6 +50,7 @@ a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that pa
 2. Make thumbnails in `photos/<name>/thumb/` (same filenames, `sips -Z 760 -s formatOptions 66`) — grids use thumbnails, lightbox uses full-res.
 3. Add a block to `CONCERTS` in `photos.js`:
    `{ artist:"...", venue:"...", date:"...", dir:"photos/<name>/", shots:["01.jpg", ...] }`
+   (optional `cover:"10.jpg"` picks the home-page card photo; default is the first shot)
 4. Bump `?v` in `index.html` + `show.html`, push. The concert auto-gets a gallery at `show.html?c=<index>`.
 
 ## Interaction notes

@@ -97,7 +97,7 @@
   const io = new IntersectionObserver((ents) => {
     ents.forEach((en) => {
       if (!en.isIntersecting) return;
-      const im = en.target.querySelector(".shot img");
+      const im = en.target.matches(".still-card") ? en.target.querySelector("img") : en.target.querySelector(".shot img");
       if (im && im.src) ambient(`url("${im.src}") center / cover no-repeat`);
     });
   }, { rootMargin: "-45% 0px -45% 0px" });
@@ -121,7 +121,13 @@
     if (poster) poster.addEventListener("load", () => use(poster));
   }
   function watchConcerts() {
-    document.querySelectorAll(".concert").forEach((c) => io.observe(c));
+    document.querySelectorAll(".concert, .still-card").forEach((c) => io.observe(c));
+    // the cover you point at lights the page
+    const covers = document.getElementById("concerts");
+    if (covers) covers.addEventListener("pointerover", (e) => {
+      const im = e.target.closest && e.target.closest(".still-card") && e.target.closest(".still-card").querySelector("img");
+      if (im) ambient(`url("${im.src}") center / cover no-repeat`);
+    });
     // a gallery page: its own photos light the page, and the light follows the one you point at
     const grid = document.getElementById("showGrid");
     if (grid) {
@@ -224,7 +230,7 @@
   }
 
   /* ---------- reveals ---------- */
-  const rvSel = ".pool-head > :not(.logo-svg), .lm-group > .panel-label, .lm-card, .lm-go, .pool .vid, .pool .shot, .file, .pool-folder-title, .rv-note, " +
+  const rvSel = ".still-card, .pool-head > :not(.logo-svg), .lm-group > .panel-label, .lm-card, .lm-go, .pool .vid, .pool .shot, .file, .pool-folder-title, .rv-note, " +
     "#showGrid .shot, .show .panel-label, .show-title, .stills .panel-label, .concert-head, .concert .shot, .artists .panel-label, .artist, .about .panel-label, .panel-text, .contact .panel-label, .contact-email, .socials, .colophon, .subpages-wrap .panel-label";
   const rvIO = new IntersectionObserver((ents) => {
     ents.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); rvIO.unobserve(en.target); } });

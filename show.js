@@ -22,6 +22,7 @@
     const img = document.createElement("img"); img.loading = "lazy"; img.alt = CON.artist || "still";
     img.src = (CON.dir || "") + "thumb/" + file;                        // light thumbnail for the grid
     img.onerror = () => { img.onerror = null; img.src = (CON.dir || "") + file; };  // fallback to full if no thumb
+    if (file === (CON.cover || shots[0])) img.style.viewTransitionName = "still-cover";   // where the home-page cover lands
     shot.append(img);
     shot.addEventListener("click", () => openPhoto(si, shot));
     shotEls.push(shot);

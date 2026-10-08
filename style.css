@@ -1207,3 +1207,45 @@ html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .
 @media (hover: none), (pointer: coarse) {
   .reel .clip, .subpages .clip { transition: opacity .5s var(--ease), box-shadow .5s var(--ease); filter: none; }
 }
+
+/* ---------- STILLS on the home page: one cover per concert, like an album grid ---------- */
+.still-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 40vw), 1fr)); max-width: 1060px;
+  gap: clamp(12px, 2vw, 22px); margin-top: 26px; }   /* ~4 across on a computer, 2 on a phone */
+@media (max-width: 760px) { .still-cap { left: 8px; right: 8px; bottom: 8px; padding: 9px 11px 10px; border-radius: 13px; } .still-artist { font-size: 19px; } }
+.still-card { position: relative; display: block; aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; isolation: isolate;
+  background: #0c0c0e; box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 22px 50px -24px rgba(0,0,0,.85);
+  transition: translate .5s var(--ease), box-shadow .45s var(--ease), opacity .9s var(--ease) var(--rvd, 0s), filter .9s var(--ease) var(--rvd, 0s);
+  -webkit-tap-highlight-color: transparent; }
+.still-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: scale .8s var(--ease); }
+/* glass edge, like the films */
+.still-card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 3;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 0 0 1px rgba(255,255,255,.06); }
+/* a soft shade so the caption reads on any photo */
+.still-card::before { content: ""; position: absolute; inset: 45% 0 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.55)); }
+.still-cap { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2; display: flex; flex-direction: column; gap: 3px;
+  padding: 11px 14px 12px; border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+  -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.08); }
+.still-artist { font-family: var(--display); font-weight: 700; font-size: clamp(20px, 2.2vw, 26px); line-height: 1; letter-spacing: .02em; color: var(--text); }
+.still-cap small { font-family: var(--ui); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244,244,242,.72);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.still-count { position: absolute; top: 10px; right: 10px; z-index: 2; min-width: 34px; padding: 6px 10px; border-radius: 999px; text-align: center;
+  font-family: var(--ui); font-size: 11px; letter-spacing: .08em; color: var(--text);
+  background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+  -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.08); }
+.still-count::after { content: " ↗"; color: var(--accent); }
+@media (hover: hover) {
+  .still-card:hover { translate: 0 -5px;
+    box-shadow: 0 0 0 1px rgba(255,212,0,.55), 0 0 40px rgba(255,212,0,.2), 0 34px 70px -26px rgba(0,0,0,.9); }
+  .still-card:hover .still-img { scale: 1.06; }
+}
+.still-card:active { scale: .975; transition: scale .08s ease-out; }
+
+/* the cover flies from its card into the gallery (and back): cross-page view transition */
+@view-transition { navigation: auto; }
+::view-transition-group(still-cover) { animation-duration: .55s; animation-timing-function: cubic-bezier(.2, .9, .25, 1); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }

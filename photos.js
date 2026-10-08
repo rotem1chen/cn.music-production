@@ -5,6 +5,7 @@
    artist / venue / date — shown in the concert header
    dir   — the folder the shots live in (inside the site)
    shots — the image filenames inside that folder, in order
+   cover — optional: the shot shown on the home page card (default: the first shot)
    ============================================================ */
 
 const CONCERTS = [  {

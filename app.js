@@ -519,39 +519,29 @@
   let openPhoto = function () {};                       // set up below once the lightbox exists
   function esc(s) { return String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])); }
 
+  // one cover per concert, like an album grid; it opens the full gallery (show.html)
   if (concertsWrap) {
+    concertsWrap.classList.add("still-grid");
+    let last = null; try { last = sessionStorage.getItem("cn_last_concert"); } catch (_) {}
     concertsData.forEach((con, ci) => {
       const shots = con.shots || [];
-      const block = document.createElement("div"); block.className = "concert";
-
-      const head = document.createElement("div"); head.className = "concert-head";
+      const cover = con.cover || shots[0]; if (!cover) return;
+      const card = document.createElement("a"); card.className = "still-card"; card.href = "show.html?c=" + ci;
       const meta = [con.venue, con.date].filter(Boolean).map(esc).join(" · ");
-      const info = document.createElement("div");
-      info.innerHTML = `<span class="concert-artist">${esc(con.artist || "")}</span>` + (meta ? ` <span class="concert-meta">${meta}</span>` : "");
-      const all = document.createElement("button"); all.className = "concert-all";
-      all.innerHTML = `View all · ${shots.length} <span class="ar">→</span>`;
-      all.addEventListener("click", () => { location.href = "show.html?c=" + ci; });   // full-gallery subpage
-      head.append(info, all);
-      block.appendChild(head);
-
-      const grid = document.createElement("div"); grid.className = "concert-grid";
-      shots.slice(0, 3).forEach((file, si) => {
-        const shot = document.createElement("div"); shot.className = "shot";
-        const img = document.createElement("img"); img.loading = "lazy"; img.alt = con.artist || "still";
-        img.src = (con.dir || "") + "thumb/" + file;                       // light thumbnail for the grid
-        img.onerror = () => { img.onerror = null; img.src = (con.dir || "") + file; };  // fallback to full if no thumb
-        shot.append(img);
-        const seeAll = (si === 2 && shots.length > 3);      // last preview → "+N more" → opens the full show subpage
-        if (seeAll) {
-          const more = document.createElement("div"); more.className = "shot-more"; more.textContent = "+" + (shots.length - 3);
-          shot.appendChild(more);
-        }
-        if (!seeAll) shotEls[ci + ":" + si] = shot;
-        shot.addEventListener("click", () => { if (seeAll) location.href = "show.html?c=" + ci; else openPhoto(ci, si, shot); });
-        grid.appendChild(shot);
+      card.innerHTML =
+        `<img class="still-img" loading="lazy" alt="${esc(con.artist || "still")}" src="${esc((con.dir || "") + "thumb/" + cover)}">` +
+        `<span class="still-count">${shots.length}</span>` +
+        `<span class="still-cap"><b class="still-artist">${esc(con.artist || "")}</b>` + (meta ? `<small>${meta}</small>` : "") + `</span>`;
+      const img = card.querySelector("img");
+      img.onerror = () => { img.onerror = null; img.src = (con.dir || "") + cover; };
+      // the cover flies into the gallery (view transition): only the card you open carries the name
+      if (String(ci) === last) img.style.viewTransitionName = "still-cover";
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".still-img").forEach((im) => { im.style.viewTransitionName = ""; });
+        img.style.viewTransitionName = "still-cover";
+        try { sessionStorage.setItem("cn_last_concert", String(ci)); } catch (_) {}
       });
-      block.appendChild(grid);
-      concertsWrap.appendChild(block);
+      concertsWrap.appendChild(card);
     });
   }
 
