@@ -351,15 +351,14 @@ a { color: inherit; text-decoration: none; }
 .colophon { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 80px; font-size: 11px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); }
 
 /* ---------- Viewer (grow + spreading crosshair) ---------- */
-.viewer { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0); transition: background .45s var(--ease); pointer-events: none; }
-.viewer.open { pointer-events: auto; }   /* while it closes, clicks go straight through to the page */
+.viewer { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0); transition: background .55s var(--ease); }
 .viewer[hidden] { display: none; }
 .viewer.open { background: rgba(0,0,0,.96); }
 
 /* crosshair lines that spread outward slowly — a camera grid drawing itself */
 .v-lead {
   position: fixed; background: var(--accent); opacity: 0; pointer-events: none; z-index: 101;
-  transition: top .5s var(--ease), left .5s var(--ease), opacity .4s var(--ease);
+  transition: top 1.2s var(--ease), left 1.2s var(--ease), opacity .5s var(--ease);
 }
 .v-lead-t, .v-lead-b { left: 0; width: 100vw; height: 1px; }
 .v-lead-l, .v-lead-r { top: 0; height: 100vh; width: 1px; }
@@ -367,12 +366,12 @@ a { color: inherit; text-decoration: none; }
 
 .viewer-stage {
   position: fixed; overflow: visible; background: #000 center/cover no-repeat; border-radius: 10px; z-index: 102;
-  transform-origin: 50% 50%; will-change: transform;
-  transition: transform .55s var(--ease);
+  will-change: top, left, width, height;
+  transition: top 1.1s var(--ease), left 1.1s var(--ease), width 1.1s var(--ease), height 1.1s var(--ease);
 }
 /* transparent while the poster grows; the real player fades in only once loaded */
 .viewer-media { position: absolute; inset: 0; overflow: hidden; border-radius: 10px; background: transparent; opacity: 0; transition: opacity .45s ease; }
-.viewer.loaded.grown .viewer-media { opacity: 1; }
+.viewer.loaded .viewer-media { opacity: 1; }
 .viewer-media iframe, .viewer-media video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .viewer-stage .corner { width: 20px; height: 20px; opacity: 0; transition: opacity .3s ease .05s; }
 .viewer.open .viewer-stage .corner { opacity: 1; }
@@ -385,7 +384,7 @@ a { color: inherit; text-decoration: none; }
   position: fixed; top: 22px; right: var(--pad); z-index: 103;
   background: none; border: 0; color: var(--text); cursor: pointer;
   font-family: var(--ui); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-  opacity: 0; transition: opacity .3s ease .2s, color .2s;
+  opacity: 0; transition: opacity .3s ease .4s, color .2s;
 }
 .viewer-close:hover { color: var(--accent); }
 .viewer.open .viewer-close { opacity: 1; }
