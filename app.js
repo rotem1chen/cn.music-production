@@ -355,6 +355,12 @@
      grid + grow animation instead of after it. It is shown only once the stage has grown AND the
      film is actually playing; until then the poster shows a liquid loading state (.waiting). */
   let play = { token: 0 };
+  const soundBtn = document.getElementById("vSound");
+  if (soundBtn) soundBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    try { ytPlayer.unMute(); ytPlayer.setVolume(100); ytPlayer.playVideo(); } catch (_) {}
+    soundBtn.hidden = true;
+  });
   function settle(t) {                                  // called whenever "grown" or "ready" changes
     if (t !== play.token || !play.grown || !play.ready || play.revealed) return;
     play.revealed = true;
@@ -367,11 +373,6 @@
 
   function mountPlayer(c, t) {
     if (c.v.type === "youtube") {
-      if (isTouch) {                                    // mobile: plain iframe; it needs a tap to play anyway
-        mediaBox.innerHTML = `<iframe src="https://www.youtube.com/embed/${c.v.id}?autoplay=1&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
-        mediaBox.querySelector("iframe").addEventListener("load", () => ready(t), { once: true });
-        return;
-      }
       if (!ytApiReady) { pendingMount = () => mountPlayer(c, t); return; }
       mediaBox.innerHTML = '<div id="ytHost"></div>';
       let primed = false;
@@ -379,13 +380,21 @@
         videoId: c.v.id, width: "100%", height: "100%",
         playerVars: { autoplay: 1, mute: 1, controls: 1, modestbranding: 1, rel: 0, playsinline: 1, fs: 1, iv_load_policy: 3 },
         events: {
-          onReady: (e) => { try { e.target.mute(); e.target.playVideo(); } catch (_) {} },
+          onReady: (e) => {
+            try { e.target.mute(); e.target.playVideo(); } catch (_) {}
+            // a phone in Low Power Mode refuses even muted autoplay: show YouTube's own play button soon
+            if (isTouch) setTimeout(() => { if (!primed) ready(t); }, 2500);
+          },
           onStateChange: (e) => {
             if (e.data !== YT.PlayerState.PLAYING || primed || t !== play.token) return;
             primed = true;                              // it plays: buffered and decoding. Hold it until we show it.
             const p = e.target;
             if (!play.grown) { try { p.pauseVideo(); } catch (_) {} }
-            play.start = () => { try { p.seekTo(0, true); p.unMute(); p.setVolume(100); p.playVideo(); } catch (_) {} };
+            // phones only allow a video to play by itself if it's muted, so there it starts muted
+            // and "Tap for sound" turns the sound on; computers start with sound straight away
+            play.start = isTouch
+              ? () => { try { p.seekTo(0, true); p.playVideo(); } catch (_) {} soundBtn.hidden = false; }
+              : () => { try { p.seekTo(0, true); p.unMute(); p.setVolume(100); p.playVideo(); } catch (_) {} };
             ready(t);
           },
         },
@@ -438,6 +447,7 @@
     cursor.classList.remove("show", "big"); cursorShown = false;   // hide the ring over the player
     viewer.hidden = false;
     viewer.classList.remove("loaded", "waiting");
+    if (soundBtn) soundBtn.hidden = true;
     void viewer.offsetWidth;         // commit the edge start frame
     viewer.classList.add("open");
     document.body.style.overflow = "hidden";
@@ -486,6 +496,7 @@
     const r = lastFocused ? lastFocused.getBoundingClientRect() : null;
     if (r) { setStage(r.left, r.top, r.width, r.height); setLines(r.top, r.bottom, r.left, r.right); }
     viewer.classList.remove("open", "loaded", "waiting");
+    if (soundBtn) soundBtn.hidden = true;
     document.body.style.overflow = "";
 
     setTimeout(() => {
@@ -684,12 +695,13 @@
 
     const hasTiles = typeof SUBPAGES !== "undefined" && Array.isArray(SUBPAGES) && SUBPAGES.length;
     const stops = [
-      hasTiles ? { el: document.getElementById("subpagesWrap"), text: "Scroll for other work" } : null,
-      { el: document.getElementById("stills"), text: "Scroll for stills" },
+      hasTiles ? { el: document.getElementById("subpagesWrap"), text: "Scroll for other work", short: "Other work" } : null,
+      { el: document.getElementById("stills"), text: "Scroll for stills", short: "Stills" },
     ].filter((s) => s && s.el);
     if (!stops.length) { btn.remove(); return; }
 
     let stop = null;
+    const phone = window.matchMedia("(max-width: 760px)");   // phones get the short label in a small pill
 
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -713,7 +725,7 @@
       const next = stops.find((s) => s.el.offsetTop > edge) || null;
       if (next !== stop) {
         stop = next;
-        if (stop) { label.textContent = stop.text; btn.href = "#" + stop.el.id; }
+        if (stop) { label.textContent = phone.matches ? stop.short : stop.text; btn.href = "#" + stop.el.id; }
       }
       btn.classList.toggle("gone", !stop);
     }
