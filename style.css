@@ -832,11 +832,7 @@ body { background: transparent; }   /* html is already black; a black body would
   box-shadow: var(--glass-rim), var(--glass-drop);
   border-radius: 999px; isolation: isolate;
 }
-/* Chromium bends the light at the rim (fx.js adds the SVG lens); everyone else gets frosted glass */
-.lg-refract :is(.nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close) {
-  -webkit-backdrop-filter: url(#lg-refract);
-          backdrop-filter: url(#lg-refract);
-}
+/* Chromium also bends the light at the rim: fx.js builds a lens per element; everyone else gets frosted glass */
 /* specular sheen — light catching the top-left of the material */
 :is(.nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close)::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
@@ -962,7 +958,6 @@ body { background: transparent; }   /* html is already black; a black body would
   box-shadow: var(--glass-rim), 0 10px 28px rgba(0,0,0,.35);
   transition: background .5s ease, box-shadow .5s ease, color .4s, scale .35s var(--spring);
   -webkit-tap-highlight-color: transparent; }
-.lg-refract .pin-pad button, .lg-refract .pin-boxes span { -webkit-backdrop-filter: url(#lg-refract); backdrop-filter: url(#lg-refract); }
 .pin-pad button:hover { background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.06)); }
 .pin-pad button:active { scale: .92; color: #000; background: radial-gradient(circle at 40% 35%, #fff2a0, #ffd400 60%);
   box-shadow: 0 0 0 1px rgba(255,212,0,.6), 0 0 34px rgba(255,212,0,.55); transition: scale .06s ease-out, background 0s, color 0s, box-shadow 0s; }

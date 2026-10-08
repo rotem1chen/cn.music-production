@@ -10,29 +10,51 @@
   const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const root = document.documentElement;
 
-  /* ---------- real refraction where the browser can do it (Chromium: backdrop-filter: url()) ---------- */
+  /* ---------- real refraction where the browser can do it (Chromium: backdrop-filter: url()) ----------
+     Each glass element gets its own lens, built at its exact pixel size: a thin rim on every side bends
+     the light inward (it samples from inside the glass, never from outside it), the middle stays clear.
+     A ResizeObserver rebuilds the lens when the element changes size (the HUD does on every film). */
   const isChromium = !!(navigator.userAgentData && navigator.userAgentData.brands &&
     navigator.userAgentData.brands.some((b) => /Chromium/.test(b.brand)));
-  if (isChromium) {
-    // edge-weighted displacement map: neutral in the middle, bending light near every edge — a lens rim
+  const noGlass = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
+  const GLASS = ".nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close, .pin-pad button:not(.pin-del), .pin-boxes span";
+  let lensSvg = null, lensN = 0;
+  function lensFor(el) {
+    const w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
+    if (w < 4 || h < 4) return;
+    if (el._lens && el._lens.w === w && el._lens.h === h) return;
+    const rim = Math.max(4, Math.min(14, Math.min(w, h) * 0.28));       // px of bending at each edge
+    const fx = rim / w, fy = rim / h;
     const map = "data:image/svg+xml," + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" preserveAspectRatio="none">' +
-      '<defs><linearGradient id="x"><stop offset="0" stop-color="#000"/><stop offset=".22" stop-color="#800000"/>' +
-      '<stop offset=".78" stop-color="#800000"/><stop offset="1" stop-color="#f00"/></linearGradient>' +
-      '<linearGradient id="y" x2="0" y2="1"><stop offset="0" stop-color="#000"/><stop offset=".3" stop-color="#008000"/>' +
-      '<stop offset=".7" stop-color="#008000"/><stop offset="1" stop-color="#0f0"/></linearGradient></defs>' +
-      '<rect width="100" height="100" fill="url(#x)"/><rect width="100" height="100" fill="url(#y)" style="mix-blend-mode:screen"/></svg>');
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("aria-hidden", "true");
-    svg.style.cssText = "position:absolute;width:0;height:0;overflow:hidden";
-    svg.innerHTML =
-      '<filter id="lg-refract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">' +
-      `<feImage href="${map}" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="m"/>` +
-      '<feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>' +
-      '<feDisplacementMap in="b" in2="m" scale="38" xChannelSelector="R" yChannelSelector="G" result="d"/>' +
-      '<feColorMatrix in="d" type="saturate" values="1.8"/></filter>';
-    document.body.appendChild(svg);
-    root.classList.add("lg-refract");
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+      `<defs><linearGradient id="x"><stop offset="0" stop-color="#f00"/><stop offset="${fx}" stop-color="#800000"/>` +
+      `<stop offset="${1 - fx}" stop-color="#800000"/><stop offset="1" stop-color="#000"/></linearGradient>` +
+      `<linearGradient id="y" x2="0" y2="1"><stop offset="0" stop-color="#0f0"/><stop offset="${fy}" stop-color="#008000"/>` +
+      `<stop offset="${1 - fy}" stop-color="#008000"/><stop offset="1" stop-color="#000"/></linearGradient></defs>` +
+      `<rect width="${w}" height="${h}" fill="url(#x)"/><rect width="${w}" height="${h}" fill="url(#y)" style="mix-blend-mode:screen"/></svg>`);
+    const id = el._lens ? el._lens.id : "lg-" + (++lensN);
+    let f = lensSvg.querySelector("#" + id);
+    if (!f) { f = document.createElementNS("http://www.w3.org/2000/svg", "filter"); f.id = id; lensSvg.appendChild(f); }
+    ["filterUnits", "primitiveUnits"].forEach((a) => f.setAttribute(a, "userSpaceOnUse"));
+    f.setAttribute("x", 0); f.setAttribute("y", 0); f.setAttribute("width", w); f.setAttribute("height", h);
+    f.setAttribute("color-interpolation-filters", "sRGB");
+    f.innerHTML =
+      `<feImage href="${map}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="m"/>` +
+      '<feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/>' +
+      `<feDisplacementMap in="b" in2="m" scale="${(rim * 1.6).toFixed(1)}" xChannelSelector="R" yChannelSelector="G" result="d"/>` +
+      '<feColorMatrix in="d" type="saturate" values="1.8"/>';
+    el._lens = { id, w, h };
+    el.style.backdropFilter = el.style.webkitBackdropFilter = `url(#${id})`;
+  }
+  if (isChromium && !noGlass) {
+    lensSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    lensSvg.setAttribute("aria-hidden", "true");
+    lensSvg.style.cssText = "position:absolute;width:0;height:0;overflow:hidden";
+    document.body.appendChild(lensSvg);
+    const ro = new ResizeObserver((ents) => ents.forEach((en) => lensFor(en.target)));
+    const arm = () => document.querySelectorAll(GLASS).forEach((el) => { if (!el._lensArmed) { el._lensArmed = true; ro.observe(el); } });
+    arm();
+    new MutationObserver(arm).observe(document.body, { childList: true, subtree: true });   // reel paging adds a new pill
   }
 
   /* ---------- spring (damping ratio + response, Apple-style) ---------- */
