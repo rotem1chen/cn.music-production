@@ -22,50 +22,6 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; scroll-snap-type: none; background: var(--bg); }
 
-/* ---------- Intro overlay ---------- */
-.intro {
-  position: fixed; inset: 0; z-index: 300; background: #000;
-  display: flex; align-items: center; justify-content: center;
-  transition: opacity .5s var(--ease);
-}
-.intro[hidden] { display: none; }
-.intro.done { opacity: 0; pointer-events: none; }
-.intro.playing { cursor: pointer; }
-.intro-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; opacity: 0; transition: opacity .3s ease; }
-.intro.playing .intro-video { opacity: 1; }
-/* black landing: only the logo + Enter until they click */
-.intro-gate {
-  position: fixed; inset: 0; z-index: 302; background: #000;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: clamp(26px, 5vh, 48px);
-}
-.intro.playing .intro-gate { display: none; }
-.intro-logo { width: clamp(150px, 22vw, 320px); height: auto; display: block; }
-/* Enter framed by the same yellow target-corners as the reel reticle */
-.intro-enter {
-  position: relative; display: inline-flex; align-items: center; justify-content: center;
-  padding: 18px 46px; background: transparent; border: 0; cursor: pointer;
-}
-.intro-enter .ec-label {
-  font-family: var(--ui); font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase;
-  color: var(--text); transition: color .25s;
-}
-.intro-enter:hover .ec-label { color: var(--accent); }
-.intro-enter .ec { position: absolute; width: 12px; height: 12px; border: 1.5px solid var(--accent); transition: width .3s var(--ease), height .3s var(--ease); }
-.intro-enter .ec.tl { top: 0; left: 0;  border-right: 0; border-bottom: 0; }
-.intro-enter .ec.tr { top: 0; right: 0; border-left: 0;  border-bottom: 0; }
-.intro-enter .ec.bl { bottom: 0; left: 0;  border-right: 0; border-top: 0; }
-.intro-enter .ec.br { bottom: 0; right: 0; border-left: 0;  border-top: 0; }
-.intro-enter:hover .ec { width: 18px; height: 18px; }
-.intro-enter[hidden] { display: none; }
-.intro-skip {
-  position: fixed; bottom: 26px; right: var(--pad); z-index: 301;
-  background: none; border: 0; color: var(--muted); cursor: pointer;
-  font-family: var(--ui); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-  transition: color .2s;
-}
-.intro-skip:hover { color: var(--accent); }
-body.intro-lock { overflow: hidden; height: 100vh; }
 body {
   background: var(--bg); color: var(--text);
   font-family: var(--ui); -webkit-font-smoothing: antialiased; overflow-x: hidden;
@@ -89,17 +45,24 @@ a { color: inherit; text-decoration: none; }
   position: absolute; top: 7vh; left: 50%; transform: translateX(-50%);
   z-index: 25; text-align: center; pointer-events: none;
 }
-.logo-photo {
-  display: block; margin: 0 auto;
-  width: clamp(110px, 15vw, 200px); height: auto;
-}
-.logo-mark {                         /* fallback if logo.png is missing */
-  display: none; margin: 0 auto;
-  width: clamp(72px, 9vw, 120px); aspect-ratio: 123.21 / 129.73;
-  background-color: var(--accent);
+/* the CN mark is logo.svg used as a stencil, filled with brushed metal — no box behind it */
+.logo-svg {
+  display: block; margin: 0 auto; aspect-ratio: 123.21 / 129.73;
+  background: linear-gradient(155deg, #fdfdfd 0%, #a9a9ad 22%, #f2f2f4 38%, #6f6f75 55%, #d9d9dd 72%, #8c8c92 88%, #f7f7f7 100%);
+  background-size: 100% 100%;
   -webkit-mask: url("logo.svg") center / contain no-repeat;
           mask: url("logo.svg") center / contain no-repeat;
+  position: relative;
 }
+/* a single sheen sweeps across the metal when it appears */
+.logo-svg::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.95) 50%, transparent 65%) no-repeat;
+  background-size: 250% 100%; background-position: 120% 0; animation: logoSheen 1.6s var(--ease) .5s both; }
+@keyframes logoSheen { to { background-position: -120% 0; } }
+@media (prefers-reduced-motion: reduce) { .logo-svg::after { animation: none; opacity: 0; } }
+.logo-hero-mark { width: clamp(80px, 10.5vw, 140px); }
+.logo-svg.pin-logo { width: clamp(64px, 8vw, 96px); }
+.logo-svg.pool-logo { width: clamp(80px, 10vw, 130px); height: auto; margin: 0 0 30px; }
 .logo-word { display: block; margin-top: 12px; font-weight: 400; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--text); }
 
 /* ---------- Viewfinder chrome ---------- */
@@ -207,7 +170,7 @@ a { color: inherit; text-decoration: none; }
 .logo-word { font-size: 13px; letter-spacing: 0.3em; }
 
 /* Oswald runs lighter than Space Mono at these sizes — carry the small text at 600 */
-.nav, .nav-mark, .skip-stills, .intro-skip, .panel-label, .hud, .concert-all, .concert-meta,
+.nav, .nav-mark, .skip-stills, .panel-label, .hud, .concert-all, .concert-meta,
 .reel-more, .a-link, .plight-close, .plight-nav, .plight-meta, .shot-more, .sidx,
 .ll-sub, .svid-cap, .social-empty, .shot-name, .colophon { font-weight: 600; }
 
@@ -833,10 +796,10 @@ button.rv-tc:hover { background: var(--accent); color: #000; }
    Touch screens have no hover, so this is the only sign a tap landed until the next thing loads.
    `scale` is its own property, so it stacks on top of any existing transform. */
 :is(.clip, .shot, .vid, .svid, .lm-card, .lm-go):active { scale: .975; transition: scale .08s ease-out; }
-:is(.intro-enter, .reel-more, .concert-all, .skip-stills, .pool-btn, .plight-nav, .plight-close, .viewer-close, .dl, .a-link, .rv-tc):active {
+:is(.reel-more, .concert-all, .skip-stills, .pool-btn, .plight-nav, .plight-close, .viewer-close, .dl, .a-link, .rv-tc):active {
   scale: .95; color: var(--accent); transition: scale .08s ease-out, color 0s;
 }
-:is(.clip, .shot, .vid, .svid, .lm-card, .lm-go, .intro-enter, .reel-more, .concert-all, .skip-stills, .pool-btn, .plight-nav, .plight-close, .viewer-close, .dl, .a-link, .rv-tc) {
+:is(.clip, .shot, .vid, .svid, .lm-card, .lm-go, .reel-more, .concert-all, .skip-stills, .pool-btn, .plight-nav, .plight-close, .viewer-close, .dl, .a-link, .rv-tc) {
   -webkit-tap-highlight-color: transparent;   /* our own press state replaces the grey iOS flash */
 }
 
@@ -853,7 +816,6 @@ button.rv-tc:hover { background: var(--accent); color: #000; }
 
 /* ---- ambient light: the film / concert you're on glows behind everything ---- */
 body { background: transparent; }   /* html is already black; a black body would paint over the light */
-.logo-photo, .intro-logo, .pool-logo { mix-blend-mode: lighten; }   /* the PNG's black square melts into the light */
 .ambient { position: fixed; inset: -12%; z-index: -1; pointer-events: none; overflow: hidden; }
 .ambient i { position: absolute; inset: 0; opacity: 0; transform: scale(1.18);
   filter: blur(80px) saturate(1.7) brightness(.55);
@@ -965,7 +927,7 @@ body { background: transparent; }   /* html is already black; a black body would
   transform: translate(calc(var(--mx) * -.2 + 14vmax), calc(var(--my) * -.2 + 10vmax)); }
 .pin-light i:nth-child(3) { width: 40vmax; height: 40vmax; margin: -20vmax 0 0 -20vmax; background: radial-gradient(circle, rgba(110,60,255,.26), transparent 62%);
   transform: translate(calc(var(--mx) * .12 - 18vmax), calc(var(--my) * .12 + 16vmax)); }
-.pin-logo { width: clamp(84px, 11vw, 132px); animation: pinRise 1s var(--ease) backwards; }
+.pin-logo { width: clamp(84px, 11vw, 132px); }   /* no rise: Chrome leaves a masked element half-faded after it; the metal sheen is its entrance */
 .pin .panel-label { animation: pinRise 1s var(--ease) .08s backwards; }
 .pin-form { animation: pinRise 1s var(--ease) .16s backwards; }
 .pin-pad { animation: pinRise 1s var(--ease) .24s backwards; }

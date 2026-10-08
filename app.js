@@ -3,51 +3,6 @@
   "use strict";
   document.addEventListener("touchstart", () => {}, { passive: true });   // lets iOS Safari show :active press states
 
-  /* ---------- Intro (Enter to play with sound, once per session) ---------- */
-  (function intro() {
-    const el = document.getElementById("intro");
-    if (!el) return;
-    const video = document.getElementById("introVideo");
-    const enter = document.getElementById("introEnter");
-    const skip = document.getElementById("introSkip");
-    let done = false;
-
-    // already played this session → skip the gate entirely
-    if (sessionStorage.getItem("cn_intro_played")) { el.remove(); return; }
-
-    document.body.classList.add("intro-lock");
-
-    function end() {
-      if (done) return; done = true;
-      try { sessionStorage.setItem("cn_intro_played", "1"); } catch (_) {}
-      el.classList.add("done");
-      document.body.classList.remove("intro-lock");
-      setTimeout(() => el.remove(), 600);
-    }
-
-    function start() {
-      el.classList.add("playing");
-      if (enter) enter.hidden = true;
-      if (skip) skip.hidden = false;
-      if (!video) return end();
-      video.addEventListener("ended", end, { once: true });
-      video.addEventListener("error", end, { once: true });
-      video.muted = false;                                   // user gesture → sound allowed
-      video.volume = 0.3;                                    // quieter intro
-      try { video.currentTime = 0; } catch (_) {}
-      const p = video.play && video.play();
-      if (p && p.catch) p.catch(() => {                      // if playing-with-sound is refused, fall back to muted
-        video.muted = true;
-        const p2 = video.play && video.play();
-        if (p2 && p2.catch) p2.catch(end);
-      });
-      setTimeout(() => el.addEventListener("click", end), 0);   // click anywhere skips while it's playing
-    }
-
-    if (enter) enter.addEventListener("click", start);
-    if (skip) skip.addEventListener("click", end);
-  })();
-
   /* ---------- Site text ---------- */
   document.title = SITE.name + " — Music Video Production";
   document.querySelectorAll("[data-brand]").forEach((el) => (el.textContent = SITE.name));
@@ -57,14 +12,6 @@
   const yEl = document.querySelector("[data-year]"); if (yEl) yEl.textContent = new Date().getFullYear();
   const emailLink = document.querySelector("[data-email-link]");
   if (emailLink) { emailLink.textContent = SITE.email; emailLink.href = "mailto:" + SITE.email; }
-
-  // logo: use logo.png if present, else fall back to the SVG mark
-  const logoPhoto = document.getElementById("logoPhoto");
-  const logoFallback = document.getElementById("logoFallback");
-  if (logoPhoto) logoPhoto.addEventListener("error", () => {
-    logoPhoto.style.display = "none";
-    if (logoFallback) logoFallback.style.display = "block";
-  });
 
   const socialWrap = document.getElementById("socials");
   if (socialWrap && SITE.socials) {

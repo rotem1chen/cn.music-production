@@ -10,13 +10,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Heebo:wght@300;400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=113" />
+  <link rel="stylesheet" href="style.css?v=115" />
 </head>
 <body class="show-page pool-page" id="top">
   <!-- PIN GATE — the page stays hidden until the code is entered (remembered on this device for 30 days) -->
   <div class="pin" id="pin">
     <div class="pin-light" aria-hidden="true"><i></i><i></i><i></i></div>
-    <img class="intro-logo pin-logo" src="logo.png?v=12" alt="CN PROD" />
+    <span class="logo-svg pin-logo" role="img" aria-label="CN PROD"></span>
     <span class="panel-label">[ ENTER CODE ]</span>
     <form class="pin-form" id="pinForm" autocomplete="off">
       <div class="pin-boxes" id="pinBoxes"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span></div>
@@ -38,7 +38,7 @@
 
   <section class="pool linkmaker">
     <div class="pool-head">
-      <img class="pool-logo" src="logo.png?v=12" alt="CN PROD" />
+      <span class="logo-svg pool-logo" role="img" aria-label="CN PROD"></span>
       <span class="panel-label">[ LINK MAKER ]</span>
       <h1 class="show-title pool-title">Client link</h1>
       <p class="pool-status lm-help">Everything you send a client, in one place. Share the Drive folder or file as “Anyone with the link” first, then paste it in.</p>
@@ -252,7 +252,7 @@
     paint(); inp.focus();
   })();
   </script>
-  <script src="fx.js?v=113"></script>
+  <script src="fx.js?v=114"></script>
   <script src="media-config.js?v=94"></script>
   <script>
   (function () {

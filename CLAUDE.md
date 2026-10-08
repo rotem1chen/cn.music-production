@@ -5,13 +5,13 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v113**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v115**.
 
 ## Files
-- `index.html` — main page: intro gate, films reel, STILLS preview (3 shots/concert)
+- `index.html` — main page: films reel, STILLS preview (3 shots/concert). Opens straight onto the films — there is no intro
 - `show.html` — per-concert full gallery, opened as `show.html?c=<concert index>`
 - `style.css` — all styling. Theme: pure black + brand **yellow `#ffd400`**, mono font (Space Mono), "camera viewfinder" look (corner target-brackets)
-- `app.js` — main-page logic (intro w/ music, reel, video viewer, stills grid + lightbox)
+- `app.js` — main-page logic (reel, video viewer, stills grid + lightbox)
 - `show.js` — gallery-subpage logic
 - **`clips.js`** — CONFIG for films: `SITE` (name/tagline/contact/socials) + `CLIPS` array
 - **`photos.js`** — CONFIG for stills: `CONCERTS` array
@@ -20,7 +20,7 @@ After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` ta
 - `fx.js` — the "liquid" layer (home + gallery pages): ambient light from the active film/concert, the glass nav droplet, reel depth/tilt, scroll reveals. Glass refraction is an SVG lens it injects; Chromium only, others get frosted blur
 - `plight-fx.js` — the fluid photo lightbox (open from thumbnail, swipe/flick, drag down to close), used by index, show and media
 - `vgrid.js` — the grid+player logic BOTH subpages share; each page sets `window.VGRID = { items, ratio, min, unit }` before loading it
-- `logo.png` (metal CN mark), `intro.mp4` (intro video w/ audio), `photos/<concert>/` (full-res + `thumb/` thumbnails)
+- `logo.svg` (the CN mark, shown everywhere — filled with a metal gradient in CSS, so no background box), `logo.png` (only for the search-engine logo), `intro-poster.jpg` (the link-preview image — keep it), `photos/<concert>/` (full-res + `thumb/` thumbnails)
 
 ## How to add a FILM
 Add an object to `CLIPS` in `clips.js`:
@@ -52,7 +52,6 @@ a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that pa
 
 ## Interaction notes
 - Films reel: **wheel scrolls**; **mouse only moves the yellow target-corners** onto the pointed film (no auto-centering).
-- Intro: black screen → logo + ENTER → plays intro with music (click anywhere to skip) → fades in. Once per session.
 - Mobile: custom cursor is hidden; videos need a **tap to play** (mobile blocks autoplay).
 
 ## YouTube notes
