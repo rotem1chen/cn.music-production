@@ -951,3 +951,76 @@ body { background: transparent; }   /* html is already black; a black body would
   :is(.nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close) {
     background: #141414; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
+
+/* ---------- Lock page (link.html) — liquid version ---------- */
+.pin { gap: 18px; overflow: hidden; isolation: isolate; cursor: default;
+  transition: opacity .7s var(--ease) .32s, filter .7s var(--ease) .32s, transform .9s var(--ease) .32s; }
+/* living light: three soft lamps that lean toward the pointer */
+.pin-light { position: absolute; inset: 0; z-index: -1; pointer-events: none; --mx: 0px; --my: 0px; }
+.pin-light i { position: absolute; left: 50%; top: 50%; border-radius: 50%; filter: blur(70px); mix-blend-mode: screen;
+  transition: transform 1.8s var(--ease); }
+.pin-light i:nth-child(1) { width: 52vmax; height: 52vmax; margin: -26vmax 0 0 -26vmax; background: radial-gradient(circle, rgba(255,212,0,.42), transparent 62%);
+  transform: translate(calc(var(--mx) * .35 - 8vmax), calc(var(--my) * .35 - 6vmax)); }
+.pin-light i:nth-child(2) { width: 46vmax; height: 46vmax; margin: -23vmax 0 0 -23vmax; background: radial-gradient(circle, rgba(255,110,20,.32), transparent 62%);
+  transform: translate(calc(var(--mx) * -.2 + 14vmax), calc(var(--my) * -.2 + 10vmax)); }
+.pin-light i:nth-child(3) { width: 40vmax; height: 40vmax; margin: -20vmax 0 0 -20vmax; background: radial-gradient(circle, rgba(110,60,255,.26), transparent 62%);
+  transform: translate(calc(var(--mx) * .12 - 18vmax), calc(var(--my) * .12 + 16vmax)); }
+.pin-logo { width: clamp(84px, 11vw, 132px); animation: pinRise 1s var(--ease) backwards; }
+.pin .panel-label { animation: pinRise 1s var(--ease) .08s backwards; }
+.pin-form { animation: pinRise 1s var(--ease) .16s backwards; }
+.pin-pad { animation: pinRise 1s var(--ease) .24s backwards; }
+@keyframes pinRise { from { opacity: 0; translate: 0 24px; filter: blur(10px); } to { opacity: 1; translate: 0 0; filter: blur(0); } }
+
+/* code boxes: glass capsules; each digit drops in as a yellow bead */
+.pin-boxes { gap: 16px; }
+.pin-boxes span { width: 58px; height: 72px; border: 0; border-radius: 22px; font-size: 0;
+  background: var(--glass-fill); -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: var(--glass-rim), 0 10px 30px rgba(0,0,0,.4);
+  transition: box-shadow .35s var(--ease), translate .55s var(--spring), scale .55s var(--spring), opacity .4s; }
+.pin-boxes span.on { box-shadow: var(--glass-rim), 0 0 0 1.5px rgba(255,212,0,.75), 0 0 26px rgba(255,212,0,.35); }
+.pin-boxes span.on::after { display: none; }
+.pin-boxes span::before { content: ""; width: 20px; height: 20px; border-radius: 50%; scale: 0;
+  background: radial-gradient(circle at 35% 30%, #fff6b0 0%, #ffd400 45%, #c79a00 100%);
+  box-shadow: 0 0 18px rgba(255,212,0,.7), inset 0 -2px 4px rgba(0,0,0,.25); transition: scale .2s ease; }
+.pin-boxes span.filled::before { scale: 1; animation: beadIn .5s var(--spring) both; }
+@keyframes beadIn { 0% { scale: .2; translate: 0 -18px; } 55% { scale: 1.25 .8; translate: 0 2px; } 100% { scale: 1; translate: 0 0; } }
+
+/* wrong code: an iPhone-style shake that dies down, with a red warning glow */
+.pin.shake .pin-boxes { animation: pinShake2 .6s linear; }
+.pin.shake .pin-boxes span { box-shadow: var(--glass-rim), 0 0 0 1.5px rgba(255,70,70,.8), 0 0 26px rgba(255,60,60,.4); }
+.pin.shake .pin-boxes span::before { background: radial-gradient(circle at 35% 30%, #ffd0d0, #ff4a4a 50%, #a01010); box-shadow: 0 0 18px rgba(255,60,60,.7); }
+@keyframes pinShake2 { 10% { translate: -16px 0; } 24% { translate: 13px 0; } 38% { translate: -9px 0; } 52% { translate: 6px 0; }
+  66% { translate: -3px 0; } 80% { translate: 1.5px 0; } 100% { translate: 0 0; } }
+
+/* glass keypad */
+.pin-pad { display: grid; grid-template-columns: repeat(3, 76px); gap: 16px 22px; margin-top: 8px; }
+.pin-pad button { width: 76px; height: 76px; border: 0; border-radius: 50%; cursor: pointer; color: var(--text);
+  font-family: var(--ui); font-size: 30px; font-weight: 400; line-height: 1;
+  background: var(--glass-fill); -webkit-backdrop-filter: blur(18px) saturate(190%); backdrop-filter: blur(18px) saturate(190%);
+  box-shadow: var(--glass-rim), 0 10px 28px rgba(0,0,0,.35);
+  transition: background .5s ease, box-shadow .5s ease, color .4s, scale .35s var(--spring);
+  -webkit-tap-highlight-color: transparent; }
+.lg-refract .pin-pad button, .lg-refract .pin-boxes span { -webkit-backdrop-filter: url(#lg-refract); backdrop-filter: url(#lg-refract); }
+.pin-pad button:hover { background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.06)); }
+.pin-pad button:active { scale: .92; color: #000; background: radial-gradient(circle at 40% 35%, #fff2a0, #ffd400 60%);
+  box-shadow: 0 0 0 1px rgba(255,212,0,.6), 0 0 34px rgba(255,212,0,.55); transition: scale .06s ease-out, background 0s, color 0s, box-shadow 0s; }
+.pin-pad .pin-del { font-size: 22px; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--muted); }
+@media (hover: hover) and (pointer: fine) { .pin-pad { grid-template-columns: repeat(3, 64px); gap: 12px 18px; }
+  .pin-pad button { width: 64px; height: 64px; font-size: 24px; } }
+@media (max-height: 700px) { .pin-logo { display: none; } .pin-pad button { width: 64px; height: 64px; } .pin-pad { grid-template-columns: repeat(3, 64px); } }
+
+/* right code: the beads gather into one, then the glass dissolves into the page */
+.pin.done { opacity: 0; filter: blur(18px); transform: scale(1.12); pointer-events: none; }
+.pin.done .pin-boxes span { translate: calc((1.5 - var(--i)) * 74px) 0; scale: .7; }
+.pin.done .pin-boxes span:not(:first-child) { opacity: 0; }
+.pin.done .pin-boxes span:first-child { scale: 1.25; box-shadow: var(--glass-rim), 0 0 0 1.5px rgba(255,212,0,.9), 0 0 60px rgba(255,212,0,.7); }
+.pin.done .pin-pad, .pin.done .panel-label, .pin.done .pin-msg { opacity: 0; transition: opacity .3s; }
+body.unlocking .linkmaker { animation: pageIn 1s var(--ease) .35s both; }
+@keyframes pageIn { from { opacity: 0; scale: .96; filter: blur(10px); } to { opacity: 1; scale: 1; filter: blur(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pin-light i { transition: none; }
+  .pin-boxes span.filled::before { animation: none; }
+  .pin.done { transform: none; filter: none; }
+  .pin.done .pin-boxes span { translate: none; scale: none; }
+}
