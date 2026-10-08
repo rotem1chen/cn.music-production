@@ -8,6 +8,7 @@
   "use strict";
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const touch = window.matchMedia("(hover: none), (pointer: coarse)").matches;   // phones: keep scrolling light
   const root = document.documentElement;
 
   /* ---------- real refraction where the browser can do it (Chromium: backdrop-filter: url()) ----------
@@ -47,7 +48,7 @@
     el._lens = { id, w, h };
     el.style.backdropFilter = el.style.webkitBackdropFilter = `url(#${id})`;
   }
-  if (isChromium && !noGlass) {
+  if (isChromium && !noGlass && !touch) {               // phones get frosted glass: the lens per frame is too heavy while scrolling
     lensSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     lensSvg.setAttribute("aria-hidden", "true");
     lensSvg.style.cssText = "position:absolute;width:0;height:0;overflow:hidden";
@@ -197,7 +198,7 @@
       let rx = -d * 26, ry = 0, sc = 1 - Math.min(0.22, Math.abs(d) * 0.16), z = -Math.abs(d) * 60;
       if (tilt && tilt.el === el) { rx += -tilt.y * 9; ry = tilt.x * 11; sc *= 1.035; z += 20; }
       el.style.transform = `perspective(1100px) translateZ(${z.toFixed(1)}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
-      el.style.filter = Math.abs(d) > 0.35 ? `blur(${((Math.abs(d) - 0.35) * 2.4).toFixed(2)}px)` : "";
+      if (!touch) el.style.filter = Math.abs(d) > 0.35 ? `blur(${((Math.abs(d) - 0.35) * 2.4).toFixed(2)}px)` : "";
     });
   }
   if (fine && !reduced) {
