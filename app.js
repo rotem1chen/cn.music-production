@@ -448,63 +448,77 @@
     return { x: (vw - fw) / 2, y: (vh - fh) / 2, w: fw, h: fh };
   }
 
+  /* the stage is laid out once at its final size; the small → big move is a transform (GPU),
+     so the player never re-lays out mid-animation */
+  function toRect(B, r) {
+    const sx = r.width / B.w, sy = r.height / B.h;
+    const dx = (r.left + r.width / 2) - (B.x + B.w / 2), dy = (r.top + r.height / 2) - (B.y + B.h / 2);
+    return `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+  }
+  let bigNow = null;
+
   function openViewer(el, c) {
+    clearTimeout(viewer._hide);                      // re-opening while the last one is still closing
     viewerOpen = true;
     lastFocused = el;
     stopPreview(el);
 
     // start over the small clip; lines begin OUT at the screen edges (invisible frame)
     const r = el.getBoundingClientRect();
-    setStage(r.left, r.top, r.width, r.height);
+    const B = bigNow = bigRect(clipAspect(c));
+    stage.style.transition = "none";
+    setStage(B.x, B.y, B.w, B.h);
+    stage.style.transform = toRect(B, r);
     setLines(0, window.innerHeight, 0, window.innerWidth);
     stage.style.backgroundImage = el._poster ? el._poster.style.backgroundImage : "none";
     mediaBox.innerHTML = "";
 
     cursor.classList.remove("show", "big"); cursorShown = false;   // hide the ring over the player
     viewer.hidden = false;
-    viewer.classList.remove("loaded");
+    viewer.classList.remove("loaded", "grown");
     void viewer.offsetWidth;         // commit the edge start frame
+    stage.style.transition = "";
     viewer.classList.add("open");
     document.body.style.overflow = "hidden";
 
     // BEAT 1: lines glide inward from the edges to frame the small photo (the grid forms)
     requestAnimationFrame(() => setLines(r.top, r.bottom, r.left, r.right));
 
-    // BEAT 2: once the grid has settled, grow the photo + spread the lines back outward
-    const GRID_HOLD = 1450;
+    // BEAT 2: the grid has formed → grow the photo, spread the lines, and start loading the film now
+    const GRID_HOLD = 420;
     stage._grow = setTimeout(() => {
-      const B = bigRect(clipAspect(c));
-      setStage(B.x, B.y, B.w, B.h);
+      stage.style.transform = "none";
       setLines(B.y, B.y + B.h, B.x, B.x + B.w);
+      mountPlayer(c);
     }, GRID_HOLD);
 
-    // BEAT 3: reveal the video once it has grown (poster stays until it's actually playing)
-    stage._timer = setTimeout(() => mountPlayer(c), GRID_HOLD + 1250);
+    // BEAT 3: once grown, the player may show as soon as it is actually playing
+    stage._timer = setTimeout(() => viewer.classList.add("grown"), GRID_HOLD + 560);
 
     closeBtn.focus();
   }
 
   function closeViewer() {
-    if (viewer.hidden) return;
+    if (viewer.hidden || !viewer.classList.contains("open")) return;
     clearTimeout(stage._timer);
     clearTimeout(stage._grow);
     pendingMount = null;
     if (ytPlayer && ytPlayer.destroy) { try { ytPlayer.destroy(); } catch (_) {} ytPlayer = null; }
     mediaBox.innerHTML = "";
 
-    // reverse: shrink back to wherever the clip now sits, lines close in
+    // reverse along the same path: shrink back to wherever the clip now sits, lines close in
     const r = lastFocused ? lastFocused.getBoundingClientRect() : null;
-    if (r) { setStage(r.left, r.top, r.width, r.height); setLines(r.top, r.bottom, r.left, r.right); }
-    viewer.classList.remove("open", "loaded");
+    if (r && bigNow) { stage.style.transform = toRect(bigNow, r); setLines(r.top, r.bottom, r.left, r.right); }
+    viewer.classList.remove("open", "loaded", "grown");
     document.body.style.overflow = "";
+    viewerOpen = false;                              // the page takes input again right away
 
-    setTimeout(() => {
+    viewer._hide = setTimeout(() => {
       viewer.hidden = true;
-      viewerOpen = false;
       activeIdx = -1;               // force preview + target to reattach
       refresh();
-      if (lastFocused && lastFocused.focus) lastFocused.focus();
-    }, 1100);
+      if (lastFocused && lastFocused.focus) lastFocused.focus({ preventScroll: true });
+    }, 600);
   }
 
   closeBtn.addEventListener("click", closeViewer);
