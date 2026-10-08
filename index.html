@@ -52,7 +52,10 @@
   <!-- opening: decide before first paint, so nothing flashes in its final place (opening.js plays it) -->
   <script>
     try {
-      if (!sessionStorage.getItem("cn_open_played") && !location.hash &&
+      // every load and refresh — except coming Back from a gallery (the cover flies home instead),
+      // a #section link, or reduced motion
+      var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+      if (!(nav && nav.type === "back_forward") && !location.hash &&
           !matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentElement.classList.add("opening");
     } catch (e) {}
   </script>
@@ -186,6 +189,6 @@
   <script src="plight-fx.js?v=121"></script>
   <script src="app.js?v=129"></script>
   <script src="fx.js?v=131"></script>
-  <script src="opening.js?v=119"></script>
+  <script src="opening.js?v=132"></script>
 </body>
 </html>

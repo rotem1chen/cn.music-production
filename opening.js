@@ -1,4 +1,4 @@
-/* CN Production — the opening (home page, once per visit).
+/* CN Production — the opening (home page, every load and refresh).
    No gate and no overlay: it plays on the real page.
    1. the metal CN mark materialises big in the centre, the sheen crosses it
    2. the ambient light blooms out from it
@@ -11,7 +11,6 @@
   const html = document.documentElement;
   if (!html.classList.contains("opening")) return;
   if (window.scrollY > 40) { html.classList.remove("opening"); return; }   // reopened mid-page: just show it
-  try { sessionStorage.setItem("cn_open_played", "1"); } catch (_) {}
 
   const $ = (s) => document.querySelector(s);
   const logo = $(".logo-hero");
