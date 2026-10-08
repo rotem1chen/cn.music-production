@@ -839,3 +839,115 @@ button.rv-tc:hover { background: var(--accent); color: #000; }
 :is(.clip, .shot, .vid, .svid, .lm-card, .lm-go, .intro-enter, .reel-more, .concert-all, .skip-stills, .pool-btn, .plight-nav, .plight-close, .viewer-close, .dl, .a-link, .rv-tc) {
   -webkit-tap-highlight-color: transparent;   /* our own press state replaces the grey iOS flash */
 }
+
+/* =====================================================================
+   LIQUID — ambient light, liquid glass, depth, reveals (driven by fx.js)
+   ===================================================================== */
+:root {
+  --glass-fill: linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.035));
+  --glass-rim: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -1px 1px rgba(255,255,255,.10),
+               inset 0 0 0 1px rgba(255,255,255,.09), inset 0 0 24px rgba(255,255,255,.05);
+  --glass-drop: 0 12px 38px rgba(0,0,0,.45);
+  --spring: cubic-bezier(.2, .9, .25, 1.12);     /* a touch of overshoot for things that land */
+}
+
+/* ---- ambient light: the film / concert you're on glows behind everything ---- */
+body { background: transparent; }   /* html is already black; a black body would paint over the light */
+.logo-photo, .intro-logo, .pool-logo { mix-blend-mode: lighten; }   /* the PNG's black square melts into the light */
+.ambient { position: fixed; inset: -12%; z-index: -1; pointer-events: none; overflow: hidden; }
+.ambient i { position: absolute; inset: 0; opacity: 0; transform: scale(1.18);
+  filter: blur(80px) saturate(1.7) brightness(.55);
+  transition: opacity 1.4s ease, transform 2.6s var(--ease); }
+.ambient i.on { opacity: .95; transform: scale(1.04); }
+.ambient::after { content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 65% at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,.45) 60%, #000 92%); }
+
+/* ---- liquid glass: one material for every floating control ---- */
+:is(.nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close) {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(18px) saturate(190%);
+          backdrop-filter: blur(18px) saturate(190%);
+  box-shadow: var(--glass-rim), var(--glass-drop);
+  border-radius: 999px; isolation: isolate;
+}
+/* Chromium bends the light at the rim (fx.js adds the SVG lens); everyone else gets frosted glass */
+.lg-refract :is(.nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close) {
+  -webkit-backdrop-filter: url(#lg-refract);
+          backdrop-filter: url(#lg-refract);
+}
+/* specular sheen — light catching the top-left of the material */
+:is(.nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close)::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  background: linear-gradient(115deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,0) 32%, rgba(255,255,255,0) 72%, rgba(255,255,255,.07) 100%);
+}
+.skip-stills .ec, .reel-more .ec { display: none; }      /* the glass is the frame now */
+
+/* nav: one floating pill, centred, with a liquid droplet on the current section */
+.nav { inset: 14px auto auto 50%; transform: translateX(-50%); padding: 6px; gap: 2px;
+  justify-content: center; mix-blend-mode: normal; }
+.nav-right { display: contents; }
+.nav a { position: relative; z-index: 1; padding: 11px 17px; border-radius: 999px; opacity: .74;
+  transition: opacity .25s, color .35s; }
+.nav a:hover { opacity: 1; }
+.nav a.on { opacity: 1; color: var(--accent); }
+.nav-blob { position: absolute; left: 0; top: 6px; bottom: 6px; width: 0; border-radius: 999px; z-index: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.05));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 0 0 1px rgba(255,212,0,.32), 0 0 22px rgba(255,212,0,.22);
+  transform-origin: 50% 50%; will-change: transform, width; }
+
+/* HUD: a glass capsule that re-forms its text when the film changes */
+.hud { left: 50%; right: auto; bottom: 18px; transform: translateX(-50%);
+  display: flex; gap: 20px; padding: 13px 24px; white-space: nowrap; max-width: calc(100vw - 32px);
+  transition: opacity .45s var(--ease), transform .6s var(--spring); }
+.hud.hide, .hud.yield { opacity: 0; transform: translateX(-50%) translateY(16px) scale(.94); }
+.hud > span:empty { display: none; }
+.hud.pulse > span { animation: hudIn .55s var(--ease) both; }
+.hud.pulse > span:nth-child(2) { animation-delay: .04s; } .hud.pulse > span:nth-child(3) { animation-delay: .08s; }
+.hud.pulse > span:nth-child(4) { animation-delay: .12s; }
+@keyframes hudIn { from { opacity: 0; filter: blur(8px); translate: 0 7px; } to { opacity: 1; filter: blur(0); translate: 0 0; } }
+@media (max-width: 720px) {
+  .hud { display: flex; gap: 14px; bottom: 14px; padding: 11px 18px; }
+}
+@media (max-width: 760px) { .go-more { bottom: calc(14px + 44px + 12px + env(safe-area-inset-bottom, 0px)); } }   /* clears the glass HUD */
+
+/* jump buttons + reel paging become glass pills */
+.skip-stills, .reel-more { padding: 13px 20px; color: var(--accent); }
+
+/* lightbox + player controls */
+.plight-close, .viewer-close { padding: 11px 18px; }
+.plight-nav { width: 56px; height: 56px; display: grid; place-items: center; padding: 0 0 4px; font-size: 30px;
+  opacity: var(--pa, 1); color: var(--text); }
+.plight-nav:hover { color: var(--accent); }
+
+/* ---- reel depth: films tilt back as they leave the centre, the hovered one leans in ---- */
+.reel .clip, .subpages .clip {
+  transition: opacity .5s var(--ease), transform .3s cubic-bezier(.2,.8,.2,1), filter .45s var(--ease), box-shadow .5s var(--ease);
+  will-change: transform;
+}
+.reel .clip.active { box-shadow: 0 46px 90px -40px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.07); }
+.reel .clip::after, .subpages .clip::after {             /* glass edge on every tile */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 4;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.glare { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; opacity: 0;
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgba(255,255,255,.42), rgba(255,255,255,0) 46%);
+  mix-blend-mode: soft-light; transition: opacity .35s; }
+.clip.tilting .glare { opacity: 1; }
+
+/* ---- reveals: things rise out of a blur as you reach them ---- */
+.rv { opacity: 0; translate: 0 36px; filter: blur(12px);
+  transition: opacity .9s var(--ease) var(--rvd, 0s), translate 1.15s var(--ease) var(--rvd, 0s), filter .9s var(--ease) var(--rvd, 0s); }
+.rv.in { opacity: 1; translate: 0 0; filter: none; }
+.artist.rv { transition: opacity .9s var(--ease) var(--rvd, 0s), translate 1.15s var(--ease) var(--rvd, 0s), filter .9s var(--ease) var(--rvd, 0s), padding-left .3s var(--ease); }
+.contact-email.rv { transition: opacity .9s var(--ease) var(--rvd, 0s), translate 1.15s var(--ease) var(--rvd, 0s), filter .9s var(--ease) var(--rvd, 0s), border-color .3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rv { translate: none; filter: none; transition: opacity .5s ease; }
+  .ambient i { transition: opacity .6s ease; transform: none; }
+  .hud.pulse > span { animation: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .ambient { display: none; }
+  :is(.nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close) {
+    background: #141414; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

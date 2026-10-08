@@ -306,6 +306,7 @@
     hudIndex.textContent = isSub ? "" : String(page * PAGE_SIZE + i + 1).padStart(2, "0") + " — " + total;
     bars.forEach((b, j) => b.classList.toggle("on", !isSub && j === i));
     target.classList.remove("lock"); void target.offsetWidth; target.classList.add("lock");
+    document.dispatchEvent(new CustomEvent("cn:active", { detail: { el } }));   // fx.js: ambient light + HUD refresh
   }
 
   function startPreview(el, c) {
