@@ -989,3 +989,41 @@ body.unlocking .linkmaker { animation: pageIn 1s var(--ease) .35s both; }
 
 /* opening (opening.js): hidden only until the script hands them to their animations */
 html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .ambient) { opacity: 0; }
+
+/* ---------- Viewer, liquid version: same timing, the yellow grid becomes light ---------- */
+/* the page behind frosts over instead of going flat black, and the film's colours glow through it */
+.viewer { transition: background .55s var(--ease), -webkit-backdrop-filter .9s var(--ease), backdrop-filter .9s var(--ease);
+  -webkit-backdrop-filter: blur(0px) saturate(100%); backdrop-filter: blur(0px) saturate(100%); }
+.viewer.open { background: rgba(0,0,0,.62);
+  -webkit-backdrop-filter: blur(26px) saturate(160%); backdrop-filter: blur(26px) saturate(160%); }
+.v-amb { position: absolute; inset: -15%; z-index: 100; pointer-events: none; opacity: 0;
+  background: center / cover no-repeat; filter: blur(90px) saturate(1.8) brightness(.55); transform: scale(1.1);
+  transition: opacity 1.2s ease, transform 2.4s var(--ease); }
+.viewer.open .v-amb { opacity: .85; transform: scale(1); }
+
+/* the crosshair lines are beams of yellow light: a bright core, a soft glow, ends that fade out */
+.v-lead { background: none; }
+.v-lead::before { content: ""; position: absolute; inset: 0; }
+.v-lead-t::before, .v-lead-b::before {
+  background: linear-gradient(90deg, rgba(255,212,0,0), var(--accent) 18%, #fff3a8 50%, var(--accent) 82%, rgba(255,212,0,0)); }
+.v-lead-l::before, .v-lead-r::before {
+  background: linear-gradient(180deg, rgba(255,212,0,0), var(--accent) 18%, #fff3a8 50%, var(--accent) 82%, rgba(255,212,0,0)); }
+.v-lead { filter: drop-shadow(0 0 4px rgba(255,212,0,.9)) drop-shadow(0 0 14px rgba(255,212,0,.45)); }
+.viewer.open .v-lead { opacity: .95; }
+
+/* the growing film: a glass edge, a deep soft shadow, glowing corners, a sheen as it zooms in */
+.viewer-stage { box-shadow: 0 50px 140px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.08); }
+.viewer-stage::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.08); }
+.viewer-stage::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
+  background: linear-gradient(110deg, transparent 38%, rgba(255,255,255,.38) 50%, transparent 62%) no-repeat;
+  background-size: 260% 100%; background-position: 130% 0; mix-blend-mode: soft-light; opacity: 0; }
+.viewer.open .viewer-stage::before { animation: stageSheen 1.3s var(--ease) 1.45s both; }   /* starts with the grow */
+@keyframes stageSheen { 0% { opacity: 1; background-position: 130% 0; } 100% { opacity: 1; background-position: -130% 0; } }
+.viewer-stage .corner { border-color: var(--accent); filter: drop-shadow(0 0 6px rgba(255,212,0,.8)); }
+
+@media (prefers-reduced-motion: reduce) { .viewer.open .viewer-stage::before { animation: none; } }
+@media (prefers-reduced-transparency: reduce) {
+  .viewer.open { background: rgba(0,0,0,.96); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .v-amb { display: none; }
+}
