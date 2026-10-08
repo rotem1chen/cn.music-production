@@ -60,6 +60,15 @@
   // the animations now hold the start state, so the CSS hiding can go
   html.classList.remove("opening");
 
+  // the films rise into place: keep the yellow corners glued to the film every frame (no glide),
+  // so they arrive attached instead of floating where the film used to be
+  html.classList.add("opening-run");
+  let follow = true;
+  (function stick() {
+    if (window.cnRefresh) window.cnRefresh();
+    if (follow) requestAnimationFrame(stick);
+  })();
+
   // interruptible: input fast-forwards whatever is still playing
   let ff = false;
   function fastForward() {
@@ -70,5 +79,10 @@
   const evs = ["wheel", "pointerdown", "keydown", "touchstart"];
   function off() { evs.forEach((e) => window.removeEventListener(e, fastForward, true)); }
   evs.forEach((e) => window.addEventListener(e, fastForward, { capture: true, passive: true }));
-  Promise.all(anims.map((a) => a.finished.catch(() => {}))).then(off);
+  Promise.all(anims.map((a) => a.finished.catch(() => {}))).then(() => {
+    off();
+    follow = false;
+    html.classList.remove("opening-run");
+    if (window.cnRefresh) window.cnRefresh();
+  });
 })();

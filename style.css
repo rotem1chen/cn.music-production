@@ -1296,3 +1296,5 @@ html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .
 @media (hover: none), (pointer: coarse) {   /* phones: keep the tilt glued to the scroll (no transform delay) */
   .subpages .clip { transition: opacity .9s var(--ease) var(--rvd, 0s), scale 1.1s var(--ease) var(--rvd, 0s), box-shadow .5s var(--ease); }
 }
+/* during the opening the corners follow the rising film frame by frame — no glide, so they never lag behind */
+html.opening-run .target { transition: opacity .35s; }

@@ -306,6 +306,7 @@
   }, { passive: true });
   window.addEventListener("resize", refresh);
 
+  window.cnRefresh = refresh;   // opening.js keeps the yellow corners on the film while it rises into place
   renderPage(0);          // first five films (everything above must exist before this runs)
   refresh();
 
