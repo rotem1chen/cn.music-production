@@ -37,6 +37,27 @@
       border: 1px solid var(--line); color: var(--accent); text-decoration: none;
       font: 600 11px var(--ui); letter-spacing: 0.14em; text-transform: uppercase }
     a.act:hover { border-color: var(--accent) }
+
+    /* liquid: studio light behind the waiting / error states, glass on top */
+    html { background: #000 } body { background: transparent }
+    body::before { content: ""; position: fixed; inset: -12%; z-index: -1; pointer-events: none;
+      background: radial-gradient(38% 42% at 30% 28%, rgba(255,212,0,.55), transparent 70%),
+                  radial-gradient(42% 48% at 76% 72%, rgba(255,110,20,.45), transparent 70%),
+                  radial-gradient(36% 40% at 18% 88%, rgba(110,60,255,.38), transparent 70%);
+      filter: blur(80px) saturate(1.5) brightness(.5) }
+    .state > * { position: relative }
+    .state:not([hidden])::before { content: ""; position: absolute; width: min(520px, 90vw); height: 300px; border-radius: 28px; z-index: -1;
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.035));
+      -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.42), inset 0 0 0 1px rgba(255,255,255,.08), 0 30px 80px -20px rgba(0,0,0,.7) }
+    .state { position: relative; isolation: isolate }
+    .bar { height: 3px; border-radius: 3px; background: rgba(255,255,255,.1) }
+    .bar i { border-radius: 3px; box-shadow: 0 0 14px rgba(255,212,0,.8) }
+    a.act { border: 0; border-radius: 999px; padding: 13px 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.035));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.42), inset 0 0 0 1px rgba(255,255,255,.08), 0 10px 28px rgba(0,0,0,.35) }
+    a.act:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,.42), 0 0 0 1px rgba(255,212,0,.5), 0 0 26px rgba(255,212,0,.2) }
+    #doc { background: transparent }
   </style>
 </head>
 <body>

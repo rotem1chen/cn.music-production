@@ -1049,3 +1049,106 @@ html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .
   background: linear-gradient(180deg, rgba(255,212,0,0), var(--accent) 18%, #fff3a8 50%, var(--accent) 82%, rgba(255,212,0,0)); }
 @media (prefers-reduced-motion: reduce) { .plight-stage.sheen::before { animation: none; } }
 @media (prefers-reduced-transparency: reduce) { .p-amb { display: none; } }
+
+/* =====================================================================
+   LIQUID — tool pages (link.html, media.html, review.html)
+   Same material as the site: light behind, glass on top, yellow as light.
+   ===================================================================== */
+.pool-page .ambient i.on { opacity: .8; }
+
+/* ---- shared: glass cards, wells, pills, liquid-yellow primaries ---- */
+.pool-page :is(.lm-card, .lm-go, .file, .rv-form, .rv-note, .vload-box) {
+  border: 0; border-radius: 22px;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%);
+  box-shadow: var(--glass-rim), 0 18px 50px -18px rgba(0,0,0,.6);
+  transition: box-shadow .45s var(--ease), translate .5s var(--ease), background .4s, opacity .9s var(--ease) var(--rvd, 0s), filter .9s var(--ease) var(--rvd, 0s);
+}
+.pool-page :is(.lm-card, .lm-go, .file):hover, .pool-page .lm-card:focus-within {
+  translate: 0 -3px;
+  box-shadow: var(--glass-rim), 0 0 0 1px rgba(255,212,0,.45), 0 0 38px rgba(255,212,0,.16), 0 26px 60px -20px rgba(0,0,0,.7);
+}
+.pool-page :is(.lm-card, .lm-out, .pool-folder-title)::before,
+.pool-page :is(.lm-card, .lm-out)::after { display: none; }          /* the glass is the frame now — no corner brackets */
+.pool-page .pool-btn .ec, .pool-page .pool-folder-title .ec { display: none; }
+
+.pool-page :is(.lm-input, .rv-name, .rv-text, .rv-fps select) {
+  border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(255,255,255,.05);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.35); transition: border-color .25s, box-shadow .3s;
+}
+.pool-page :is(.lm-input, .rv-name, .rv-text, .rv-fps select):focus {
+  outline: none; border-color: rgba(255,212,0,.8); box-shadow: inset 0 1px 2px rgba(0,0,0,.35), 0 0 0 4px rgba(255,212,0,.14), 0 0 24px rgba(255,212,0,.12);
+}
+.pool-page .lm-out { border: 0; border-radius: 14px; background: rgba(255,212,0,.07);
+  box-shadow: inset 0 0 0 1px rgba(255,212,0,.55), 0 0 30px rgba(255,212,0,.12); }
+
+.pool-page .pool-btn { border-radius: 999px; padding: 13px 20px; border: 0;
+  background: var(--glass-fill); -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: var(--glass-rim), 0 10px 28px rgba(0,0,0,.35); transition: box-shadow .35s, color .25s, background .35s; }
+.pool-page .pool-btn:hover { box-shadow: var(--glass-rim), 0 0 0 1px rgba(255,212,0,.45), 0 0 26px rgba(255,212,0,.18); }
+/* primary = a drop of liquid yellow */
+.pool-page .pool-btn.primary { color: #0a0a08; font-weight: 700;
+  background: radial-gradient(120% 140% at 30% 0%, #fff4a6 0%, #ffd400 45%, #e0b100 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 6px rgba(150,110,0,.35), 0 10px 30px rgba(255,212,0,.28); }
+.pool-page .pool-btn.primary:hover { background: radial-gradient(120% 140% at 30% 0%, #fffbd6 0%, #ffe033 45%, #ecbb00 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), inset 0 -2px 6px rgba(150,110,0,.35), 0 12px 40px rgba(255,212,0,.42); }
+
+/* ---- link maker ---- */
+.lm-card { padding: clamp(20px, 2.6vw, 30px); }
+.lm-go { padding: 20px 22px; }
+
+/* ---- delivery (media pool): tiles lift out of the glass ---- */
+.pool .vid, .pool .shot { border-radius: 16px; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 18px 46px -22px rgba(0,0,0,.8);
+  transition: translate .5s var(--ease), box-shadow .45s var(--ease), opacity .9s var(--ease) var(--rvd, 0s), filter .9s var(--ease) var(--rvd, 0s); }
+.pool .vid::before, .pool .vid::after, .pool .shot::before, .pool .shot::after { display: none; }
+.pool .vid:hover, .pool .shot:hover { translate: 0 -4px;
+  box-shadow: 0 0 0 1px rgba(255,212,0,.5), 0 0 34px rgba(255,212,0,.18), 0 28px 60px -22px rgba(0,0,0,.85); }
+.pool .vid-play { width: 58px; height: 58px; inset: 0; margin: auto; border-radius: 50%; display: grid; place-items: center;
+  background: var(--glass-fill); -webkit-backdrop-filter: blur(14px) saturate(180%); backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: var(--glass-rim), 0 10px 30px rgba(0,0,0,.4); text-shadow: none; }
+.pool-page .dl { border: 0; border-radius: 50%; background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(14px) saturate(180%); backdrop-filter: blur(14px) saturate(180%); box-shadow: var(--glass-rim), 0 6px 18px rgba(0,0,0,.4); }
+.pool-page .dl:hover { background: radial-gradient(120% 140% at 30% 0%, #fff4a6, #ffd400 50%); color: #000; }
+.file { padding: 16px 20px; margin-bottom: 10px; border-bottom: 0; }
+.pool-folder-title { display: inline-block; padding: 9px 18px; border-radius: 999px; background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: var(--glass-rim); }
+/* the delivery video player + loader: frosted, lit by the clip */
+.vplay { background: rgba(0,0,0,.6); -webkit-backdrop-filter: blur(26px) saturate(160%); backdrop-filter: blur(26px) saturate(160%); }
+.vplay-stage { border-radius: 14px; box-shadow: 0 50px 140px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.08); }
+.vplay-stage iframe, .vplay-video { border-radius: 14px; }
+.vplay-stage .corner, .rv-stage .corner { filter: drop-shadow(0 0 6px rgba(255,212,0,.8)); }
+.vload-box { padding: 28px 34px; }
+.vload-bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+.vload-bar i { border-radius: 4px; box-shadow: 0 0 14px rgba(255,212,0,.8); }
+
+/* ---- cut review: the player is a lit object, notes are glass, markers are beads of light ---- */
+.rv-stage { border-radius: 16px; box-shadow: 0 50px 120px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.08); }
+.rv-media { border-radius: 16px; }
+.rv-stage:fullscreen, .rv-stage:fullscreen .rv-media { border-radius: 0; }
+.rv-bigplay { border: 0; background: var(--glass-fill); -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: var(--glass-rim), 0 0 0 1px rgba(255,212,0,.45), 0 0 40px rgba(255,212,0,.25); }
+.rv-controls { padding: 6px 16px; border-radius: 999px; background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%); box-shadow: var(--glass-rim), 0 14px 40px rgba(0,0,0,.4); }
+.rv-track::before, .rv-buffer, .rv-progress { height: 3px; top: 15.5px; border-radius: 3px; }
+.rv-progress { box-shadow: 0 0 12px rgba(255,212,0,.7); }
+.rv-head-pin { width: 3px; border-radius: 3px; box-shadow: 0 0 10px rgba(255,212,0,.9); }
+.rv-mark { width: 12px; height: 12px; top: 21px; border-radius: 50%; transform: translateX(-50%);
+  background: radial-gradient(circle at 35% 30%, #fff6b0, #ffd400 50%, #c79a00); box-shadow: 0 0 12px rgba(255,212,0,.75); }
+.rv-mark:hover { transform: translateX(-50%) scale(1.5); }
+.rv-mark.fixed { background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1.5px var(--muted); }
+.rv-form { padding: 18px; box-shadow: var(--glass-rim), 0 0 0 1px rgba(255,212,0,.4), 0 0 40px rgba(255,212,0,.1); }
+.rv-tc { border-radius: 999px; border: 0; background: rgba(255,212,0,.08); box-shadow: inset 0 0 0 1px rgba(255,212,0,.55); }
+.rv-note { padding: 16px 20px; margin-bottom: 10px; border-bottom: 0; }
+.rv-note:first-child { border-top: 0; }
+.rv-note.flash { box-shadow: var(--glass-rim), 0 0 0 1px rgba(255,212,0,.6), 0 0 40px rgba(255,212,0,.25); }
+
+@media (prefers-reduced-transparency: reduce) {
+  .pool-page :is(.lm-card, .lm-go, .file, .rv-form, .rv-note, .vload-box, .pool-btn:not(.primary), .rv-controls, .rv-bigplay, .dl, .pool-folder-title) {
+    background: #141414; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .vplay { background: rgba(0,0,0,.96); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+/* the two editors sit in the Link Maker as one big pane of glass */
+.lm-editor { display: block; border: 0; border-radius: 26px; background: #000;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.1), inset 0 1px 0 rgba(255,255,255,.3), 0 40px 120px -30px rgba(0,0,0,.85); }

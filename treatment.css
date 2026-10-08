@@ -233,3 +233,84 @@ iframe { display: block; border: 0; width: 100%; height: calc(100% - 68px); back
 }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+
+/* =====================================================================
+   LIQUID — the editors (treatment + quotation), same material as the site.
+   Screen only: exported treatments / quotations carry their own styles and
+   are not touched by anything here.
+   ===================================================================== */
+:root {
+  --glass-fill: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.035));
+  --glass-rim: inset 0 1px 0 rgba(255,255,255,.42), inset 0 -1px 1px rgba(255,255,255,.09),
+               inset 0 0 0 1px rgba(255,255,255,.08), inset 0 0 22px rgba(255,255,255,.04);
+  --liquid-yellow: radial-gradient(120% 140% at 30% 0%, #fff4a6 0%, #ffd400 45%, #e0b100 100%);
+}
+html { background: #000 }
+body { background: transparent }
+/* studio light behind the workspace: yellow, amber, a little violet */
+body::before { content: ""; position: fixed; inset: -12%; z-index: -1; pointer-events: none;
+  background: radial-gradient(38% 42% at 24% 22%, rgba(255,212,0,.55), transparent 70%),
+              radial-gradient(42% 48% at 80% 72%, rgba(255,110,20,.45), transparent 70%),
+              radial-gradient(36% 40% at 12% 90%, rgba(110,60,255,.38), transparent 70%);
+  filter: blur(80px) saturate(1.5) brightness(.5) }
+
+/* buttons: glass pills (no corner brackets — the glass is the frame) */
+button, .file-button { border: 0; border-radius: 999px; background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: var(--glass-rim), 0 8px 22px rgba(0,0,0,.35); transition: color .25s, box-shadow .3s, scale .3s var(--ease) }
+button::before, button::after, .file-button::before, .file-button::after { content: none }
+button:hover, .file-button:hover { border-color: transparent;
+  box-shadow: var(--glass-rim), 0 0 0 1px rgba(255,212,0,.45), 0 0 24px rgba(255,212,0,.16) }
+button:active, .file-button:active { scale: .96; transition: scale .08s ease-out }
+.primary { background: var(--liquid-yellow); color: #0a0a08; font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 6px rgba(150,110,0,.35), 0 10px 28px rgba(255,212,0,.28) }
+.primary:hover { background: radial-gradient(120% 140% at 30% 0%, #fffbd6 0%, #ffe033 45%, #ecbb00 100%); color: #0a0a08;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), inset 0 -2px 6px rgba(150,110,0,.35), 0 12px 36px rgba(255,212,0,.42) }
+.draft-del, .draft-del:hover { background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none }
+
+/* fields: soft glass wells that light up yellow when you type */
+input, textarea, select { border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(255,255,255,.05);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: inset 0 1px 2px rgba(0,0,0,.35);
+  transition: border-color .25s, box-shadow .3s }
+input:focus, textarea:focus, select:focus { outline: none; border-color: rgba(255,212,0,.8);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.35), 0 0 0 4px rgba(255,212,0,.14), 0 0 24px rgba(255,212,0,.12) }
+.section-body textarea { background: rgba(255,255,255,.04) }
+.section-name { border-radius: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none }
+.section-name:focus { box-shadow: none; border-bottom-color: var(--yellow) }
+
+/* top bar: a glass strip that stays put while you scroll */
+.top { position: sticky; top: 0; z-index: 5; border-bottom: 0; background: rgba(10,10,10,.35);
+  -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.25) }
+
+/* drafts: glass rows; the open one glows */
+aside { border-right: 0; background: rgba(255,255,255,.025); box-shadow: inset -1px 0 0 rgba(255,255,255,.07) }
+.draft { border-left: 0; border-radius: 16px; background: transparent; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none }
+.draft:hover { background: rgba(255,255,255,.05); box-shadow: none }
+.draft.active { background: var(--glass-fill); border-left: 0;
+  box-shadow: var(--glass-rim), 0 0 0 1px rgba(255,212,0,.45), 0 0 26px rgba(255,212,0,.14) }
+
+/* the story: each section is a glass card */
+.section-card { border: 0; border-radius: 24px; background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%);
+  box-shadow: var(--glass-rim), 0 20px 50px -20px rgba(0,0,0,.6) }
+.cover { border: 0; border-radius: 24px; box-shadow: 0 30px 80px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.08) }
+.reference img { border-radius: 12px }
+.share-row { border: 0; border-radius: 18px; background: rgba(255,212,0,.07);
+  box-shadow: inset 0 0 0 1px rgba(255,212,0,.55), 0 0 34px rgba(255,212,0,.12) }
+.q-row { border-bottom-color: rgba(255,255,255,.08) }
+
+/* preview + toast */
+dialog { border: 0; border-radius: 24px; overflow: hidden; box-shadow: 0 40px 140px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.1) }
+dialog::backdrop { background: rgba(0,0,0,.6); -webkit-backdrop-filter: blur(24px) saturate(150%); backdrop-filter: blur(24px) saturate(150%) }
+.preview-toolbar { border-bottom: 0; background: rgba(255,255,255,.04); box-shadow: inset 0 -1px 0 rgba(255,255,255,.08) }
+#toast { border-radius: 999px; background: var(--liquid-yellow);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 14px 40px rgba(255,212,0,.35) }
+
+@media (prefers-reduced-transparency: reduce) {
+  body::before { display: none }
+  button, .file-button, input, textarea, select, .top, .section-card, .draft.active { -webkit-backdrop-filter: none; backdrop-filter: none }
+  button, .file-button, .section-card, .draft.active { background: #161616 }
+  .top { background: #0b0b0b }
+}

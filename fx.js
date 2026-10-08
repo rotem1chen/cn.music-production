@@ -17,7 +17,8 @@
   const isChromium = !!(navigator.userAgentData && navigator.userAgentData.brands &&
     navigator.userAgentData.brands.some((b) => /Chromium/.test(b.brand)));
   const noGlass = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
-  const GLASS = ".nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close, .pin-pad button:not(.pin-del), .pin-boxes span";
+  const GLASS = ".nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close, .pin-pad button:not(.pin-del), .pin-boxes span, " +
+    ".lm-card, .lm-go, .pool-btn:not(.primary), .file, .rv-controls, .rv-form, .rv-note, .rv-bigplay, .vload-box";
   let lensSvg = null, lensN = 0;
   function lensFor(el) {
     const w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
@@ -99,6 +100,25 @@
       if (im && im.src) ambient(`url("${im.src}") center / cover no-repeat`);
     });
   }, { rootMargin: "-45% 0px -45% 0px" });
+  const BRAND_LIGHT = "radial-gradient(38% 42% at 28% 30%, rgba(255,212,0,.6), transparent 70%), " +
+    "radial-gradient(42% 48% at 76% 68%, rgba(255,110,20,.5), transparent 70%), " +
+    "radial-gradient(36% 40% at 18% 86%, rgba(110,60,255,.42), transparent 70%), #000";
+  const toolPage = document.body.classList.contains("pool-page");
+  function lightTools() {
+    if (!toolPage) return;
+    ambient(BRAND_LIGHT);
+    const use = (im) => { if (im && im.src && im.naturalWidth) ambient(`url("${im.currentSrc || im.src}") center / cover no-repeat`); };
+    // delivery: the first photo / video thumbnail that loads, then whatever you point at
+    const pool = document.getElementById("pool") || document.querySelector(".pool");
+    if (pool) {
+      let lit = false;
+      pool.addEventListener("load", (e) => { if (!lit && e.target.tagName === "IMG" && e.target.closest(".shot, .vid")) { lit = true; use(e.target); } }, true);
+      pool.addEventListener("pointerover", (e) => { const t = e.target.closest && e.target.closest(".shot, .vid"); if (t) use(t.querySelector("img")); });
+    }
+    // cut review: the video's own poster
+    const poster = document.getElementById("rvPoster");
+    if (poster) poster.addEventListener("load", () => use(poster));
+  }
   function watchConcerts() {
     document.querySelectorAll(".concert").forEach((c) => io.observe(c));
     // a gallery page: its own photos light the page, and the light follows the one you point at
@@ -203,7 +223,8 @@
   }
 
   /* ---------- reveals ---------- */
-  const rvSel = "#showGrid .shot, .show .panel-label, .show-title, .stills .panel-label, .concert-head, .concert .shot, .artists .panel-label, .artist, .about .panel-label, .panel-text, .contact .panel-label, .contact-email, .socials, .colophon, .subpages-wrap .panel-label";
+  const rvSel = ".pool-head > :not(.logo-svg), .lm-group > .panel-label, .lm-card, .lm-go, .pool .vid, .pool .shot, .file, .pool-folder-title, .rv-note, " +
+    "#showGrid .shot, .show .panel-label, .show-title, .stills .panel-label, .concert-head, .concert .shot, .artists .panel-label, .artist, .about .panel-label, .panel-text, .contact .panel-label, .contact-email, .socials, .colophon, .subpages-wrap .panel-label";
   const rvIO = new IntersectionObserver((ents) => {
     ents.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); rvIO.unobserve(en.target); } });
   }, { rootMargin: "0px 0px -8% 0px" });
@@ -230,7 +251,10 @@
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", () => { aimBlob(true); kickDepth(); });
   function boot() {
-    watchConcerts(); armReveals(); spySection(); aimBlob(true); kickDepth(); yieldHud();
+    watchConcerts(); lightTools(); armReveals(); spySection(); aimBlob(true); kickDepth(); yieldHud();
+    // tool pages fill in after load (Drive folders, notes): reveal what arrives
+    if (toolPage) { let q = 0; new MutationObserver(() => { cancelAnimationFrame(q); q = requestAnimationFrame(armReveals); })
+      .observe(document.body, { childList: true, subtree: true }); }
     onActive(document.querySelector(".reel .clip.active"));   // app.js picked a film before we were listening
     // the reel re-renders when you page through films; pick the new tiles up
     const reel = document.getElementById("work");
