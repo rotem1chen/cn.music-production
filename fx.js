@@ -230,12 +230,35 @@
   }
 
   /* ---------- reveals ---------- */
-  const rvSel = ".still-card, .pool-head > :not(.logo-svg), .lm-group > .panel-label, .lm-card, .lm-go, .pool .vid, .pool .shot, .file, .pool-folder-title, .rv-note, " +
+  const rvSel = ".subpages .clip, .still-card, .pool-head > :not(.logo-svg), .lm-group > .panel-label, .lm-card, .lm-go, .pool .vid, .pool .shot, .file, .pool-folder-title, .rv-note, " +
     "#showGrid .shot, .show .panel-label, .show-title, .stills .panel-label, .concert-head, .concert .shot, .artists .panel-label, .artist, .about .panel-label, .panel-text, .contact .panel-label, .contact-email, .socials, .colophon, .subpages-wrap .panel-label";
   const rvIO = new IntersectionObserver((ents) => {
     ents.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); rvIO.unobserve(en.target); } });
   }, { rootMargin: "0px 0px -8% 0px" });
+  /* text that arrives in pieces: labels and the email letter by letter, prose word by word */
+  const SPLIT = [[".panel-label", "ch"], [".contact-email", "ch"], [".panel-text", "w"]];
+  function split(el, kind) {
+    if (el.classList.contains("split")) return;
+    const text = el.textContent; if (!text.trim()) return;
+    el.classList.add("split");
+    el.setAttribute("aria-label", text.trim());
+    el.textContent = "";
+    let i = 0;
+    const parts = kind === "w" ? text.split(/(\s+)/) : Array.from(text);
+    parts.forEach((p) => {
+      if (!p) return;
+      if (/^\s+$/.test(p)) { el.appendChild(document.createTextNode(p)); return; }
+      const s = document.createElement("span"); s.className = kind; s.textContent = p; s.setAttribute("aria-hidden", "true");
+      s.style.setProperty("--i", i++); el.appendChild(s);
+    });
+  }
+  // the hairline above each section draws itself out from the centre when you reach it
+  const lineIO = new IntersectionObserver((ents) => ents.forEach((en) => {
+    if (en.isIntersecting) { en.target.classList.add("line-in"); lineIO.unobserve(en.target); }
+  }), { rootMargin: "0px 0px -12% 0px" });
   function armReveals() {
+    SPLIT.forEach(([sel, kind]) => document.querySelectorAll(sel).forEach((el) => { if (!el.closest(".pin")) split(el, kind); }));
+    document.querySelectorAll(".stills, .panel").forEach((sec) => { if (!sec._line) { sec._line = true; sec.classList.add("line-rv"); lineIO.observe(sec); } });
     document.querySelectorAll(rvSel).forEach((el) => {
       if (el.classList.contains("rv")) return;
       el.classList.add("rv");

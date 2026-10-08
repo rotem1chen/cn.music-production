@@ -1249,3 +1249,50 @@ html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .
 ::view-transition-group(still-cover) { animation-duration: .55s; animation-timing-function: cubic-bezier(.2, .9, .25, 1); }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
+
+/* =====================================================================
+   APPEAR — richer entrances (fx.js adds .rv / .in, .split, .line-in)
+   ===================================================================== */
+/* text in pieces: the element itself stays put, its letters / words rise out of a blur one after another */
+.split.rv { opacity: 1; translate: none; filter: none; }
+.split .ch, .split .w { display: inline-block; opacity: 0; translate: 0 .55em; filter: blur(8px);
+  transition: opacity .7s var(--ease), translate .9s var(--ease), filter .7s var(--ease);
+  transition-delay: calc(var(--rvd, 0s) + var(--i) * var(--step, 30ms)); }
+.split .w { --step: 55ms; }
+.split.in .ch, .split.in .w { opacity: 1; translate: 0 0; filter: blur(0); }
+/* section labels: after the letters, a short yellow line draws out */
+.panel-label.split::after { content: ""; display: inline-block; vertical-align: middle; width: 0; height: 1px; margin-left: 12px;
+  background: var(--accent); box-shadow: 0 0 8px rgba(255,212,0,.7); transition: width .9s var(--ease) .45s; }
+.panel-label.split.in::after { width: 30px; }
+
+/* the hairline above each section draws itself out from the centre */
+.line-rv { position: relative; border-top-color: transparent !important; }
+.line-rv::before { content: ""; position: absolute; top: -1px; left: var(--pad); right: var(--pad); height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line) 18%, rgba(255,212,0,.35) 50%, var(--line) 82%, transparent);
+  scale: 0 1; transition: scale 1.6s var(--ease); }
+.line-rv.line-in::before { scale: 1 1; }
+
+/* stills covers stand up into place, like cards lifted off a table */
+.still-card.rv { transform-origin: 50% 100%; transform: perspective(900px) rotateX(24deg) scale(.92); }
+.still-card.rv.in { transform: none; }
+.still-card { transition: translate .5s var(--ease), box-shadow .45s var(--ease), transform 1.2s var(--ease) var(--rvd, 0s),
+  opacity .9s var(--ease) var(--rvd, 0s), filter .9s var(--ease) var(--rvd, 0s); }
+.still-card.rv .still-cap { opacity: 0; translate: 0 14px; transition: opacity .6s var(--ease), translate .8s var(--ease);
+  transition-delay: calc(var(--rvd, 0s) + .45s); }
+.still-card.rv.in .still-cap { opacity: 1; translate: 0 0; }
+
+/* SOCIAL / RESTAURANT tiles materialise: grow out of a blur (scale, so the 3D tilt keeps working) */
+.subpages .clip.rv { translate: none; scale: .86; }
+.subpages .clip.rv.in { scale: 1; }
+.subpages .clip { transition: opacity .9s var(--ease) var(--rvd, 0s), scale 1.1s var(--ease) var(--rvd, 0s),
+  transform .3s cubic-bezier(.2,.8,.2,1), filter .9s var(--ease), box-shadow .5s var(--ease); }
+
+@media (prefers-reduced-motion: reduce) {
+  .split .ch, .split .w { translate: none; filter: none; transition: opacity .4s ease; transition-delay: 0s; }
+  .line-rv::before { scale: 1 1; transition: none; }
+  .still-card.rv, .subpages .clip.rv { transform: none; scale: none; }
+  .still-card.rv .still-cap { translate: none; }
+}
+@media (hover: none), (pointer: coarse) {   /* phones: keep the tilt glued to the scroll (no transform delay) */
+  .subpages .clip { transition: opacity .9s var(--ease) var(--rvd, 0s), scale 1.1s var(--ease) var(--rvd, 0s), box-shadow .5s var(--ease); }
+}
