@@ -1196,3 +1196,9 @@ html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .
   animation: soundIn .6s var(--ease) both; }
 .v-sound[hidden] { display: none; }
 @keyframes soundIn { from { opacity: 0; translate: -50% 12px; filter: blur(6px); } to { opacity: 1; translate: -50% 0; filter: blur(0); } }
+/* phones, home page: no top menu and no "Other work" pill — the films are the whole screen.
+   (sub-pages keep their menu: there it is the way back) */
+@media (max-width: 760px) {
+  body.home .nav, body.home #goMore { display: none; }
+  body.home .logo-hero { top: max(36px, 5vh); }
+}

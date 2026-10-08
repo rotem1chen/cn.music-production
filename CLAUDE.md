@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v126**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v127**.
 
 ## Files
 - `index.html` — main page: films reel, STILLS preview (3 shots/concert). Opens straight onto the films — there is no intro
@@ -54,6 +54,7 @@ a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that pa
 
 ## Interaction notes
 - Films reel: **wheel scrolls**; **mouse only moves the yellow target-corners** onto the pointed film (no auto-centering).
+- Phones, home page only: no top menu and no "Other work" pill (`body.home` in style.css) — the films are the whole screen. Sub-pages keep their menu.
 - Mobile: films autoplay **muted** (phones only allow muted autoplay) and a yellow "Tap for sound" pill under the video turns the sound on. Films load on click (hidden) so they are buffered by the time the open animation ends; if not, the poster shows a liquid loading state.
 
 ## YouTube notes
