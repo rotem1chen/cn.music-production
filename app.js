@@ -275,6 +275,7 @@
       { duration: 450, easing: "cubic-bezier(.16,1,.3,1)" }));
   }
 
+  let lockedEl = null;                              // the film the last haptic tick was for
   function setActive(i) {
     const prev = elAt(activeIdx);
     if (prev) { prev.classList.remove("active"); stopPreview(prev); }
@@ -290,6 +291,9 @@
     hudIndex.textContent = isSub ? "" : String(page * PAGE_SIZE + i + 1).padStart(2, "0") + " — " + total;
     bars.forEach((b, j) => b.classList.toggle("on", !isSub && j === i));
     lockOn();
+    // Android: a tiny tick as the target locks on — only for a new film (not the same one re-locking
+    // after the viewer closes or the page re-renders) and never more than one per 150ms of scrolling
+    if (el !== lockedEl) { lockedEl = el; if (window.cnHaptic) window.cnHaptic(8, 150); }
     document.dispatchEvent(new CustomEvent("cn:active", { detail: { el } }));   // fx.js: ambient light + HUD refresh
   }
 
