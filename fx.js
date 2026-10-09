@@ -293,7 +293,8 @@
       const el = e.target.closest && e.target.closest(".reel .clip, .subpages .clip");
       if (!el) { if (tilt) { const old = tilt.el; tilt = null; old.classList.remove("tilting"); kickDepth(); } return; }
       const r = el.getBoundingClientRect();
-      const x = ((e.clientX - r.left) / r.width) * 2 - 1, y = ((e.clientY - r.top) / r.height) * 2 - 1;
+      // clamped: a captured scrub drag (scrub.js) keeps reporting the tile after the pointer has left it
+      const x = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width) * 2 - 1)), y = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height) * 2 - 1));
       if (tilt && tilt.el !== el) tilt.el.classList.remove("tilting");
       tilt = { el, x, y };
       el.classList.add("tilting");

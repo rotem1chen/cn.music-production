@@ -127,6 +127,11 @@
     el.addEventListener("mouseleave", () => { cursor.classList.remove("big"); if (hoverIdx === i) { hoverIdx = -1; refresh(); } });
     el.addEventListener("click", () => openViewer(el, c));
     el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openViewer(el, c); } });
+    // drag sideways across the film to flip through its scenes (scrub.js); the target treats it as the active film
+    if (window.cnScrub && c.v.type === "youtube") window.cnScrub.attach(el, c.v.id, {
+      onStart: () => { if (hoverIdx !== i) { hoverIdx = i; refresh(); } },
+      onEnd: (pt) => { if (pt !== "mouse" && hoverIdx === i) { hoverIdx = -1; refresh(); } },
+    });
     return el;
   }
 
@@ -462,9 +467,11 @@
       if (!ytApiReady) { pendingMount = () => mountPlayer(c, t); loadYTApi(); return; }
       mediaBox.innerHTML = '<div id="ytHost"></div>';
       let primed = false;
+      const from = play.seek || 0;                     // scrubbed to a point just before opening (scrub.js)
       ytPlayer = new YT.Player("ytHost", {
         videoId: c.v.id, width: "100%", height: "100%",
-        playerVars: { autoplay: 1, mute: 1, controls: 1, modestbranding: 1, rel: 0, playsinline: 1, fs: 1, iv_load_policy: 3 },
+        playerVars: Object.assign({ autoplay: 1, mute: 1, controls: 1, modestbranding: 1, rel: 0, playsinline: 1, fs: 1, iv_load_policy: 3 },
+          from ? { start: Math.floor(from) } : {}),
         events: {
           onReady: (e) => {
             try { e.target.mute(); e.target.playVideo(); } catch (_) {}
@@ -479,8 +486,8 @@
             // phones only allow a video to play by itself if it's muted, so there it starts muted
             // and "Tap for sound" turns the sound on; computers start with sound straight away
             play.start = isTouch
-              ? () => { try { p.seekTo(0, true); p.playVideo(); } catch (_) {} soundBtn.hidden = false; }
-              : () => { try { p.seekTo(0, true); p.unMute(); p.setVolume(100); p.playVideo(); } catch (_) {} };
+              ? () => { try { p.seekTo(from, true); p.playVideo(); } catch (_) {} soundBtn.hidden = false; }
+              : () => { try { p.seekTo(from, true); p.unMute(); p.setVolume(100); p.playVideo(); } catch (_) {} };
             ready(t);
           },
         },
@@ -599,6 +606,9 @@
     lastFocused = el;
     film = items.indexOf(c);
     stopPreview(el);
+    // opened straight after scrubbing it: the film starts where the scrub left it
+    const seek = window.cnScrub ? window.cnScrub.takeSeek(el) : null;
+    if (window.cnScrub) window.cnScrub.reset(el);
 
     // start over the small clip; lines begin OUT at the screen edges (invisible frame)
     const r = el.getBoundingClientRect();
@@ -636,7 +646,7 @@
 
     // the film starts loading now, hidden, so it buffers while the grid and the grow play
     const t = ++play.token;
-    play = { token: t };
+    play = { token: t, seek: seek || 0 };
     mountPlayer(c, t);
 
     // BEAT 3 (same moment as always): the stage has grown — show the film if it's ready,
@@ -976,7 +986,7 @@
     else if (e.key === "ArrowLeft") { e.preventDefault(); goFilm(-1); }
     else if (e.key === "ArrowRight") { e.preventDefault(); goFilm(1); }
   });
-  window.cnViewer = { state: () => ({ phase, film, vfx: vfxOn(), hidden: viewer.hidden, x: V ? V.x.x : 0, y: V ? V.y.x : 0, s: V ? V.s.x : 1 }) };   // tests / debugging
+  window.cnViewer = { state: () => ({ phase, film, vfx: vfxOn(), hidden: viewer.hidden, x: V ? V.x.x : 0, y: V ? V.y.x : 0, s: V ? V.s.x : 1, seek: play.seek || 0 }) };   // tests / debugging
 
   /* ---------- STILLS: concert contact sheets + photo lightbox ---------- */
   const concertsData = (typeof CONCERTS !== "undefined" && Array.isArray(CONCERTS)) ? CONCERTS : [];

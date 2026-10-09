@@ -59,6 +59,8 @@
     tile.appendChild(cap);
 
     tile.addEventListener("click", () => openVideo(i));
+    // drag sideways to flip through the film's scenes (scrub.js; YouTube films with storyboards only)
+    if (window.cnScrub && c.v.type === "youtube") window.cnScrub.attach(tile, c.v.id);
     tile.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openVideo(i); } });
     grid.appendChild(tile);
   });
