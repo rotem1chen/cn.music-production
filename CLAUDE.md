@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v138** (style.css, app.js, fx.js, plight-fx.js, show.js, media.js — referenced from index, show, media, link, review, social, restaurant; opening.js is still v136).
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v140** (style.css, app.js, fx.js, plight-fx.js, show.js, media.js — referenced from index, show, media, link, review, social, restaurant; opening.js is still v136).
 Every page's viewport meta has `viewport-fit=cover` — keep it on new pages, and place new fixed controls with the `--sat/--sab/--sal/--sar` safe-area tokens (end of style.css).
 
 ## Files
@@ -35,7 +35,7 @@ so nothing is letterboxed. Omit it for normal films. Works in the reel and the o
 Then bump `?v` in `index.html` and push. (YouTube video must be Public + embeddable.)
 
 ## Sub-page tiles (SOCIAL / RESTAURANT)
-`CLIPS` is **films only** — the reel shows the first 5, then a pull zone: keep scrolling into it and a yellow ring fills ("Keep pulling · N more films"); when full, the next films rise in right there and you scroll on into them (no button, no jump to the top). Keyboard users get a focusable "Show N more films" button in the same place. The other kinds of work are
+`CLIPS` is **films only** — the reel shows the first 5, then a pull zone: keep scrolling into it and a yellow ring fills ("Keep pulling · N more films"); when full, the next films rise in right there and you scroll on into them (no button, no jump to the top). Speed decides intent: a flick straight past (faster than ~1.6px/ms) skips — the ring dims to "Skipped · Scroll back up for N more" and re-arms when you scroll back above it. Keyboard users get a focusable "Show N more films" button in the same place. The other kinds of work are
 **`SUBPAGES`** in `clips.js`: clip-sized yellow tiles rendered *below* the reel, under a `[ MORE ]` label.
 `{ link: "restaurant.html", title: "RESTAURANT", sub: "Commercial" }` — add a line to add a tile.
 Long titles shrink to fit automatically (the size is `150cqw / <title length>`, so it scales off the tile, not the viewport).

@@ -1490,3 +1490,6 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
   font-family: var(--ui); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
 .rp-btn:focus-visible { opacity: 1; pointer-events: auto; outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .rp-in { transform: none; } .reel-pull.go .rp-in { transform: none; } }
+/* after a flick straight past, the ring dims and waits (scrolling back up re-arms it) */
+.reel-pull { flex-direction: column; align-items: center; justify-content: flex-start; }
+.reel-pull.passed .rp-in { opacity: .3; transform: none; transition: opacity .4s ease, transform .4s var(--ease); }

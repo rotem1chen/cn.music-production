@@ -157,6 +157,7 @@
 
   /* ---------- the pull zone ---------- */
   let pull = null, pullTop = 0, pullH = 0, pullDone = false;
+  let lastY = 0, lastT = 0, speed = 0, passed = false;   // speed decides intent: a slow pull loads, a flick skips
   const R = 26, CIRC = 2 * Math.PI * R;
   function placePull() {
     const left = items.length - shown;
@@ -164,7 +165,7 @@
     if (!pull) {
       pull = document.createElement("div");
       pull.className = "reel-pull";
-      pull.setAttribute("aria-hidden", "true");
+
       pull.innerHTML = '<div class="rp-in"><svg class="rp-ring" viewBox="0 0 64 64">' +
         `<circle class="rp-track" cx="32" cy="32" r="${R}"/><circle class="rp-fill" cx="32" cy="32" r="${R}" ` +
         `stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${CIRC.toFixed(1)}"/>` +
@@ -180,7 +181,7 @@
     pull.querySelector(".rp-s").textContent = n + (n === 1 ? " more film" : " more films");
     pull.querySelector(".rp-btn").textContent = "Show " + n + " more films";
     reel.appendChild(pull);
-    pullDone = false;
+    pullDone = false; setPassed(false);
     pull.style.setProperty("--p", 0);
     measurePull();
   }
@@ -192,12 +193,27 @@
   // per frame, from cached numbers only: how far into the zone the bottom of the screen has travelled
   function pullFrame() {
     if (!pull || pullDone) return;
-    const y = window.scrollY;
+    const y = window.scrollY, t = performance.now();
+    // px per ms: a fresh gesture starts from its own first step (no lag from zero), then decays gently
+    const v = lastT && t - lastT < 120 ? (y - lastY) / Math.max(1, t - lastT) : 0;
+    speed = Math.max(v, speed * 0.7);
+    lastY = y; lastT = t;
     const p = Math.max(0, Math.min(1, (y + vh - pullTop - pullH * 0.25) / (pullH * 0.6)));
+    // flicked straight through (faster than ~1.6px/ms, i.e. a throw, not a pull): that's a skip —
+    // the ring dims and stays behind; coming back up above it re-arms the pull
+    if (passed) { if (p < 0.15) setPassed(false); else return; }
+    if (p >= 1 && speed > 1.6) { setPassed(true); return; }
     pull.style.setProperty("--p", p.toFixed(3));
     pull.querySelector(".rp-fill").style.strokeDashoffset = (CIRC * (1 - p)).toFixed(1);
     pull.classList.toggle("ready", p > 0.98);
     if (p >= 1) revealMore();
+  }
+  function setPassed(on) {
+    passed = on;
+    pull.classList.toggle("passed", on); if (on) pull.classList.remove("ready");
+    const n = Math.min(PAGE_SIZE, items.length - shown), more = n + (n === 1 ? " more film" : " more films");
+    pull.querySelector(".rp-t").textContent = on ? "Skipped" : "Keep pulling";
+    pull.querySelector(".rp-s").textContent = on ? "Scroll back up for " + more : more;
   }
   function revealMore() {
     if (!pull || pullDone) return;
