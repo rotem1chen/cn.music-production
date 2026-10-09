@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v133**.
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v134** (style.css, app.js, fx.js, opening.js, plight-fx.js — referenced from index, show, media, link, review, social, restaurant).
 
 ## Files
 - `index.html` — main page: films reel, STILLS as one cover card per concert (opens `show.html`; the cover flies into the gallery via a view transition). Opens straight onto the films — there is no intro
@@ -57,6 +57,28 @@ a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that pa
 - Films reel: **wheel scrolls**; **mouse only moves the yellow target-corners** onto the pointed film (no auto-centering).
 - Phones, home page only: no top menu and no "Other work" pill (`body.home` in style.css) — the films are the whole screen. Sub-pages keep their menu.
 - Mobile: films autoplay **muted** (phones only allow muted autoplay) and a yellow "Tap for sound" pill under the video turns the sound on. Films load on click (hidden) so they are buffered by the time the open animation ends; if not, the poster shows a liquid loading state.
+
+## Smoothness rules (scroll + motion) — keep these when touching app.js / fx.js / opening.js
+- **One frame, one read, then writes.** Everything that follows the scroll on the home page runs in a single
+  `requestAnimationFrame` in app.js: it reads `scrollY` and the reel rects once, moves the brackets, then calls
+  fx.js's work (`window.cnScrollFrame`) with the same `scrollY`. Nothing reads layout inside a `scroll` event.
+- **Cached layout.** fx.js's depth/tilt, the scrollspy and the scroll-cue buttons use section/tile offsets measured
+  once and re-measured only when the page's size changes (`ResizeObserver` on `body`, resize, reel paging) —
+  so a scroll frame reads `scrollY` and nothing else. `innerHeight` is cached too (reading it mid-scroll can force a style pass).
+- **Scroll-linked properties never have a CSS transition.** The reel tilt (`transform`) and desktop blur (`filter`) are
+  written straight onto each frame; a transition restarted per frame trails the scroll in steps (the old "boxy" feel).
+  The hover lean eases in JS instead.
+- **Compositor only for motion:** the yellow brackets are four corners placed by `transform` (not top/left/width/height);
+  the viewer's beams likewise; the left film bars grow by `scale`, not `width`. The lock-on snap and the HUD text
+  re-forming are Web Animations, so nothing restarts a CSS animation with a forced reflow.
+- **The opening measures nothing per frame.** The brackets ride the films' rise as their own animation on `#chrome`
+  (same keyframes, same origin = centre of the screen); app.js's `refresh()` waits for `html.opening-run` to go.
+  Phones get the opening without the blur-in (transform + opacity only); a tap/scroll fast-forwards at 10× (7× on computers).
+  The YouTube API loads on idle after the opening (or immediately when a film is opened).
+- **Phones (`hover:none`/`pointer:coarse`)**: reveals rise and fade without de-blurring; the film viewer and the photo
+  lightbox frost the page with a fixed-radius blur layer whose opacity fades (`.viewer::before` / `.plight::before`),
+  instead of animating the blur radius over the whole screen. Computers keep the radius animation.
+- The retired cursor ring has no animation loop any more (it is `display:none` in CSS).
 
 ## YouTube notes
 - All films currently embed and play correctly (the old **שקוף** embedding issue is resolved).
