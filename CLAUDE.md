@@ -5,7 +5,8 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v136** (style.css, app.js, fx.js, opening.js, plight-fx.js — referenced from index, show, media, link, review, social, restaurant).
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v137** (style.css, app.js, fx.js, plight-fx.js, show.js, media.js — referenced from index, show, media, link, review, social, restaurant; opening.js is still v136).
+Every page's viewport meta has `viewport-fit=cover` — keep it on new pages, and place new fixed controls with the `--sat/--sab/--sal/--sar` safe-area tokens (end of style.css).
 
 ## Files
 - `index.html` — main page: films reel, STILLS as one cover card per concert (opens `show.html`; the cover flies into the gallery via a view transition). Opens straight onto the films — there is no intro
@@ -21,7 +22,7 @@ After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` ta
 - **Tool pages are liquid too** (link, media, review, t, and both editors): ambient light (brand light, or the client's own photos / the review video's poster), glass cards, wells and pills, liquid-yellow primaries. Editor styles live at the end of `treatment.css`; exported treatments/quotations carry their own inline styles and are NOT affected
 - **Safari on phones: no big live blurs.** The ambient light and the viewer/lightbox glows are pre-blurred once in fx.js (`tiny()` / `window.cnSoftBg`: the image shrunk to a 64px canvas, tinted, stretched back up). A live 80–90px `filter: blur()` on a full-screen layer froze iPhone Safari for seconds after every load; Chrome didn't mind. Computers keep the live blur.
 - `opening.js` — the home page's opening (plays on a refresh or a first arrival; skipped when you come from any other page of the site, by Back or by a link): the metal CN mark materialises in the centre, the light blooms, the mark settles into place, the glass nav forms, the films rise. Any scroll/click/tap/key fast-forwards it. A tiny script in `index.html`'s `<head>` decides before first paint (skipped for reduced motion, a `#hash` link, or a page reopened mid-scroll)
-- `plight-fx.js` — the fluid photo lightbox (open from thumbnail, swipe/flick, drag down to close), used by index, show and media
+- `plight-fx.js` — the fluid photo lightbox (open from thumbnail, swipe/flick, drag down to close, rubber band at the first/last photo, pinch / double-tap zoom), used by index, show and media. Pages pass `index: () => i` to stop at the ends (without it the set wraps). It also exports the shared physics (`PlightFX.Spring / project / rubberband / velocity`, used by the film viewer in app.js) and `window.cnHaptic(ms, minGap)` — Android-only `navigator.vibrate`, 8–15ms, only after the first touch
 - `vgrid.js` — the grid+player logic BOTH subpages share; each page sets `window.VGRID = { items, ratio, min, unit }` before loading it
 - `logo.svg` (the CN mark, shown everywhere — filled with a metal gradient in CSS, so no background box), `logo.png` (only for the search-engine logo), `intro-poster.jpg` (the link-preview image — keep it), `photos/<concert>/` (full-res + `thumb/` thumbnails)
 
@@ -57,6 +58,13 @@ a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that pa
 ## Interaction notes
 - Films reel: **wheel scrolls**; **mouse only moves the yellow target-corners** onto the pointed film (no auto-centering).
 - Phones, home page only: no top menu and no "Other work" pill (`body.home` in style.css) — the films are the whole screen. Sub-pages keep their menu.
+- Film viewer gestures (app.js, "Viewer physics"): **drag down** on the glass grab handle above the film or anywhere on the backdrop (mouse too) — 1:1 with the grab offset, momentum decides close vs snap back; closing lands in the film's own tile (the reel turns to that page / scrolls behind the glass). **Swipe left/right**, **←/→**, or the glass ‹ › buttons (computers only) go through ALL films without closing; the ends rubber-band. Gestures on the YouTube iframe itself stay YouTube's.
+  The opening is still the CSS sequence (1450ms grid hold + 1.1s grow — keep that timing). Any interruption (close/Esc/backdrop/drag during the grid or grow) switches the viewer to springs (`.vfx`): stage = laid-out box + transform, beams written per frame, backdrop/glow/controls follow `--va`; at rest it hands back to the CSS. `window.cnViewer.state()` exposes the phase for tests.
+- Photo lightbox: pinch (two fingers, about the midpoint) / double-tap / double-click / trackpad pinch to zoom up to 4x; one finger pans while zoomed (swipe doesn't change photo, drag-down doesn't close).
+- "Next 5 films" paging is directional (old set lifts away, new set rises in; back to the first five runs downward) — Web Animations, reduced motion = crossfade.
+- Contact email: one tap copies it ("Copied ✓" glass pill at the tap) and opens a Copy / Email glass popover anchored at the tap.
+- Haptics (Android only): target lock on a new film (max one per 150ms), photo flick commit, film swipe commit, email copied.
+- Glass controls in the viewer and lightbox materialise (blur + scale on computers, opacity + scale on phones). `prefers-contrast: more` turns all glass near-solid with a light border (fx.js skips the lens).
 - Mobile: films autoplay **muted** (phones only allow muted autoplay) and a yellow "Tap for sound" pill under the video turns the sound on. Films load on click (hidden) so they are buffered by the time the open animation ends; if not, the poster shows a liquid loading state.
 
 ## Smoothness rules (scroll + motion) — keep these when touching app.js / fx.js / opening.js
@@ -80,6 +88,8 @@ a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that pa
   lightbox frost the page with a fixed-radius blur layer whose opacity fades (`.viewer::before` / `.plight::before`),
   instead of animating the blur radius over the whole screen. Computers keep the radius animation.
 - The retired cursor ring has no animation loop any more (it is `display:none` in CSS).
+- The viewer's gesture springs and the lightbox zoom write transform/opacity only, from cached boxes (`stageBox`, `base`); the only layout reads are once at the moment a gesture takes over (the presentation values) and once at close (the tile's rect).
+- Testing touch gestures in puppeteer: take screenshots with CDP `Page.captureScreenshot`, not `page.screenshot()` — the latter re-applies device metrics and injects a stray pointer move mid-gesture.
 
 ## YouTube notes
 - All films currently embed and play correctly (the old **שקוף** embedding issue is resolved).
