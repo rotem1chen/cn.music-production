@@ -52,10 +52,13 @@
   <!-- opening: decide before first paint, so nothing flashes in its final place (opening.js plays it) -->
   <script>
     try {
-      // every load and refresh — except coming Back from a gallery (the cover flies home instead),
-      // a #section link, or reduced motion
+      // on a refresh or when you first arrive — never when you come back from another page of the site
+      // (a gallery, social, restaurant: by Back or by a link), on a #section link, or with reduced motion
       var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
-      if (!(nav && nav.type === "back_forward") && !location.hash &&
+      var type = nav ? nav.type : "navigate", fromSite = false;
+      try { fromSite = !!document.referrer && new URL(document.referrer).origin === location.origin; } catch (e) {}
+      var skip = type === "back_forward" || (type !== "reload" && fromSite);
+      if (!skip && !location.hash &&
           !matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentElement.classList.add("opening");
     } catch (e) {}
   </script>
