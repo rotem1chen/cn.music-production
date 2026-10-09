@@ -98,9 +98,8 @@ a { color: inherit; text-decoration: none; }
   display: flex; flex-direction: column; align-items: center;
   gap: clamp(14px, 2.4vh, 30px);
   padding: calc(50vh - var(--clipH)/2 - 20px) 0;
-  transition: opacity .3s var(--ease);          /* crossfade when the next five swap in */
 }
-.reel.swap { opacity: 0; }
+/* paging between sets of five is a Web Animation in app.js (goToPage): up and away / rise in from below */
 .clip {
   width: var(--clipW); height: var(--clipH);
   position: relative; overflow: hidden; background: #070707; border-radius: 10px;
@@ -378,10 +377,6 @@ a { color: inherit; text-decoration: none; }
   .artist, .file { transition-property: color, border-color !important; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .reel { transition: none; }
-  .reel.swap { opacity: 1; }
-}
 
 /* ---------- Media pool (media.html — client delivery from a Drive folder) ---------- */
 .pool { max-width: 1200px; margin: 0 auto; padding: clamp(96px,14vh,150px) var(--pad) clamp(60px,10vh,110px); }

@@ -168,25 +168,46 @@
     return btn;
   }
 
-  // fade the reel out, swap the films and land at the top while nobody can see it, fade back in
+  /* Paging is a direction, not a fade: the five on screen lift up and away, the next five rise in from
+     below (going back to the first five runs the other way). Only transform + opacity move, as Web
+     Animations on the compositor; the page lands at the top while the reel is invisible.
+     Reduced motion: a plain crossfade. */
   let swapping = false;
   function goToPage(next) {
     if (swapping) return;                                  // ignore double-clicks mid-swap
     swapping = true;
     chrome.classList.add("hide");                          // brackets + HUD step aside for the swap
     hud.classList.add("hide");
-    reel.classList.add("swap");
-
-    const FADE = 300;                                      // keep in step with .reel's transition
+    const forward = ((next % pageCount) + pageCount) % pageCount !== 0;
+    const D = forward ? -1 : 1;                            // the way the old set leaves: up (next) / down (back)
+    const vh = window.innerHeight;
+    const done = () => { swapping = false; refresh(); };  // target + HUD land on the new first film
+    if (!reel.animate) {                                   // very old browsers: just swap
+      renderPage(next); window.scrollTo({ top: 0, behavior: "instant" }); done(); return;
+    }
+    // scale about the middle of the screen, not the middle of the (much taller) reel
+    reel.style.transformOrigin = `50% ${(window.scrollY + vh / 2 - reel.offsetTop).toFixed(0)}px`;
+    const out = reel.animate(reducedMotion
+      ? [{ opacity: 1 }, { opacity: 0 }]
+      : [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translate3d(0, ${(D * vh * 0.16).toFixed(0)}px, 0) scale(.94)` }],
+      { duration: reducedMotion ? 180 : 360, easing: "cubic-bezier(.55,0,.75,.2)", fill: "forwards" });
+    // timer, not the animation's own finish — timers keep running when the tab is in the background
     setTimeout(() => {
       renderPage(next);
-      (document.scrollingElement || document.documentElement).scrollTop = 0;   // invisible jump
-      setTimeout(() => {                                   // timer, not rAF — rAF stalls in background tabs
-        reel.classList.remove("swap");
-        swapping = false;
-        refresh();                                         // target + HUD land on the new first film
-      }, 20);
-    }, FADE);
+      window.scrollTo({ top: 0, behavior: "instant" });   // invisible jump
+      reel.style.transformOrigin = `50% ${(vh / 2 - reel.offsetTop).toFixed(0)}px`;
+      const IN = reducedMotion ? 260 : 720, STEP = 50;
+      reel.animate(reducedMotion
+        ? [{ opacity: 0 }, { opacity: 1 }]
+        : [{ opacity: 0, transform: "scale(.97)" }, { opacity: 1, transform: "none" }],
+        { duration: reducedMotion ? IN : 460, easing: "cubic-bezier(.16,1,.3,1)" });
+      out.cancel();
+      // each new film rises on its own `translate` (the reel tilt keeps its `transform`), a beat apart
+      if (!reducedMotion) clipEls.forEach((el, i) => el.animate(
+        [{ translate: `0 ${(-D * vh * 0.28).toFixed(0)}px` }, { translate: "0 0" }],
+        { duration: IN, delay: i * STEP, easing: "cubic-bezier(.16,1,.3,1)", fill: "backwards" }));
+      setTimeout(() => { reel.style.transformOrigin = ""; done(); }, IN + (reducedMotion ? 0 : (clipEls.length - 1) * STEP));
+    }, reducedMotion ? 180 : 360);
   }
 
   /* ---------- Refs ---------- */
