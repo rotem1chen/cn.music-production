@@ -1043,6 +1043,14 @@ html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .
   background: linear-gradient(180deg, rgba(255,212,0,0), var(--accent) 18%, #fff3a8 50%, var(--accent) 82%, rgba(255,212,0,0)); }
 @media (prefers-reduced-motion: reduce) { .plight-stage.sheen::before { animation: none; } }
 @media (prefers-reduced-transparency: reduce) { .p-amb { display: none; } }
+/* first / last photo: that arrow dims (it still answers with a rubber-band nudge, nothing wraps round) */
+.plight.at-first .plight-nav.prev, .plight.at-last .plight-nav.next { opacity: calc(.32 * var(--pa, 1)); }
+/* zoomed in (pinch / double-tap): the photo is the whole screen, so its frame steps back */
+.plight-img { transform-origin: 50% 50%; }
+.plight-stage .corner, .plight-stage::after { transition: opacity .3s var(--ease); }
+.plight.zoomed .plight-stage .corner, .plight.zoomed .plight-stage::after { opacity: 0; }
+.plight.zoomed .plight-img { border-radius: 0; }
+.plight.zoomed { cursor: grab; }
 
 /* =====================================================================
    LIQUID — tool pages (link.html, media.html, review.html)

@@ -341,6 +341,7 @@
     root: plight, stage: document.getElementById("plightStage"), img: plightImg,
     step: (dir) => { pShot += dir; showPhoto(); },
     count: () => photos.length,
+    index: () => pShot,                                 // stops at the first / last photo (rubber band), no wrap
     sourceEl: () => photoEls[pShot] || null,
     onClosed: () => { plightImg.src = ""; document.body.style.overflow = ""; },
   });
