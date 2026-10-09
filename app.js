@@ -361,6 +361,8 @@
   const closeBtn = document.getElementById("viewerClose");
   const vLeadT = document.getElementById("vLeadT"), vLeadB = document.getElementById("vLeadB");
   const vLeadL = document.getElementById("vLeadL"), vLeadR = document.getElementById("vLeadR");
+  const vAmb = document.getElementById("vAmb");
+  const vPrev = document.getElementById("vPrev"), vNext = document.getElementById("vNext");
   let lastFocused = null;
 
   /* ---------- YouTube API: reveal the player only once it's actually playing ---------- */
@@ -445,12 +447,34 @@
       play.start = () => { v.currentTime = 0; v.muted = false; const pr = v.play(); if (pr && pr.catch) pr.catch(() => { v.muted = true; v.play(); }); };
     }
   }
+  // the stage has grown: show the film if it's ready, otherwise the poster gets the liquid loading state
+  function grown(t) {
+    if (t !== play.token) return;
+    play.grown = true;
+    if (play.mountLater) play.mountLater();
+    play.waitT = setTimeout(() => { if (t === play.token && !play.revealed) viewer.classList.add("waiting"); }, 200);
+    play.safety = setTimeout(() => ready(t), 9000);   // never strand anyone on the poster
+    settle(t);
+  }
+  // stop whatever is playing or still loading for the film on the stage
+  function dropMedia() {
+    clearTimeout(play.waitT); clearTimeout(play.safety);
+    play = { token: play.token + 1 };                  // anything still loading for this film is ignored
+    pendingMount = null;
+    if (ytPlayer && ytPlayer.destroy) { try { ytPlayer.destroy(); } catch (_) {} ytPlayer = null; }
+    mediaBox.innerHTML = "";
+    viewer.classList.remove("loaded", "waiting");
+    if (soundBtn) soundBtn.hidden = true;
+  }
 
+  let stageBox = null, linesAt = [0, 0, 0, 0];   // where the stage is laid out / the beams were sent (no reads back)
   function setStage(x, y, w, h) {
+    stageBox = { x, y, w, h };
     stage.style.left = x + "px"; stage.style.top = y + "px";
     stage.style.width = w + "px"; stage.style.height = h + "px";
   }
   function setLines(top, bottom, left, right) {   // transforms, so the beams glide on the compositor
+    linesAt = [top, bottom, left, right];
     vLeadT.style.transform = `translateY(${top}px)`; vLeadB.style.transform = `translateY(${bottom}px)`;
     vLeadL.style.transform = `translateX(${left}px)`; vLeadR.style.transform = `translateX(${right}px)`;
   }
@@ -463,9 +487,66 @@
     return { x: (vw - fw) / 2, y: (vh - fh) / 2, w: fw, h: fh };
   }
 
+  /* The film on the stage is one of ALL the films (not just this page's five): you can swipe through
+     every one of them, and closing lands back in its own tile — the reel turns to that tile's page
+     and brings it on screen behind the frosted glass first, so the film always has a home to go to. */
+  let film = -1;                 // index into items
+  let phase = "closed";          // "grid" (beams forming) → "grow" → "open"; "closing"
+  let closeT = null;
+  function posterFor(c, apply) {
+    const i = pageItems.indexOf(c), el = clipEls[i];
+    const bg = el && el._poster && el._poster.style.backgroundImage;
+    if (bg && bg !== "none") { apply(bg); return; }
+    // not on this page: the small cover straight away, the big one if YouTube has it
+    if (c.v.thumbFallback) apply(`url("${c.v.thumbFallback}")`);
+    const u = c.thumb || c.v.thumb; if (!u) return;
+    const im = new Image();
+    im.onload = () => { if (im.naturalWidth > 200 && items[film] === c) apply(`url("${u}")`); };
+    im.src = u;
+  }
+  function showPoster(c) {
+    posterFor(c, (bg) => {
+      stage.style.backgroundImage = bg;
+      const u = /url\(["']?([^"')]+)["']?\)/.exec(bg || "");   // the film's own colours light the frosted backdrop
+      if (vAmb) { if (u && window.cnSoftBg) window.cnSoftBg(vAmb, u[1]); else vAmb.style.backgroundImage = bg; }
+    });
+    // the neighbours' covers are ready before the swipe
+    [film - 1, film + 1].forEach((j) => { const n = items[j]; if (n && (n.thumb || n.v.thumb)) new Image().src = n.thumb || n.v.thumb; });
+  }
+  function canFilm(dir) { const j = film + dir; return j >= 0 && j < items.length; }
+  function markFilmEnds() {
+    viewer.classList.toggle("at-first", !canFilm(-1));
+    viewer.classList.toggle("at-last", !canFilm(1));
+  }
+  // the tile this film closes back into, on screen (turning the reel's page / scrolling while unseen)
+  function sourceTile() {
+    const c = items[film]; if (!c) return lastFocused;
+    let i = pageItems.indexOf(c);
+    if (i < 0) { renderPage(Math.floor(film / PAGE_SIZE)); i = pageItems.indexOf(c); }
+    const el = clipEls[i]; if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > window.innerHeight) {
+      window.scrollTo({ top: window.scrollY + r.top + r.height / 2 - window.innerHeight / 2, behavior: "instant" });
+      el._centred = true;                               // its reel tilt is a frame behind: measure it flat
+    }
+    lastFocused = el;
+    return el;
+  }
+  function tileRect(el) {
+    if (!el) return null;
+    if (!el._centred) return el.getBoundingClientRect();
+    el._centred = false;
+    const tf = el.style.transform; el.style.transform = "none";
+    const r = el.getBoundingClientRect(); el.style.transform = tf;
+    return r;
+  }
+
   function openViewer(el, c) {
+    if (phase === "closing") hardReset();             // a new film while the last one is still shrinking away
+    clearTimeout(closeT);
     viewerOpen = true;
     lastFocused = el;
+    film = items.indexOf(c);
     stopPreview(el);
 
     // start over the small clip; lines begin OUT at the screen edges (invisible frame)
@@ -473,27 +554,30 @@
     setStage(r.left, r.top, r.width, r.height);
     setLines(0, window.innerHeight, 0, window.innerWidth);
     stage.style.backgroundImage = el._poster ? el._poster.style.backgroundImage : "none";
-    const amb = document.getElementById("vAmb");      // the film's own colours light the frosted backdrop
-    if (amb) {
+    if (vAmb) {
       const u = /url\(["']?([^"')]+)["']?\)/.exec(stage.style.backgroundImage || "");
-      if (u && window.cnSoftBg) window.cnSoftBg(amb, u[1]); else amb.style.backgroundImage = stage.style.backgroundImage;
+      if (u && window.cnSoftBg) window.cnSoftBg(vAmb, u[1]); else vAmb.style.backgroundImage = stage.style.backgroundImage;
     }
     mediaBox.innerHTML = "";
 
     cursor.classList.remove("show", "big"); cursorShown = false;   // hide the ring over the player
     viewer.hidden = false;
-    viewer.classList.remove("loaded", "waiting");
+    viewer.style.pointerEvents = "";
+    viewer.classList.remove("loaded", "waiting", "ready");
+    markFilmEnds();
     if (soundBtn) soundBtn.hidden = true;
     void viewer.offsetWidth;         // commit the edge start frame
     viewer.classList.add("open");
     document.body.style.overflow = "hidden";
+    phase = "grid";
 
     // BEAT 1: lines glide inward from the edges to frame the small photo (the grid forms)
-    requestAnimationFrame(() => setLines(r.top, r.bottom, r.left, r.right));
+    requestAnimationFrame(() => { if (phase === "grid" && !vfxOn()) setLines(r.top, r.bottom, r.left, r.right); });
 
     // BEAT 2: once the grid has settled, grow the photo + spread the lines back outward
     const GRID_HOLD = 1450;
     stage._grow = setTimeout(() => {
+      phase = "grow";
       const B = bigRect(clipAspect(c));
       setStage(B.x, B.y, B.w, B.h);
       setLines(B.y, B.y + B.h, B.x, B.x + B.w);
@@ -508,45 +592,340 @@
     // otherwise the poster gets the liquid loading state until it is
     stage._timer = setTimeout(() => {
       if (t !== play.token) return;
-      play.grown = true;
-      if (play.mountLater) play.mountLater();
-      play.waitT = setTimeout(() => { if (t === play.token && !play.revealed) viewer.classList.add("waiting"); }, 200);
-      play.safety = setTimeout(() => ready(t), 9000);   // never strand anyone on the poster
-      settle(t);
+      phase = "open";
+      viewer.classList.add("ready");                  // swipe / arrows / handle are live from here
+      showPoster(c);                                   // (warms the neighbours' covers)
+      grown(t);
     }, GRID_HOLD + 1250);
 
     closeBtn.focus();
   }
 
   function closeViewer() {
-    if (viewer.hidden) return;
+    if (viewer.hidden || phase === "closing") return;
+    // anything still moving (the opening, a drag, a swipe) reverses from where it is on screen right now
+    if (phase !== "open" || vfxOn()) { springClose({ x: 0, y: 0 }); return; }
     clearTimeout(stage._timer);
     clearTimeout(stage._grow);
-    clearTimeout(play.waitT); clearTimeout(play.safety);
-    play = { token: play.token + 1 };                  // anything still loading for this film is ignored
-    pendingMount = null;
-    if (ytPlayer && ytPlayer.destroy) { try { ytPlayer.destroy(); } catch (_) {} ytPlayer = null; }
-    mediaBox.innerHTML = "";
+    dropMedia();
+    phase = "closing";
 
     // reverse: shrink back to wherever the clip now sits, lines close in
-    const r = lastFocused ? lastFocused.getBoundingClientRect() : null;
+    const r = tileRect(sourceTile());
     if (r) { setStage(r.left, r.top, r.width, r.height); setLines(r.top, r.bottom, r.left, r.right); }
-    viewer.classList.remove("open", "loaded", "waiting");
-    if (soundBtn) soundBtn.hidden = true;
+    viewer.classList.remove("open", "loaded", "waiting", "ready");
+    viewer.style.pointerEvents = "none";            // the page is usable again right away
     document.body.style.overflow = "";
 
-    setTimeout(() => {
+    closeT = setTimeout(() => {
       viewer.hidden = true;
+      viewer.style.pointerEvents = "";
+      phase = "closed";
       viewerOpen = false;
       activeIdx = -1;               // force preview + target to reattach
       refresh();
-      if (lastFocused && lastFocused.focus) lastFocused.focus();
+      if (lastFocused && lastFocused.focus) lastFocused.focus({ preventScroll: true });
     }, 1100);
   }
 
+  /* ---------- Viewer physics: drag down to close, swipe to the next film ----------
+     The opening above stays a CSS sequence (its slow timing is the look). The moment a finger takes
+     hold — or anything interrupts the opening — the viewer switches to springs (.vfx): the stage keeps
+     its laid-out box and moves by transform, the beams chase its edges, the backdrop follows --va.
+     Every spring starts from what is on screen right now, so nothing ever has to finish first. */
+  const PF = window.PlightFX || {};
+  const reducedV = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const noGlassV = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
+  const V = PF.Spring ? {
+    x: new PF.Spring(0, 0.5), y: new PF.Spring(0, 0.5), s: new PF.Spring(1, 0.002),
+    a: new PF.Spring(1, 0.004),          // backdrop + chrome: 1 shown, 0 gone
+    sp: new PF.Spring(0, 0.002),         // beams: 0 on the stage's edges, 1 out at the screen's edges
+    off: new PF.Spring(0, 0.002),        // what is left of the beams' own head start when the springs took over
+  } : null;
+  let box = null, beamDelta = [0, 0, 0, 0], vraf = null, vlast = 0, vEnd = null, pendingFilm = 0;
+  const beamsEls = [vLeadT, vLeadB, vLeadL, vLeadR];
+  function vfxOn() { return viewer.classList.contains("vfx"); }
+  function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+  function stageEdges() {                          // the stage's live edges: laid-out box + springs
+    const cx = box.x + box.w / 2 + V.x.x, cy = box.y + box.h / 2 + V.y.x, hw = box.w * V.s.x / 2, hh = box.h * V.s.x / 2;
+    return [cy - hh, cy + hh, cx - hw, cx + hw];
+  }
+  function vRender() {
+    stage.style.transform = `translate3d(${V.x.x.toFixed(2)}px, ${V.y.x.toFixed(2)}px, 0) scale(${V.s.x.toFixed(4)})`;
+    const a = clamp01(V.a.x), sp = clamp01(V.sp.x), off = V.off.x;
+    viewer.style.setProperty("--va", a.toFixed(3));
+    if (!isTouch && !noGlassV) viewer.style.backdropFilter = viewer.style.webkitBackdropFilter = `blur(${(26 * a).toFixed(1)}px) saturate(${(1 + 0.6 * a).toFixed(2)})`;
+    const e = stageEdges(), far = [0, window.innerHeight, 0, window.innerWidth];
+    beamsEls.forEach((b, k) => {
+      const v = e[k] + (far[k] - e[k]) * sp + beamDelta[k] * off;
+      b.style.transform = (k < 2 ? "translateY(" : "translateX(") + v.toFixed(1) + "px)";
+      b.style.opacity = (0.95 * a * (1 - sp * 0.5)).toFixed(3);
+    });
+  }
+  function vLoop(now) {
+    const dt = Math.min(0.05, (now - vlast) / 1000); vlast = now;
+    Object.values(V).forEach((s) => s.tick(dt));
+    if (pendingFilm && (Math.abs(V.x.x) >= window.innerWidth * 0.92 || V.x.done())) swapFilm();
+    vRender();
+    if (Object.values(V).every((s) => s.done()) && !pendingFilm && !vd) {
+      Object.values(V).forEach((s) => s.jump(s.target));
+      vRender(); vraf = null;
+      const f = vEnd; vEnd = null; if (f) f();
+      return;
+    }
+    vraf = requestAnimationFrame(vLoop);
+  }
+  function vKick() { if (!vraf) { vlast = performance.now(); vraf = requestAnimationFrame(vLoop); } }
+
+  // springs take over from the CSS: read the presentation values (the opening may be mid-flight) and pin them
+  function takeOver() {
+    if (vfxOn()) return;
+    let b = stageBox, lines = linesAt.slice(), a = 1;
+    if (phase === "grid" || phase === "grow") {
+      clearTimeout(stage._grow); clearTimeout(stage._timer);
+      const cs = getComputedStyle(stage);
+      b = { x: parseFloat(cs.left), y: parseFloat(cs.top), w: parseFloat(cs.width), h: parseFloat(cs.height) };
+      lines = beamsEls.map((el, k) => { const m = new DOMMatrixReadOnly(getComputedStyle(el).transform); return k < 2 ? m.m42 : m.m41; });
+      const bg = /rgba?\(([^)]+)\)/.exec(getComputedStyle(viewer).backgroundColor);
+      const alpha = bg ? parseFloat(bg[1].split(",")[3] == null ? 1 : bg[1].split(",")[3]) : 1;
+      a = clamp01(alpha / (noGlassV ? 0.96 : 0.62));
+    }
+    viewer.classList.add("vfx");
+    setStage(b.x, b.y, b.w, b.h);
+    box = stageBox;
+    V.x.jump(0); V.y.jump(0); V.s.jump(1); V.a.jump(a);
+    // the beams: how far out they still are (the grid forming), and whatever is left over rides on `off`
+    const e = [b.y, b.y + b.h, b.x, b.x + b.w], far = [0, window.innerHeight, 0, window.innerWidth];
+    let sp = 0, n = 0;
+    e.forEach((v, k) => { const span = far[k] - v; if (Math.abs(span) > 20) { sp += (lines[k] - v) / span; n++; } });
+    sp = phase === "grid" && n ? clamp01(sp / n) : 0;
+    V.sp.jump(sp);
+    beamDelta = e.map((v, k) => lines[k] - (v + (far[k] - v) * sp));
+    V.off.jump(1); V.off.to(0, { response: 0.3 });
+    vRender(); vKick();
+  }
+  // springs at rest on the open film → hand the viewer back to the CSS, with nothing visibly changing
+  function backToRest() {
+    if (phase !== "open" || !vfxOn() || vd) return;
+    stage.style.transform = "";
+    const B = stageBox;
+    viewer.style.removeProperty("--va");
+    viewer.style.backdropFilter = viewer.style.webkitBackdropFilter = "";
+    beamsEls.forEach((b) => { b.style.opacity = ""; });
+    setLines(B.y, B.y + B.h, B.x, B.x + B.w);
+    viewer.classList.remove("vfx");
+  }
+  function hardReset() {                             // drop everything at once (a new film interrupting a close)
+    if (vraf) { cancelAnimationFrame(vraf); vraf = null; }
+    vEnd = null; pendingFilm = 0; vd = null;
+    clearTimeout(closeT);
+    viewer.classList.remove("vfx", "open", "ready", "loaded", "waiting");
+    stage.style.transform = ""; stage.style.opacity = "";
+    viewer.style.removeProperty("--va");
+    viewer.style.backdropFilter = viewer.style.webkitBackdropFilter = "";
+    beamsEls.forEach((b) => { b.style.opacity = ""; });
+    viewer.hidden = true; phase = "closed";
+  }
+
+  // close from wherever the stage is: shrink into its tile (handing over the finger's velocity)
+  function springClose(vel) {
+    if (!V) { phase = "open"; viewer.classList.remove("vfx"); closeViewer(); return; }
+    const from = phase;
+    takeOver();
+    clearTimeout(stage._grow); clearTimeout(stage._timer);
+    dropMedia();
+    if (pendingFilm) { pendingFilm = 0; }
+    phase = "closing";
+    viewer.classList.remove("open", "ready");
+    viewer.style.pointerEvents = "none";
+    document.body.style.overflow = "";
+    const r = tileRect(sourceTile());
+    if (r && box.w) {
+      const s = Math.sqrt((r.width * r.height) / (box.w * box.h));
+      V.x.to(r.left + r.width / 2 - (box.x + box.w / 2), { velocity: vel.x, response: 0.42 });
+      V.y.to(r.top + r.height / 2 - (box.y + box.h / 2), { velocity: vel.y, response: 0.42 });
+      V.s.to(s, { response: 0.42 });
+    } else {                                           // no tile to land in: sink away in the direction it went
+      V.y.to(V.y.x + (vel.y >= 0 ? 1 : -1) * window.innerHeight * 0.25, { velocity: vel.y });
+      V.s.to(0.9);
+      stage.animate && stage.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" });
+    }
+    V.a.to(0, { response: 0.32 });
+    // interrupted while the grid was still forming: the beams go back out the way they came
+    V.sp.to(from === "grid" ? 1 : 0, { response: 0.45 });
+    vEnd = finishSpringClose;
+    if (reducedV && viewer.animate) {                // reduced motion: no travel, a short fade
+      viewer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220 }).onfinish = finishSpringClose;
+      vEnd = null;
+    }
+    vKick();
+  }
+  function finishSpringClose() {
+    if (phase !== "closing") return;
+    viewer.hidden = true;
+    viewer.style.pointerEvents = "";
+    viewer.classList.remove("vfx", "loaded", "waiting");
+    stage.style.transform = ""; stage.style.opacity = "";
+    stage.getAnimations && stage.getAnimations().forEach((an) => an.cancel());
+    viewer.style.removeProperty("--va");
+    viewer.style.backdropFilter = viewer.style.webkitBackdropFilter = "";
+    beamsEls.forEach((b) => { b.style.opacity = ""; });
+    V.x.jump(0); V.y.jump(0); V.s.jump(1); V.a.jump(1); V.sp.jump(0); V.off.jump(0);
+    phase = "closed";
+    viewerOpen = false;
+    activeIdx = -1;
+    refresh();
+    if (lastFocused && lastFocused.focus) lastFocused.focus({ preventScroll: true });
+  }
+  // let go during the opening without closing: carry on growing, now as a spring
+  function resumeGrow(vel) {
+    const B = bigRect(clipAspect(items[film]));
+    const s = Math.sqrt((B.w * B.h) / (box.w * box.h));
+    V.x.to(B.x + B.w / 2 - (box.x + box.w / 2), { damping: 0.8, response: 0.5, velocity: vel.x });
+    V.y.to(B.y + B.h / 2 - (box.y + box.h / 2), { damping: 0.8, response: 0.5, velocity: vel.y });
+    V.s.to(s, { response: 0.5 }); V.a.to(1, { response: 0.35 }); V.sp.to(0, { response: 0.5 });
+    vEnd = () => {
+      setStage(B.x, B.y, B.w, B.h); box = stageBox;
+      V.x.jump(0); V.y.jump(0); V.s.jump(1); vRender();
+      phase = "open";
+      viewer.classList.add("ready");
+      showPoster(items[film]);
+      grown(play.token);
+      backToRest();
+    };
+    vKick();
+  }
+
+  /* ---------- next / previous film without closing ---------- */
+  function nudgeFilm(dir) {                          // nothing that way: a short push that springs straight back
+    takeOver();
+    V.x.to(0, { damping: 0.62, response: 0.34, velocity: -dir * 1100 });
+    vEnd = backToRest; vKick();
+  }
+  function goFilm(dir, velocity) {
+    if (phase !== "open" || !V) return;
+    if (pendingFilm) swapFilm();                      // a fast second press finishes the first instantly
+    if (!canFilm(dir)) { nudgeFilm(dir); return; }
+    takeOver();
+    try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (_) {}
+    const v = mediaBox.querySelector("video"); if (v) v.pause();
+    pendingFilm = dir;
+    if (reducedV) { swapFilm(); return; }
+    V.x.to(-dir * window.innerWidth, { response: 0.32, velocity: velocity || 0 });
+    V.sp.to(1, { response: 0.3 });                   // the beams let go and spread to the screen edges
+    vKick();
+  }
+  function swapFilm() {
+    const dir = pendingFilm; pendingFilm = 0;
+    film += dir;
+    const c = items[film];
+    dropMedia();
+    const B = bigRect(clipAspect(c));
+    setStage(B.x, B.y, B.w, B.h); box = stageBox;
+    showPoster(c);
+    markFilmEnds();
+    try {                                              // the sheen sweeps the new film
+      stage.animate([{ opacity: 1, backgroundPosition: "130% 0" }, { opacity: 1, backgroundPosition: "-130% 0" }],
+        { duration: 1100, easing: "cubic-bezier(.16,1,.3,1)", pseudoElement: "::before" });
+    } catch (_) {}
+    const vx = V.x.v;
+    V.x.jump(dir * window.innerWidth * 0.6);          // enter from the side it was thrown toward
+    V.x.to(0, { response: 0.36, velocity: vx * 0.6 });
+    V.y.to(0); V.s.to(1); V.a.to(1, { response: 0.3 });
+    V.sp.to(0, { response: 0.55 });                  // and the beams close in to frame it
+    if (reducedV && stage.animate) { V.x.jump(0); stage.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240 }); }
+    // the new film loads exactly like an opened one: hidden, then shown once it plays
+    const t = ++play.token;
+    play = { token: t };
+    mountPlayer(c, t);
+    grown(t);
+    vEnd = backToRest;
+    vKick();
+  }
+  if (vPrev) vPrev.addEventListener("click", (e) => { e.stopPropagation(); goFilm(-1); });
+  if (vNext) vNext.addEventListener("click", (e) => { e.stopPropagation(); goFilm(1); });
+
+  /* ---------- direct manipulation (anywhere but the film itself: YouTube keeps its own gestures) ---------- */
+  let vd = null, vJustDragged = false;
+  viewer.addEventListener("pointerdown", (e) => {
+    if (!V || viewer.hidden || phase === "closing" || phase === "closed" || e.button > 0) return;
+    if (e.target.closest("button, a, iframe, video")) return;
+    vd = { id: e.pointerId, x0: e.clientX, y0: e.clientY, axis: null, hist: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }] };
+  });
+  viewer.addEventListener("pointermove", (e) => {
+    if (!vd || e.pointerId !== vd.id) return;
+    const dx = e.clientX - vd.x0, dy = e.clientY - vd.y0;
+    if (!vd.axis) {
+      if (Math.hypot(dx, dy) < 10) return;             // hysteresis before committing to a direction
+      const axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if (axis === "x" && phase !== "open") { vd = null; return; }   // no swiping until the film has arrived
+      vd.axis = axis;
+      try { viewer.setPointerCapture(e.pointerId); } catch (_) {}
+      if (pendingFilm) swapFilm();
+      takeOver();
+      vEnd = null;
+      // grab from wherever the stage is right now, and keep the grabbed spot under the finger
+      vd.bx = V.x.x; vd.by = V.y.x; vd.ba = V.a.x;
+      const cx = box.x + box.w / 2, cy = box.y + box.h / 2;
+      vd.lx = (vd.x0 - cx - V.x.x) / V.s.x; vd.ly = (vd.y0 - cy - V.y.x) / V.s.x;
+    }
+    vd.hist.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
+    if (vd.hist.length > 6) vd.hist.shift();
+    if (vd.axis === "x") {
+      let nx = vd.bx + dx;
+      if (!canFilm(nx < 0 ? 1 : -1)) nx = PF.rubberband(nx, Math.max(320, window.innerWidth));   // first / last film: stretch
+      V.x.jump(nx);
+    } else {
+      const H = window.innerHeight, travel = vd.by + dy;
+      const s = 1 - Math.min(0.25, Math.abs(travel) / H * 0.5);
+      const cx = box.x + box.w / 2, cy = box.y + box.h / 2;
+      V.s.jump(s);
+      V.x.jump(e.clientX - cx - vd.lx * s); V.y.jump(e.clientY - cy - vd.ly * s);
+      V.a.jump(Math.min(vd.ba, 1 - Math.min(1, Math.abs(travel) / (H * 0.6))));   // backdrop, glow and beams fade with it
+    }
+    vRender(); vKick();
+  });
+  function vRelease(e) {
+    if (!vd || e.pointerId !== vd.id) return;
+    const d = vd; vd = null;
+    if (!d.axis) return;                               // a tap, not a drag
+    vJustDragged = true; setTimeout(() => { vJustDragged = false; }, 0);
+    const v = e.type === "pointercancel" ? { x: 0, y: 0 } : PF.velocity(d.hist);
+    if (d.axis === "x") {
+      const end = V.x.x + PF.project(v.x), dir = end < 0 ? 1 : -1;
+      if (e.type !== "pointercancel" && Math.abs(end) > window.innerWidth * 0.3 && canFilm(dir)) {
+        goFilm(dir, v.x);
+        if (window.cnHaptic) window.cnHaptic(10);   // the swipe committed: same frame as the film leaving
+      } else {
+        V.x.to(0, { damping: 0.8, response: 0.32, velocity: canFilm(dir) ? v.x : v.x * 0.4 });
+        vEnd = backToRest; vKick();
+      }
+      return;
+    }
+    const end = V.y.x + PF.project(v.y);
+    if (e.type !== "pointercancel" && Math.abs(end) > 180) { springClose(v); return; }
+    if (phase === "open") {                           // not far enough: back into place, a little bounce from the throw
+      V.x.to(0, { damping: 0.8, response: 0.32, velocity: v.x });
+      V.y.to(0, { damping: 0.8, response: 0.32, velocity: v.y });
+      V.s.to(1); V.a.to(1, { response: 0.3 });
+      vEnd = backToRest; vKick();
+    } else resumeGrow(v);                             // grabbed during the opening: finish arriving
+  }
+  viewer.addEventListener("pointerup", vRelease);
+  viewer.addEventListener("pointercancel", vRelease);
+  viewer.addEventListener("dragstart", (e) => e.preventDefault());
+  // a drag that ends over the backdrop must not count as "click outside to close"
+  viewer.addEventListener("click", (e) => { if (vJustDragged) { e.stopPropagation(); e.preventDefault(); } }, true);
+
   closeBtn.addEventListener("click", closeViewer);
   viewer.addEventListener("click", (e) => { if (e.target === viewer) closeViewer(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !viewer.hidden) closeViewer(); });
+  document.addEventListener("keydown", (e) => {
+    if (viewer.hidden || phase === "closing") return;
+    if (e.key === "Escape") closeViewer();
+    else if (e.key === "ArrowLeft") { e.preventDefault(); goFilm(-1); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); goFilm(1); }
+  });
+  window.cnViewer = { state: () => ({ phase, film, vfx: vfxOn(), hidden: viewer.hidden, x: V ? V.x.x : 0, y: V ? V.y.x : 0, s: V ? V.s.x : 1 }) };   // tests / debugging
 
   /* ---------- STILLS: concert contact sheets + photo lightbox ---------- */
   const concertsData = (typeof CONCERTS !== "undefined" && Array.isArray(CONCERTS)) ? CONCERTS : [];

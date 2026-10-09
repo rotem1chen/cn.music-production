@@ -18,7 +18,7 @@
   const isChromium = !!(navigator.userAgentData && navigator.userAgentData.brands &&
     navigator.userAgentData.brands.some((b) => /Chromium/.test(b.brand)));
   const noGlass = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
-  const GLASS = ".nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close, .pin-pad button:not(.pin-del), .pin-boxes span, " +
+  const GLASS = ".nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close, .v-nav, .pin-pad button:not(.pin-del), .pin-boxes span, " +
     ".lm-card, .lm-go, .pool-btn:not(.primary), .file, .rv-controls, .rv-form, .rv-note, .rv-bigplay, .vload-box";
   let lensSvg = null, lensN = 0;
   function lensFor(el) {
