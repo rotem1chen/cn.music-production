@@ -474,7 +474,10 @@
     setLines(0, window.innerHeight, 0, window.innerWidth);
     stage.style.backgroundImage = el._poster ? el._poster.style.backgroundImage : "none";
     const amb = document.getElementById("vAmb");      // the film's own colours light the frosted backdrop
-    if (amb) amb.style.backgroundImage = stage.style.backgroundImage;
+    if (amb) {
+      const u = /url\(["']?([^"')]+)["']?\)/.exec(stage.style.backgroundImage || "");
+      if (u && window.cnSoftBg) window.cnSoftBg(amb, u[1]); else amb.style.backgroundImage = stage.style.backgroundImage;
+    }
     mediaBox.innerHTML = "";
 
     cursor.classList.remove("show", "big"); cursorShown = false;   // hide the ring over the player

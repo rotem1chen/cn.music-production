@@ -57,7 +57,10 @@
       const b = document.createElement("span"); b.className = "p-lead p-lead-" + k; b.setAttribute("aria-hidden", "true");
       root.appendChild(b); return b;
     });
-    function lightFrom() { const u = img.currentSrc || img.src; if (u) amb.style.backgroundImage = `url("${u}")`; }
+    function lightFrom() {
+      const u = img.currentSrc || img.src; if (!u) return;
+      if (window.cnSoftBg) window.cnSoftBg(amb, u); else amb.style.backgroundImage = `url("${u}")`;
+    }
     function sheen() { stage.classList.remove("sheen"); void stage.offsetWidth; stage.classList.add("sheen"); }
     let raf = null, last = 0, closing = false, source = null, pendingSwap = 0, justDragged = false;
     /* the stage's untransformed box, measured once (open, close, a new photo, rotation) — the beams are

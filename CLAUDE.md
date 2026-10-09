@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v134** (style.css, app.js, fx.js, opening.js, plight-fx.js — referenced from index, show, media, link, review, social, restaurant).
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v135** (style.css, app.js, fx.js, opening.js, plight-fx.js — referenced from index, show, media, link, review, social, restaurant).
 
 ## Files
 - `index.html` — main page: films reel, STILLS as one cover card per concert (opens `show.html`; the cover flies into the gallery via a view transition). Opens straight onto the films — there is no intro
@@ -19,6 +19,7 @@ After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` ta
 - **`restaurant.js`** — CONFIG for restaurant/venue films: `RESTAURANT` array → shown on `restaurant.html`
 - `fx.js` — the "liquid" layer (home + gallery pages): ambient light from the active film/concert, the glass nav droplet, reel depth/tilt, scroll reveals. Glass refraction is an SVG lens it injects; Chromium only, others get frosted blur
 - **Tool pages are liquid too** (link, media, review, t, and both editors): ambient light (brand light, or the client's own photos / the review video's poster), glass cards, wells and pills, liquid-yellow primaries. Editor styles live at the end of `treatment.css`; exported treatments/quotations carry their own inline styles and are NOT affected
+- **Safari on phones: no big live blurs.** The ambient light and the viewer/lightbox glows are pre-blurred once in fx.js (`tiny()` / `window.cnSoftBg`: the image shrunk to a 64px canvas, tinted, stretched back up). A live 80–90px `filter: blur()` on a full-screen layer froze iPhone Safari for seconds after every load; Chrome didn't mind. Computers keep the live blur.
 - `opening.js` — the home page's opening (every load and refresh; skipped when coming Back from a gallery): the metal CN mark materialises in the centre, the light blooms, the mark settles into place, the glass nav forms, the films rise. Any scroll/click/tap/key fast-forwards it. A tiny script in `index.html`'s `<head>` decides before first paint (skipped for reduced motion, a `#hash` link, or a page reopened mid-scroll)
 - `plight-fx.js` — the fluid photo lightbox (open from thumbnail, swipe/flick, drag down to close), used by index, show and media
 - `vgrid.js` — the grid+player logic BOTH subpages share; each page sets `window.VGRID = { items, ratio, min, unit }` before loading it

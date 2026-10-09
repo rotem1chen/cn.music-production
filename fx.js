@@ -74,13 +74,49 @@
   document.body.prepend(amb);
   const layers = amb.querySelectorAll("i");
   let front = 0, lastBg = "";
-  function ambient(bg) {
-    if (!bg || bg === lastBg) return;
-    lastBg = bg;
+  function show(bg) {
     front = 1 - front;
     layers[front].style.background = bg;
     layers[front].classList.add("on");
     layers[1 - front].classList.remove("on");
+  }
+  /* Phones: an 80px live blur over a full-screen layer at 3x density is what froze iPhone Safari for
+     seconds after every load. There the light is blurred ONCE: the image is shrunk to a tiny canvas,
+     tinted, and stretched back up — a 64px image scaled to the screen is already soft, and costs nothing. */
+  const tinyCache = {};
+  function tiny(url, done) {
+    if (tinyCache[url]) return done(tinyCache[url]);
+    const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async";
+    im.onload = () => {
+      try {
+        const a = document.createElement("canvas"); a.width = 16; a.height = 9;
+        a.getContext("2d").drawImage(im, 0, 0, 16, 9);             // shrinking = the blur
+        const c = document.createElement("canvas"); c.width = 64; c.height = 36;
+        const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(a, 0, 0, 64, 36);
+        const d = x.getImageData(0, 0, 64, 36), p = d.data;
+        for (let i = 0; i < p.length; i += 4) {                      // saturate 1.7, brightness .55 (as the CSS did)
+          const l = 0.2126 * p[i] + 0.7152 * p[i + 1] + 0.0722 * p[i + 2];
+          for (let k = 0; k < 3; k++) p[i + k] = Math.max(0, Math.min(255, (l + (p[i + k] - l) * 1.7) * 0.55));
+        }
+        x.putImageData(d, 0, 0);
+        done(tinyCache[url] = c.toDataURL("image/jpeg", 0.85));
+      } catch (_) { done(null); }
+    };
+    im.onerror = () => done(null);
+    im.src = url;
+  }
+  // the film viewer and photo lightbox glows use the same pre-blur on phones (app.js, plight-fx.js)
+  window.cnSoftBg = (el, url) => {
+    if (!touch) { el.style.backgroundImage = `url("${url}")`; return; }
+    el.dataset.want = url;
+    tiny(url, (data) => { if (el.dataset.want === url && data) el.style.backgroundImage = `url("${data}")`; });
+  };
+  function ambient(bg) {
+    if (!bg || bg === lastBg) return;
+    lastBg = bg;
+    const m = touch && /url\(["']?([^"')]+)["']?\)/.exec(bg);
+    if (!m) return show(bg);
+    tiny(m[1], (data) => { if (lastBg === bg && data) show(`url("${data}") center / cover no-repeat`); });
   }
   document.addEventListener("cn:active", (e) => onActive(e.detail && e.detail.el));
   const hud = document.getElementById("hud");

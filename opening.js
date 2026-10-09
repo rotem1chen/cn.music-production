@@ -45,7 +45,7 @@
     ], { duration: 700, delay: 1150 });
   }
   // light blooms out from the mark
-  play($(".ambient"), [
+  play($(".ambient"), touch ? [{ opacity: 0 }, { opacity: 1 }] : [          // phones: no scaling a full-screen light
     { opacity: 0, transform: "scale(.55)" }, { opacity: 1, transform: "scale(1)" },
   ], { duration: 1500, delay: 250 });
   // the glass nav materialises just after the logo lands under it (blur + scale together, not just a fade)

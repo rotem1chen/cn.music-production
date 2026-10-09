@@ -1304,3 +1304,11 @@ html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .
   .plight::before { opacity: var(--pa, 0); }
 }
 @media (prefers-reduced-transparency: reduce) { .viewer::before, .plight::before { display: none; } }
+/* phones: the light is pre-blurred in fx.js (a tiny stretched image), so no live blur and no zoom —
+   just a crossfade. The live 80px blur here froze iPhone Safari for seconds after each load. */
+@media (hover: none), (pointer: coarse) {
+  .ambient i { filter: none; transform: none; transition: opacity 1s ease; }
+  .ambient i.on { transform: none; }
+}
+/* phones: the viewer / lightbox glows are pre-blurred too (window.cnSoftBg in fx.js) — no live 90px blur */
+@media (hover: none), (pointer: coarse) { .v-amb, .p-amb { filter: none; transform: none; } }
