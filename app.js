@@ -1054,6 +1054,86 @@
     refresh();                 // the brackets can reach the tiles from now on
   })();
 
+  /* ---------- Contact email: one tap copies it ----------
+     A glass "Copied ✓" pill materialises where you tapped and floats away; a small glass popover,
+     grown out of the same spot, offers Copy (again) / Email (opens the mail app). */
+  (function emailCopy() {
+    const link = document.querySelector("[data-email-link]");
+    if (!link || !SITE.email) return;
+    const addr = SITE.email;
+    function legacyCopy(t) {                           // no async clipboard (old Safari, http): a hidden textarea
+      const ta = document.createElement("textarea");
+      ta.value = t; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px";
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, t.length);
+      let done = false; try { done = document.execCommand("copy"); } catch (_) {}
+      ta.remove(); return done;
+    }
+    function copy(t) {
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).then(() => true, () => legacyCopy(t));
+      return Promise.resolve(legacyCopy(t));
+    }
+    function pill(x, y, text) {
+      const el = document.createElement("div");
+      el.className = "copied-pill"; el.setAttribute("role", "status"); el.textContent = text;
+      el.style.left = x + "px"; el.style.top = y + "px";
+      document.body.appendChild(el);
+      el.addEventListener("animationend", () => el.remove());
+      setTimeout(() => el.remove(), 2400);              // reduced motion / no animation: still goes
+    }
+    function copyAt(x, y) {
+      copy(addr).then((done) => {
+        pill(x, y, done ? "Copied ✓" : addr);       // couldn't copy: at least show the address to select
+        if (done && window.cnHaptic) window.cnHaptic(12);
+      });
+    }
+
+    // the popover: built once, anchored to the email, grows out of the point that was tapped
+    const pop = document.createElement("div");
+    pop.className = "email-pop"; pop.hidden = true; pop.setAttribute("role", "menu");
+    pop.innerHTML = '<button type="button" role="menuitem" data-act="copy">Copy</button>' +
+      `<a role="menuitem" data-act="mail" href="mailto:${addr}">Email ↗</a>`;
+    document.body.appendChild(pop);
+    let shut = 0;
+    function openPop(x, y) {
+      clearTimeout(shut);
+      const r = link.getBoundingClientRect();
+      pop.hidden = false;
+      const pw = pop.offsetWidth, sx = window.scrollX, sy = window.scrollY;
+      const left = Math.max(12, Math.min(window.innerWidth - pw - 12, x - pw / 2));
+      const top = r.bottom + 12;
+      pop.style.left = (left + sx) + "px"; pop.style.top = (top + sy) + "px";
+      pop.style.transformOrigin = `${(x - left).toFixed(0)}px ${(y - top).toFixed(0)}px`;   // anchored to its source
+      void pop.offsetWidth;
+      pop.classList.add("on");
+      shut = setTimeout(closePop, 6000);
+    }
+    function closePop() {
+      clearTimeout(shut);
+      if (pop.hidden || !pop.classList.contains("on")) return;
+      pop.classList.remove("on");                       // dematerialises back into the email
+      setTimeout(() => { if (!pop.classList.contains("on")) pop.hidden = true; }, 320);
+    }
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const r = link.getBoundingClientRect();
+      const x = e.clientX || r.left + r.width / 2, y = e.clientY || r.top + r.height / 2;   // keyboard: the middle
+      copyAt(x, y);
+      openPop(x, y);
+      if (e.detail === 0) { const b = pop.querySelector("button"); if (b) b.focus({ preventScroll: true }); }
+    });
+    pop.addEventListener("click", (e) => {
+      const t = e.target.closest("[data-act]"); if (!t) return;
+      if (t.dataset.act === "copy") {
+        const r = t.getBoundingClientRect();
+        copyAt(e.clientX || r.left + r.width / 2, e.clientY || r.top + r.height / 2);
+      }
+      setTimeout(closePop, t.dataset.act === "copy" ? 250 : 0);
+    });
+    document.addEventListener("pointerdown", (e) => { if (!pop.hidden && !pop.contains(e.target) && !link.contains(e.target)) closePop(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePop(); });
+    window.addEventListener("scroll", () => { if (!pop.hidden) closePop(); }, { passive: true });
+  })();
+
   /* ---------- ARTISTS: everyone we've worked with ---------- */
   (function artistList() {
     const wrap = document.getElementById("artistList");

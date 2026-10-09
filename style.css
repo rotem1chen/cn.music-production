@@ -1358,3 +1358,47 @@ html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .
 /* the opening scales the masked metal logo: keep it on its own layer for the whole move so Safari
    doesn't re-rasterise the mask at a new size part-way through (that showed as a jump) */
 html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, opacity; }
+
+/* ---------- Contact email: copy pill + Copy / Email popover (app.js emailCopy) ----------
+   Both are liquid glass that materialises — out of a blur and a smaller scale on computers,
+   opacity + scale only on phones (no animated blur there). The popover grows from the tapped point. */
+.contact-email { cursor: copy; -webkit-tap-highlight-color: transparent; }
+.copied-pill { position: fixed; z-index: 400; pointer-events: none; translate: -50% -130%;
+  padding: 10px 16px; border-radius: 999px; white-space: nowrap;
+  font-family: var(--ui); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
+  background: var(--glass-fill); -webkit-backdrop-filter: blur(18px) saturate(190%); backdrop-filter: blur(18px) saturate(190%);
+  box-shadow: var(--glass-rim), var(--glass-drop), 0 0 24px rgba(255,212,0,.18);
+  animation: pillLife 1.9s var(--ease) both; }
+@keyframes pillLife {
+  0%   { opacity: 0; scale: .7; filter: blur(10px); translate: -50% -110%; }
+  18%  { opacity: 1; scale: 1; filter: blur(0); translate: -50% -130%; }
+  62%  { opacity: 1; scale: 1; filter: blur(0); translate: -50% -150%; }
+  100% { opacity: 0; scale: .92; filter: blur(8px); translate: -50% -260%; }
+}
+@keyframes pillLifeSoft {                 /* phones: the same life without the animated blur */
+  0%   { opacity: 0; scale: .7; translate: -50% -110%; }
+  18%  { opacity: 1; scale: 1; translate: -50% -130%; }
+  62%  { opacity: 1; scale: 1; translate: -50% -150%; }
+  100% { opacity: 0; scale: .92; translate: -50% -260%; }
+}
+.email-pop { position: absolute; z-index: 400; display: flex; gap: 4px; padding: 5px; border-radius: 999px;
+  background: var(--glass-fill); -webkit-backdrop-filter: blur(18px) saturate(190%); backdrop-filter: blur(18px) saturate(190%);
+  box-shadow: var(--glass-rim), var(--glass-drop);
+  opacity: 0; scale: .82; filter: blur(8px);
+  transition: opacity .22s ease, scale .3s var(--ease), filter .22s ease; }
+.email-pop[hidden] { display: none; }
+.email-pop.on { opacity: 1; scale: 1; filter: none; transition: opacity .3s ease, scale .5s var(--spring), filter .3s ease; }
+.email-pop :is(button, a) { border: 0; background: none; cursor: pointer; padding: 11px 18px; border-radius: 999px;
+  font-family: var(--ui); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--text);
+  -webkit-tap-highlight-color: transparent; transition: background .2s, color .2s; }
+.email-pop :is(button, a):hover, .email-pop :is(button, a):focus-visible { color: var(--accent); background: rgba(255,255,255,.08); outline: none; }
+.email-pop :is(button, a):active { scale: .95; color: var(--accent); transition: scale .08s ease-out; }
+@media (hover: none), (pointer: coarse) {
+  .copied-pill { animation-name: pillLifeSoft; }
+  .email-pop, .email-pop.on { filter: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .copied-pill { animation: none; transition: none; }   /* shows in place, goes when its timer ends */
+  .email-pop, .email-pop.on { scale: 1; filter: none; }
+}
+@media (prefers-reduced-transparency: reduce) { .copied-pill, .email-pop { background: #141414; -webkit-backdrop-filter: none; backdrop-filter: none; } }
