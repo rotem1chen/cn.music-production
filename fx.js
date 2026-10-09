@@ -84,9 +84,17 @@
   }
   document.addEventListener("cn:active", (e) => onActive(e.detail && e.detail.el));
   const hud = document.getElementById("hud");
+  // the HUD's text re-forms for the new film: each line rises out of a blur (phones: no blur, it repaints)
+  function pulseHud() {
+    if (!hud || reduced || !hud.animate) return;
+    const soft = (px) => (touch ? {} : { filter: `blur(${px}px)` });
+    Array.from(hud.children).forEach((s, i) => s.animate(
+      [Object.assign({ opacity: 0, translate: "0 7px" }, soft(8)), Object.assign({ opacity: 1, translate: "0 0" }, soft(0))],
+      { duration: 550, delay: i * 40, easing: "cubic-bezier(.16,1,.3,1)", fill: "backwards" }));
+  }
   function onActive(el) {
     if (!el) return;
-    if (hud && !reduced) { hud.classList.remove("pulse"); void hud.offsetWidth; hud.classList.add("pulse"); }
+    pulseHud();
     if (el.classList.contains("link-tile")) { ambient("radial-gradient(60% 50% at 50% 50%, #ffd400, #000 75%)"); return; }
     const p = el.querySelector(".poster");
     const img = p && p.style.backgroundImage;
@@ -182,30 +190,66 @@
   const spy = [["#top", null], ["#stills", "stills"], ["#artists", "artists"], ["#contact", "contact"]];
   function spySection() {
     if (!onHome) return;
-    const y = window.innerHeight * 0.4;
+    const y = viewH * 0.4;
     let cur = links[0];
     spy.forEach(([href, id]) => {
       const sec = id && document.getElementById(id);
-      if (sec && sec.getBoundingClientRect().top < y) cur = links.find((l) => l.getAttribute("href") === href) || cur;
+      if (sec && placeOf(sec).top - scrollPos < y) cur = links.find((l) => l.getAttribute("href") === href) || cur;
     });
-    if (id("about") && id("about").getBoundingClientRect().top < y) cur = links.find((l) => l.getAttribute("href") === "#contact") || cur;
+    if (id("about") && placeOf(id("about")).top - scrollPos < y) cur = links.find((l) => l.getAttribute("href") === "#contact") || cur;
     if (cur !== activeLink) { activeLink = cur; aimBlob(); }
   }
   function id(x) { return document.getElementById(x); }
 
-  /* ---------- reel depth + Apple TV-style tilt ---------- */
+  /* ---------- reel depth + Apple TV-style tilt ----------
+     Scroll-linked, so it is written straight onto the frame — no CSS transition on transform/filter
+     (a transition restarted on every scroll frame lags the scroll and lands in steps: the "boxy" feel).
+     No rects either: each tile's place in the document is measured once (and again when the layout
+     changes), so a scroll frame only reads scrollY. The hover lean eases in JS instead. */
   let tilt = null;   // { el, x, y } in -1..1
-  function depth() {
-    const vh = window.innerHeight;
-    document.querySelectorAll(".reel .clip, .subpages .clip").forEach((el) => {
-      const r = el.getBoundingClientRect();
-      if (r.bottom < -200 || r.top > vh + 200) return;
-      const d = Math.max(-1.6, Math.min(1.6, (r.top + r.height / 2 - vh / 2) / (vh / 2)));
-      let rx = -d * 26, ry = 0, sc = 1 - Math.min(0.22, Math.abs(d) * 0.16), z = -Math.abs(d) * 60;
-      if (tilt && tilt.el === el) { rx += -tilt.y * 9; ry = tilt.x * 11; sc *= 1.035; z += 20; }
-      el.style.transform = `perspective(1100px) translateZ(${z.toFixed(1)}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
-      if (!touch) el.style.filter = Math.abs(d) > 0.35 ? `blur(${((Math.abs(d) - 0.35) * 2.4).toFixed(2)}px)` : "";
+  let tiles = [], tilesDirty = true;
+  let viewH = window.innerHeight;                  // cached: reading innerHeight mid-scroll can force a style pass
+  let scrollPos = window.scrollY;                  // read once per frame, before anything is written
+  function docTop(el) { let y = 0; for (let n = el; n; n = n.offsetParent) y += n.offsetTop; return y; }
+  const places = new Map();                       // element → its place in the document, same lifetime as the tiles'
+  function placeOf(el) {
+    if (tilesDirty) measureTiles();
+    let p = places.get(el);
+    if (!p) places.set(el, (p = { top: docTop(el), h: el.offsetHeight }));
+    return p;
+  }
+  function measureTiles() {
+    tilesDirty = false;
+    places.clear();
+    tiles = Array.from(document.querySelectorAll(".reel .clip, .subpages .clip")).map((el) => {
+      const old = el._depth || { x: 0, y: 0, k: 0, t: "", f: "" };
+      el._depth = old;
+      return { el, top: docTop(el), h: el.offsetHeight, s: old };
     });
+  }
+  let depthLast = 0;
+  function depth(now) {
+    if (tilesDirty) measureTiles();
+    const vh = viewH, sy = scrollPos;
+    const dt = Math.min(0.05, Math.max(0, (now - depthLast) / 1000) || 0.016); depthLast = now;
+    const a = 1 - Math.exp(-dt / 0.075);           // ≈ the old .3s ease on the hover lean
+    let moving = false;
+    for (const t of tiles) {
+      const top = t.top - sy;
+      if (top + t.h < -200 || top > vh + 200) continue;
+      const d = Math.max(-1.6, Math.min(1.6, (top + t.h / 2 - vh / 2) / (vh / 2)));
+      const s = t.s, on = tilt && tilt.el === t.el;
+      s.x += ((on ? tilt.x : 0) - s.x) * a; s.y += ((on ? tilt.y : 0) - s.y) * a; s.k += ((on ? 1 : 0) - s.k) * a;
+      if (Math.abs((on ? tilt.x : 0) - s.x) + Math.abs((on ? tilt.y : 0) - s.y) + Math.abs((on ? 1 : 0) - s.k) > 0.004) moving = true;
+      const rx = -d * 26 - s.y * 9, ry = s.x * 11, sc = (1 - Math.min(0.22, Math.abs(d) * 0.16)) * (1 + 0.035 * s.k), z = -Math.abs(d) * 60 + 20 * s.k;
+      const tf = `perspective(1100px) translateZ(${z.toFixed(1)}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
+      if (tf !== s.t) { s.t = tf; t.el.style.transform = tf; }          // unchanged → no style work
+      if (!touch) {
+        const f = Math.abs(d) > 0.35 ? `blur(${((Math.abs(d) - 0.35) * 2.4).toFixed(1)}px)` : "";
+        if (f !== s.f) { s.f = f; t.el.style.filter = f; }
+      }
+    }
+    if (moving) kickDepth();                         // the lean is still easing toward the pointer
   }
   if (fine && !reduced) {
     document.addEventListener("pointermove", (e) => {
@@ -226,7 +270,7 @@
   function kickDepth() {
     if (reduced || depthQueued) return;
     depthQueued = true;
-    requestAnimationFrame(() => { depthQueued = false; depth(); });
+    requestAnimationFrame((now) => { depthQueued = false; scrollPos = window.scrollY; depth(now); });
   }
 
   /* ---------- reveals ---------- */
@@ -274,12 +318,24 @@
     if (!hud) return;
     const rm = document.querySelector(".reel-more");
     if (!rm) { hud.classList.remove("yield"); return; }
-    const a = rm.getBoundingClientRect(), vh = window.innerHeight;
-    hud.classList.toggle("yield", a.bottom > vh - 90 && a.top < vh);
+    const p = placeOf(rm), vh = viewH, top = p.top - scrollPos;
+    hud.classList.toggle("yield", top + p.h > vh - 90 && top < vh);
   }
-  function onScroll() { spySection(); kickDepth(); yieldHud(); }
-  window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", () => { aimBlob(true); kickDepth(); });
+  // all scroll work in one frame callback (reads, then writes) instead of straight in the scroll event.
+  // On the home page it rides app.js's own scroll frame, after the reel has been read, with the scroll
+  // position app.js read first — so the whole frame measures once and writes once.
+  function scrollFrame(now, y) { scrollPos = y == null ? window.scrollY : y; spySection(); yieldHud(); if (!depthQueued) depth(now); }
+  let scrollQueued = false;
+  function onScroll() {
+    if (scrollQueued) return;
+    scrollQueued = true;
+    requestAnimationFrame((now) => { scrollQueued = false; scrollFrame(now); });
+  }
+  if (Array.isArray(window.cnScrollFrame)) window.cnScrollFrame.push(scrollFrame);
+  else window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", () => { viewH = window.innerHeight; tilesDirty = true; aimBlob(true); kickDepth(); });
+  // the tiles' places only change when the layout does (images, fonts, paging, rotation)
+  if (window.ResizeObserver) new ResizeObserver(() => { tilesDirty = true; kickDepth(); }).observe(document.body);
   function boot() {
     watchConcerts(); lightTools(); armReveals(); spySection(); aimBlob(true); kickDepth(); yieldHud();
     // tool pages fill in after load (Drive folders, notes): reveal what arrives
@@ -288,7 +344,7 @@
     onActive(document.querySelector(".reel .clip.active"));   // app.js picked a film before we were listening
     // the reel re-renders when you page through films; pick the new tiles up
     const reel = document.getElementById("work");
-    if (reel) new MutationObserver(kickDepth).observe(reel, { childList: true });
+    if (reel) new MutationObserver(() => { tilesDirty = true; kickDepth(); }).observe(reel, { childList: true });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => aimBlob(true));
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();

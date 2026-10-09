@@ -207,7 +207,7 @@
   let hoverIdx = -1;
   let activeIdx = -1;
   let viewerOpen = false;
-  let animatingScroll = false, scrollRAF = null, lastMoveTs = 0;
+  let animatingScroll = false, scrollRAF = null;
 
   function scrollToClip(i) {
     const el = clipEls[i]; if (!el) return;
@@ -228,14 +228,30 @@
     })(performance.now());
   }
 
-  function positionTarget(i) {
+  /* The brackets move on the compositor: each corner has its own translate, so gliding onto the
+     next film never animates top/left/width/height (that was a layout pass on every scroll frame). */
+  const corners = ["tl", "tr", "bl", "br"].map((k) => target.querySelector(".corner." + k));
+  const CORNER = 18, cornerAt = [];
+  function positionTarget(i, r) {
     const el = elAt(i); if (!el) return;
-    const r = el.getBoundingClientRect();
-    const pad = 10;
-    target.style.left = (r.left - pad) + "px";
-    target.style.top = (r.top - pad) + "px";
-    target.style.width = (r.width + pad * 2) + "px";
-    target.style.height = (r.height + pad * 2) + "px";
+    r = r || el.getBoundingClientRect();
+    const pad = 10, x0 = r.left - pad, y0 = r.top - pad, x1 = r.right + pad - CORNER, y1 = r.bottom + pad - CORNER;
+    if (!cornerAt.length) {                    // first placement: appear in place, don't glide in from 0,0
+      corners.forEach((c) => { c.style.transition = "none"; });
+      requestAnimationFrame(() => requestAnimationFrame(() => corners.forEach((c) => { c.style.transition = ""; })));
+    }
+    [[x0, y0], [x1, y0], [x0, y1], [x1, y1]].forEach(([x, y], k) => {
+      const v = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+      if (cornerAt[k] !== v) { cornerAt[k] = v; corners[k].style.transform = v; }   // unchanged → no style work
+    });
+  }
+  // the corners snap in from outside when a new film locks (was a CSS class restarted with a forced reflow)
+  const LOCK_FROM = [["-12px", "-12px"], ["12px", "-12px"], ["-12px", "12px"], ["12px", "12px"]];
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function lockOn() {
+    if (!target.animate || reducedMotion) return;
+    corners.forEach((c, k) => c.animate([{ opacity: 0, translate: LOCK_FROM[k].join(" ") }, { opacity: 1, translate: "0 0" }],
+      { duration: 450, easing: "cubic-bezier(.16,1,.3,1)" }));
   }
 
   function setActive(i) {
@@ -252,7 +268,7 @@
     hudArtist.textContent = isSub ? "" : (c.artist || "");
     hudIndex.textContent = isSub ? "" : String(page * PAGE_SIZE + i + 1).padStart(2, "0") + " — " + total;
     bars.forEach((b, j) => b.classList.toggle("on", !isSub && j === i));
-    target.classList.remove("lock"); void target.offsetWidth; target.classList.add("lock");
+    lockOn();
     document.dispatchEvent(new CustomEvent("cn:active", { detail: { el } }));   // fx.js: ambient light + HUD refresh
   }
 
@@ -272,20 +288,26 @@
   function stopPreview(el) { if (el && el._media) { el._media.remove(); el._media = null; } }
 
   /* ---------- Refresh (hover + scroll drive the target) ---------- */
+  // one read pass: every rect first, so refresh() afterwards only writes
   function nearestToCenter() {
     const fy = window.innerHeight / 2;
     let best = -1, bestD = Infinity;
+    const rects = [];
     for (let i = 0; i < targetCount(); i++) {
-      const r = elAt(i).getBoundingClientRect();
+      const r = rects[i] = elAt(i).getBoundingClientRect();
       const d = Math.abs(r.top + r.height / 2 - fy);
       if (d < bestD) { bestD = d; best = i; }
     }
-    return { best, bestD };
+    return { best, bestD, rects };
   }
 
+  const html = document.documentElement;
   function refresh() {
     if (viewerOpen || swapping) return;
-    const { best, bestD } = nearestToCenter();
+    // during the opening the brackets ride the films' rise on the compositor (opening.js), already parked
+    // on their final place — reading rects here would measure the moving films and count the rise twice
+    if (html.classList.contains("opening-run")) return;
+    const { best, bestD, rects } = nearestToCenter();
     const useHover = hoverIdx >= 0;
     const a = useHover ? hoverIdx : best;
     const show = a >= 0 && (useHover || bestD < window.innerHeight * 0.7);
@@ -295,37 +317,42 @@
 
     if (a >= 0 && show) {
       if (a !== activeIdx) setActive(a);
-      positionTarget(a);
+      positionTarget(a, rects[a]);
     }
 
   }
 
+  /* Everything that follows the scroll runs in ONE frame callback, never straight in the scroll event:
+     by the time a scroll event fires the page may have pending style, and reading positions there
+     forced a recalculation on every event. Section offsets are cached until the layout changes. */
+  const onFrame = [];                       // cheap per-frame jobs that only read cached numbers
+  let vh = window.innerHeight;              // innerHeight itself can force a style pass in a scroll event
+  const layoutJobs = [];                    // re-measure when the page's size changes (images, fonts, paging)
+  if (window.ResizeObserver) new ResizeObserver(() => layoutJobs.forEach((f) => f())).observe(document.body);
+  const after = window.cnScrollFrame = [];  // fx.js (depth, scrollspy) joins this same frame
   let ticking = false;
   window.addEventListener("scroll", () => {
-    if (!ticking) { requestAnimationFrame(() => { refresh(); ticking = false; }); ticking = true; }
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame((now) => {
+      ticking = false;
+      const y = window.scrollY;             // the frame's one fresh read; fx.js reuses it after the writes
+      onFrame.forEach((f) => f()); refresh();
+      after.forEach((f) => f(now, y));
+    });
   }, { passive: true });
-  window.addEventListener("resize", refresh);
+  window.addEventListener("resize", () => { vh = window.innerHeight; layoutJobs.forEach((f) => f()); onFrame.forEach((f) => f()); refresh(); });
 
-  window.cnRefresh = refresh;   // opening.js keeps the yellow corners on the film while it rises into place
+  window.cnRefresh = refresh;   // opening.js puts the brackets back on the films once the opening is over
   renderPage(0);          // first five films (everything above must exist before this runs)
   refresh();
 
   /* wheel does all the scrolling — free, no auto-centering */
 
-  /* ---------- Cursor ring follows the mouse (with a little lag) ---------- */
-  let cx = window.innerWidth / 2, cy = window.innerHeight / 2, tx = cx, ty = cy, cursorShown = false;
-  window.addEventListener("mousemove", (e) => {
-    tx = e.clientX; ty = e.clientY;
-    lastMoveTs = performance.now();               // mark genuine mouse movement
-    if (viewerOpen) return;                        // ring hidden over the player (iframe eats mouse events)
-    if (!cursorShown) { cursorShown = true; cursor.classList.add("show"); }
-  });
-  window.addEventListener("mouseout", (e) => { if (!e.relatedTarget) { cursorShown = false; cursor.classList.remove("show"); } });
-  (function cursorLoop() {
-    cx += (tx - cx) * 0.32; cy += (ty - cy) * 0.32;   // still trails the mouse, but closes the gap faster
-    cursor.style.transform = "translate(" + cx + "px," + cy + "px) translate(-50%,-50%)";
-    requestAnimationFrame(cursorLoop);
-  })();
+  /* ---------- Cursor ring: retired (style.css hides it; the normal pointer is used) ----------
+     It used to trail the mouse from a requestAnimationFrame loop that never stopped, so every
+     device — phones included — did style work on every frame for an element nobody could see. */
+  let cursorShown = false;
 
   /* ---------- Viewer: video grows, crosshair lines spread with it ---------- */
   const viewer = document.getElementById("viewer");
@@ -350,7 +377,12 @@
     ytApiReady = true;
     if (pendingMount) { const f = pendingMount; pendingMount = null; f(); }
   };
-  loadYTApi();
+  // the API is a chain of scripts: fetch it once the opening is over and the page is idle, not while it
+  // plays (a phone's main thread is busiest right then). Opening a film earlier loads it on the spot.
+  (function preloadYT() {
+    const idle = () => (window.requestIdleCallback ? requestIdleCallback(loadYTApi, { timeout: 2000 }) : setTimeout(loadYTApi, 300));
+    if (html.classList.contains("opening")) setTimeout(idle, 2600); else idle();
+  })();
 
   /* The film starts loading the moment you click, hidden and muted, so it buffers during the
      grid + grow animation instead of after it. It is shown only once the stage has grown AND the
@@ -374,7 +406,7 @@
 
   function mountPlayer(c, t) {
     if (c.v.type === "youtube") {
-      if (!ytApiReady) { pendingMount = () => mountPlayer(c, t); return; }
+      if (!ytApiReady) { pendingMount = () => mountPlayer(c, t); loadYTApi(); return; }
       mediaBox.innerHTML = '<div id="ytHost"></div>';
       let primed = false;
       ytPlayer = new YT.Player("ytHost", {
@@ -418,9 +450,9 @@
     stage.style.left = x + "px"; stage.style.top = y + "px";
     stage.style.width = w + "px"; stage.style.height = h + "px";
   }
-  function setLines(top, bottom, left, right) {
-    vLeadT.style.top = top + "px"; vLeadB.style.top = bottom + "px";
-    vLeadL.style.left = left + "px"; vLeadR.style.left = right + "px";
+  function setLines(top, bottom, left, right) {   // transforms, so the beams glide on the compositor
+    vLeadT.style.transform = `translateY(${top}px)`; vLeadB.style.transform = `translateY(${bottom}px)`;
+    vLeadL.style.transform = `translateX(${left}px)`; vLeadR.style.transform = `translateX(${right}px)`;
   }
   function bigRect(aspect) {
     const a = aspect > 0 ? aspect : 0.5625;
@@ -711,18 +743,21 @@
     });
 
     // the next stop is the first one whose top is still below the fold
+    let tops = null;                                         // cached offsets, dropped when the layout changes
+    layoutJobs.push(() => { tops = null; });
     function sync() {
-      const edge = window.scrollY + window.innerHeight * 0.75;
-      const next = stops.find((s) => s.el.offsetTop > edge) || null;
+      if (!tops) tops = stops.map((s) => s.el.offsetTop);
+      const edge = window.scrollY + vh * 0.75;
+      const i = tops.findIndex((t) => t > edge), next = i < 0 ? null : stops[i];
       if (next !== stop) {
         stop = next;
         if (stop) { label.textContent = phone.matches ? stop.short : stop.text; btn.href = "#" + stop.el.id; }
+        btn.classList.toggle("gone", !stop);
       }
-      btn.classList.toggle("gone", !stop);
     }
-    window.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("resize", sync);
+    onFrame.push(sync);
     sync();
+    btn.classList.toggle("gone", !stop);
   })();
 
   /* ---------- Corner button: "Skip to stills" going down, "Back to top" once you're there ---------- */
@@ -754,8 +789,11 @@
     });
 
     // once the stills are reached — and everywhere below them — the button turns round
+    let stillsTop = null;
+    layoutJobs.push(() => { stillsTop = null; });
     function sync() {
-      const reached = window.scrollY >= stills.offsetTop - window.innerHeight * 0.2;
+      if (stillsTop === null) stillsTop = stills.offsetTop;
+      const reached = window.scrollY >= stillsTop - vh * 0.2;
       if (reached === atStills) return;
       atStills = reached;
       btn.classList.toggle("up", reached);
@@ -764,9 +802,8 @@
       if (arrow) arrow.textContent = reached ? "\u2191" : "\u2193";
     }
 
-    // read the offset live — swapping the reel to a shorter page moves the stills up
-    window.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("resize", sync);
+    // the offset is re-read whenever the layout changes — swapping the reel to a shorter page moves the stills up
+    onFrame.push(sync);
     sync();
   })();
 

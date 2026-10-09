@@ -41,6 +41,9 @@
   function rubberband(over, dim) { const c = 0.55; return (over * dim * c) / (dim + c * Math.abs(over)); }
 
   const noGlass = window.matchMedia && window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
+  // phones: the frosting is a fixed-radius layer that fades with the backdrop (style.css, .plight::before) —
+  // re-blurring the whole screen at a new radius on every frame of a swipe is too much for a phone GPU
+  const touch = window.matchMedia && window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
   window.PlightFX = function (o) {
     const root = o.root, stage = o.stage, img = o.img;
@@ -57,6 +60,15 @@
     function lightFrom() { const u = img.currentSrc || img.src; if (u) amb.style.backgroundImage = `url("${u}")`; }
     function sheen() { stage.classList.remove("sheen"); void stage.offsetWidth; stage.classList.add("sheen"); }
     let raf = null, last = 0, closing = false, source = null, pendingSwap = 0, justDragged = false;
+    /* the stage's untransformed box, measured once (open, close, a new photo, rotation) — the beams are
+       placed from it and the springs, so a frame never has to read the layout back */
+    let base = null, W = window.innerWidth, H = window.innerHeight;
+    function measureBase() {                         // hidden (0×0) is not a size worth keeping
+      const w = stage.offsetWidth;
+      base = w ? { l: stage.offsetLeft, t: stage.offsetTop, w, h: stage.offsetHeight } : null;
+    }
+    img.addEventListener("load", () => { base = null; if (!root.hidden) kick(); });
+    window.addEventListener("resize", () => { base = null; W = window.innerWidth; H = window.innerHeight; });
 
     function render() {
       stage.style.transform = `translate3d(${S.x.x}px, ${S.y.x}px, 0) scale(${S.s.x})`;
@@ -65,11 +77,14 @@
       if (noGlass) root.style.backgroundColor = `rgba(0,0,0,${(0.96 * a).toFixed(3)})`;
       else {
         root.style.backgroundColor = `rgba(0,0,0,${(0.6 * a).toFixed(3)})`;
-        root.style.backdropFilter = root.style.webkitBackdropFilter = `blur(${(26 * a).toFixed(1)}px) saturate(${(1 + 0.6 * a).toFixed(2)})`;
+        if (!touch) root.style.backdropFilter = root.style.webkitBackdropFilter = `blur(${(26 * a).toFixed(1)}px) saturate(${(1 + 0.6 * a).toFixed(2)})`;
       }
       amb.style.opacity = (0.85 * a).toFixed(3);
       // beams ride the photo's edges (wherever it is: zooming, swiping, dragging), spread out when sp → 1
-      const r = stage.getBoundingClientRect(), W = window.innerWidth, H = window.innerHeight, sp = Math.max(0, Math.min(1, S.sp.x));
+      if (!base) measureBase();
+      const b = base || { l: 0, t: 0, w: 0, h: 0 };
+      const cx = b.l + b.w / 2 + S.x.x, cy = b.t + b.h / 2 + S.y.x, hw = b.w * S.s.x / 2, hh = b.h * S.s.x / 2;
+      const r = { left: cx - hw, right: cx + hw, top: cy - hh, bottom: cy + hh, width: hw * 2 }, sp = Math.max(0, Math.min(1, S.sp.x));
       if (r.width > 2) {
         const lerp = (p, q) => p + (q - p) * sp;
         beams[0].style.transform = `translateY(${lerp(r.top, 0).toFixed(1)}px)`;
@@ -109,6 +124,7 @@
       // stage is laid out at its final place with transform cleared; map the thumb onto it
       stage.style.transform = "none";
       const f = stage.getBoundingClientRect();
+      measureBase();
       if (!f.width) return false;
       const s = Math.sqrt((r.width * r.height) / (f.width * f.height));
       S.s.jump(s);
@@ -152,6 +168,7 @@
       stage.style.transform = "none";
       const r = thumbRect();
       const f = stage.getBoundingClientRect();
+      measureBase();
       render();
       if (r && f.width) {
         const s = Math.sqrt((r.width * r.height) / (f.width * f.height));
