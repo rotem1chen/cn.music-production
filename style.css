@@ -1463,3 +1463,30 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
   .v-handle { background: #fff; box-shadow: 0 0 0 1.5px #000; }
   .plight-meta { color: #fff; text-shadow: 0 1px 3px #000; }
 }
+
+/* ---------- Pull for more films (app.js: the reel grows when the ring fills) ---------- */
+.reel-pull { position: relative; width: var(--clipW); height: 62vh; flex: none;
+  display: flex; align-items: flex-start; justify-content: center; padding-top: 6vh; --p: 0; }
+/* the ring and its words lift and stretch a little as you pull — the page giving way */
+.rp-in { display: flex; flex-direction: column; align-items: center; gap: 10px;
+  transform: translateY(calc(var(--p) * 9vh)) scale(calc(0.9 + var(--p) * 0.14));
+  opacity: calc(0.35 + var(--p) * 0.65); will-change: transform, opacity; }
+.rp-ring { width: 64px; height: 64px; overflow: visible; }
+.rp-ring circle { fill: none; stroke-width: 2.5; }
+.rp-track { stroke: rgba(244,244,242,.16); }
+.rp-fill { stroke: var(--accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 32px 32px;
+  filter: drop-shadow(0 0 6px rgba(255,212,0,.7)); }
+.rp-ar { fill: none; stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+  transform-origin: 32px 32px; transition: transform .35s var(--ease), stroke .25s; }
+.rp-t { font-family: var(--ui); font-size: 12px; letter-spacing: .26em; text-transform: uppercase; color: var(--text); }
+.rp-s { font-family: var(--ui); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
+/* full: the ring lights up and the arrow turns to a check-ready glow */
+.reel-pull.ready .rp-ring { filter: drop-shadow(0 0 14px rgba(255,212,0,.65)); }
+.reel-pull.ready .rp-ar { stroke: var(--accent); transform: scale(1.12); }
+.reel-pull.go .rp-in { transform: translateY(9vh) scale(1.1); }
+/* the same thing as a real button for keyboards and screen readers — visible only when focused */
+.rp-btn { position: absolute; left: 50%; top: 6vh; translate: -50% 0; opacity: 0; pointer-events: none;
+  padding: 12px 18px; border: 0; border-radius: 999px; background: var(--glass-fill); color: var(--accent);
+  font-family: var(--ui); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+.rp-btn:focus-visible { opacity: 1; pointer-events: auto; outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .rp-in { transform: none; } .reel-pull.go .rp-in { transform: none; } }

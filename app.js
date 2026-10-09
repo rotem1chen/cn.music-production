@@ -61,7 +61,6 @@
   const reel = document.getElementById("work");
   const total = String(items.length).padStart(2, "0");
   const PAGE_SIZE = 5;
-  const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   let page = 0;
   const clipEls = [];        // elements currently on screen (one page's worth)
   const pageItems = [];      // the clip data behind them, same order
@@ -131,83 +130,93 @@
     return el;
   }
 
-  function renderPage(p) {
-    page = ((p % pageCount) + pageCount) % pageCount;      // wraps back round to the first five
+  /* The reel is ONE list that grows. It starts with the first five; past the last film sits a pull
+     zone — keep scrolling into it and a yellow ring fills ("Keep pulling · 4 more films"). When the
+     ring is full the next films rise in right there, and you just carry on scrolling into them: no
+     button, no jump back to the top. `page` stays 0 (indexes are reel-wide). */
+  let shown = 0;
+  let swapping = false;                                    // kept for refresh(): nothing swaps any more
+  function addClip(c, i) {
+    const el = buildClip(c, i);
+    reel.insertBefore(el, pull && pull.parentNode === reel ? pull : null);
+    clipEls.push(el); pageItems.push(c);
+    const bar = document.createElement("i"); barsWrap.appendChild(bar); bars.push(bar);
+    return el;
+  }
+  function renderPage(n) {                                 // (re)build the reel with the first n films
     clipEls.forEach(stopPreview);
     reel.innerHTML = "";
-    clipEls.length = 0;
-    pageItems.length = 0;
-    hoverIdx = -1;
-    activeIdx = -1;                                        // force the HUD + target to reattach
-
-    items.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).forEach((c, i) => {
-      const el = buildClip(c, i);
-      reel.appendChild(el);
-      clipEls.push(el);
-      pageItems.push(c);
-    });
-
-    // one bar per film on this page
-    barsWrap.innerHTML = "";
-    bars = clipEls.map(() => { const b = document.createElement("i"); barsWrap.appendChild(b); return b; });
-
-    if (pageCount > 1) reel.appendChild(buildMoreButton());
-    refresh();          // reattach HUD + target to the new set straight away
+    clipEls.length = 0; pageItems.length = 0;
+    barsWrap.innerHTML = ""; bars = [];
+    hoverIdx = -1; activeIdx = -1;                         // force the HUD + target to reattach
+    shown = Math.min(items.length, Math.max(PAGE_SIZE, n || PAGE_SIZE));
+    items.slice(0, shown).forEach((c, i) => addClip(c, i));
+    placePull();
+    refresh();
   }
 
-  function buildMoreButton() {
-    const next = (page + 1) % pageCount;
-    const count = items.slice(next * PAGE_SIZE, next * PAGE_SIZE + PAGE_SIZE).length;
-    const btn = document.createElement("button");
-    btn.className = "reel-more";
-    btn.innerHTML = '<span class="rm-label">' +
-        (next === 0 ? "Back to the first " + count : "Next " + count + " films") +
-      '</span><span class="ar" aria-hidden="true">' + (next === 0 ? "\u2191" : "\u2193") + '</span>' +
-      '<span class="ec tl"></span><span class="ec tr"></span><span class="ec bl"></span><span class="ec br"></span>';
-    btn.addEventListener("click", () => goToPage(page + 1));
-    return btn;
-  }
-
-  /* Paging is a direction, not a fade: the five on screen lift up and away, the next five rise in from
-     below (going back to the first five runs the other way). Only transform + opacity move, as Web
-     Animations on the compositor; the page lands at the top while the reel is invisible.
-     Reduced motion: a plain crossfade. */
-  let swapping = false;
-  function goToPage(next) {
-    if (swapping) return;                                  // ignore double-clicks mid-swap
-    swapping = true;
-    chrome.classList.add("hide");                          // brackets + HUD step aside for the swap
-    hud.classList.add("hide");
-    const forward = ((next % pageCount) + pageCount) % pageCount !== 0;
-    const D = forward ? -1 : 1;                            // the way the old set leaves: up (next) / down (back)
-    const vh = window.innerHeight;
-    const done = () => { swapping = false; refresh(); };  // target + HUD land on the new first film
-    if (!reel.animate) {                                   // very old browsers: just swap
-      renderPage(next); window.scrollTo({ top: 0, behavior: "instant" }); done(); return;
+  /* ---------- the pull zone ---------- */
+  let pull = null, pullTop = 0, pullH = 0, pullDone = false;
+  const R = 26, CIRC = 2 * Math.PI * R;
+  function placePull() {
+    const left = items.length - shown;
+    if (left <= 0) { if (pull) pull.remove(); pull = null; return; }
+    if (!pull) {
+      pull = document.createElement("div");
+      pull.className = "reel-pull";
+      pull.setAttribute("aria-hidden", "true");
+      pull.innerHTML = '<div class="rp-in"><svg class="rp-ring" viewBox="0 0 64 64">' +
+        `<circle class="rp-track" cx="32" cy="32" r="${R}"/><circle class="rp-fill" cx="32" cy="32" r="${R}" ` +
+        `stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${CIRC.toFixed(1)}"/>` +
+        '<path class="rp-ar" d="M32 22v18m-7-7 7 7 7-7"/></svg>' +
+        '<span class="rp-t">Keep pulling</span><span class="rp-s"></span></div>';
+      // keyboard / screen readers / anyone who'd rather press: the same thing as a real button
+      const b = document.createElement("button");
+      b.className = "rp-btn"; b.type = "button";
+      b.addEventListener("click", () => revealMore());
+      pull.appendChild(b);
     }
-    // scale about the middle of the screen, not the middle of the (much taller) reel
-    reel.style.transformOrigin = `50% ${(window.scrollY + vh / 2 - reel.offsetTop).toFixed(0)}px`;
-    const out = reel.animate(reducedMotion
-      ? [{ opacity: 1 }, { opacity: 0 }]
-      : [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translate3d(0, ${(D * vh * 0.16).toFixed(0)}px, 0) scale(.94)` }],
-      { duration: reducedMotion ? 180 : 360, easing: "cubic-bezier(.55,0,.75,.2)", fill: "forwards" });
-    // timer, not the animation's own finish — timers keep running when the tab is in the background
-    setTimeout(() => {
-      renderPage(next);
-      window.scrollTo({ top: 0, behavior: "instant" });   // invisible jump
-      reel.style.transformOrigin = `50% ${(vh / 2 - reel.offsetTop).toFixed(0)}px`;
-      const IN = reducedMotion ? 260 : 720, STEP = 50;
-      reel.animate(reducedMotion
-        ? [{ opacity: 0 }, { opacity: 1 }]
-        : [{ opacity: 0, transform: "scale(.97)" }, { opacity: 1, transform: "none" }],
-        { duration: reducedMotion ? IN : 460, easing: "cubic-bezier(.16,1,.3,1)" });
-      out.cancel();
-      // each new film rises on its own `translate` (the reel tilt keeps its `transform`), a beat apart
-      if (!reducedMotion) clipEls.forEach((el, i) => el.animate(
-        [{ translate: `0 ${(-D * vh * 0.28).toFixed(0)}px` }, { translate: "0 0" }],
-        { duration: IN, delay: i * STEP, easing: "cubic-bezier(.16,1,.3,1)", fill: "backwards" }));
-      setTimeout(() => { reel.style.transformOrigin = ""; done(); }, IN + (reducedMotion ? 0 : (clipEls.length - 1) * STEP));
-    }, reducedMotion ? 180 : 360);
+    const n = Math.min(PAGE_SIZE, left);
+    pull.querySelector(".rp-s").textContent = n + (n === 1 ? " more film" : " more films");
+    pull.querySelector(".rp-btn").textContent = "Show " + n + " more films";
+    reel.appendChild(pull);
+    pullDone = false;
+    pull.style.setProperty("--p", 0);
+    measurePull();
+  }
+  function measurePull() {
+    if (!pull) return;
+    const r = pull.getBoundingClientRect();
+    pullTop = r.top + window.scrollY; pullH = r.height;
+  }
+  // per frame, from cached numbers only: how far into the zone the bottom of the screen has travelled
+  function pullFrame() {
+    if (!pull || pullDone) return;
+    const y = window.scrollY;
+    const p = Math.max(0, Math.min(1, (y + vh - pullTop - pullH * 0.25) / (pullH * 0.6)));
+    pull.style.setProperty("--p", p.toFixed(3));
+    pull.querySelector(".rp-fill").style.strokeDashoffset = (CIRC * (1 - p)).toFixed(1);
+    pull.classList.toggle("ready", p > 0.98);
+    if (p >= 1) revealMore();
+  }
+  function revealMore() {
+    if (!pull || pullDone) return;
+    pullDone = true;
+    pull.classList.add("ready", "go");
+    if (window.cnHaptic) window.cnHaptic(14);
+    const from = shown;
+    shown = Math.min(items.length, shown + PAGE_SIZE);
+    const fresh = items.slice(from, shown).map((c, k) => addClip(c, from + k));
+    // the films rise in where the ring was, a beat apart; the ring folds away
+    const vhNow = window.innerHeight;
+    if (!reducedMotion && fresh[0] && fresh[0].animate) fresh.forEach((el, k) => el.animate(
+      [{ opacity: 0, translate: `0 ${(vhNow * 0.22).toFixed(0)}px`, scale: ".94" }, { opacity: 1, translate: "0 0", scale: "1" }],
+      { duration: 720, delay: k * 60, easing: "cubic-bezier(.16,1,.3,1)", fill: "backwards" }));
+    const old = pull; pull = null;
+    old.animate ? old.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.8)" }],
+      { duration: 260, easing: "ease-in", fill: "forwards" }).finished.then(() => { old.remove(); placePull(); layoutJobs.forEach((f) => f()); })
+      : (old.remove(), placePull());
+    refresh();
   }
 
   /* ---------- Refs ---------- */
@@ -354,6 +363,7 @@
   let vh = window.innerHeight;              // innerHeight itself can force a style pass in a scroll event
   const layoutJobs = [];                    // re-measure when the page's size changes (images, fonts, paging)
   if (window.ResizeObserver) new ResizeObserver(() => layoutJobs.forEach((f) => f())).observe(document.body);
+  onFrame.push(pullFrame); layoutJobs.push(measurePull);   // the reel's pull zone (above)
   const after = window.cnScrollFrame = [];  // fx.js (depth, scrollspy) joins this same frame
   let ticking = false;
   window.addEventListener("scroll", () => {
@@ -369,7 +379,7 @@
   window.addEventListener("resize", () => { vh = window.innerHeight; layoutJobs.forEach((f) => f()); onFrame.forEach((f) => f()); refresh(); });
 
   window.cnRefresh = refresh;   // opening.js puts the brackets back on the films once the opening is over
-  renderPage(0);          // first five films (everything above must exist before this runs)
+  renderPage(PAGE_SIZE);  // first five films (everything above must exist before this runs)
   refresh();
 
   /* wheel does all the scrolling — free, no auto-centering */
@@ -547,7 +557,7 @@
   function sourceTile() {
     const c = items[film]; if (!c) return lastFocused;
     let i = pageItems.indexOf(c);
-    if (i < 0) { renderPage(Math.floor(film / PAGE_SIZE)); i = pageItems.indexOf(c); }
+    if (i < 0) { renderPage(Math.ceil((film + 1) / PAGE_SIZE) * PAGE_SIZE); i = pageItems.indexOf(c); }
     const el = clipEls[i]; if (!el) return null;
     const r = el.getBoundingClientRect();
     if (r.top < 0 || r.bottom > window.innerHeight) {
