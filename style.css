@@ -1423,3 +1423,23 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
   .skip-stills:not(.go-more) { top: calc(84px + var(--sat)); }
   .hud { bottom: calc(14px + var(--sab)); }
 }
+
+/* ---------- Glass controls materialise (film viewer + photo lightbox) ----------
+   CLOSE, the arrows, the prev/next buttons and the grab handle arrive as a material, not a fade: out of a
+   blur and a slightly smaller scale on computers; opacity + scale only on phones (no animated blur there).
+   They leave the same way, in reverse, and without the entrance delay. */
+.viewer-close { scale: .88; filter: blur(8px); transition: opacity .22s ease, scale .3s var(--ease), filter .22s ease, color .2s; }
+.viewer.open .viewer-close { scale: 1; filter: none; transition: opacity .35s ease .4s, scale .6s var(--spring) .4s, filter .4s ease .4s, color .2s; }
+.v-handle, .v-nav { filter: blur(8px); }
+.v-handle, .v-nav { transition: opacity .22s ease, scale .3s var(--ease), filter .22s ease, color .2s; }
+.viewer.ready .v-handle, .viewer.ready .v-nav { filter: none; transition: opacity .45s ease .1s, scale .6s var(--spring) .1s, filter .45s ease .1s, color .2s; }
+.viewer.ready.vfx .v-handle, .viewer.ready.vfx .v-nav, .viewer.open.vfx .viewer-close { scale: calc(.88 + .12 * var(--va, 1)); filter: blur(calc((1 - var(--va, 1)) * 8px)); }
+/* the lightbox's controls ride its backdrop spring (--pa, written per frame by plight-fx.js) */
+.plight-close, .plight-nav { scale: calc(.88 + .12 * var(--pa, 1)); filter: blur(calc((1 - var(--pa, 1)) * 8px)); }
+@media (hover: none), (pointer: coarse) {
+  .viewer-close, .viewer.open .viewer-close, .v-handle, .v-nav, .viewer.ready .v-handle, .viewer.ready .v-nav,
+  .viewer.ready.vfx .v-handle, .viewer.ready.vfx .v-nav, .viewer.open.vfx .viewer-close, .plight-close, .plight-nav { filter: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .viewer-close, .v-handle, .v-nav, .plight-close, .plight-nav { scale: 1 !important; filter: none !important; }
+}
