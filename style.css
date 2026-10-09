@@ -1312,3 +1312,6 @@ html.opening :is(.logo-hero, .nav, #work, #chrome, #hud, #goMore, #skipStills, .
 }
 /* phones: the viewer / lightbox glows are pre-blurred too (window.cnSoftBg in fx.js) — no live 90px blur */
 @media (hover: none), (pointer: coarse) { .v-amb, .p-amb { filter: none; transform: none; } }
+/* the opening scales the masked metal logo: keep it on its own layer for the whole move so Safari
+   doesn't re-rasterise the mask at a new size part-way through (that showed as a jump) */
+html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, opacity; }

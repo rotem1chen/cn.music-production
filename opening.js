@@ -33,7 +33,14 @@
     const dy = window.innerHeight / 2 - (r.top + r.height / 2);
     const s = Math.min(1.7, (window.innerHeight * 0.4) / Math.max(1, r.height));
     const at = (sc) => `translateX(-50%) translateY(${dy.toFixed(1)}px) scale(${sc.toFixed(3)})`;
-    play(logo, [
+    // phones have no blur to soften the expo curve's first frames, so there the travel up starts gently
+    // and flows straight on from the grow (ease-in-out, no hold) — otherwise it reads as a jump in Safari
+    const travel = touch ? "cubic-bezier(.55, 0, .2, 1)" : E;
+    play(logo, touch ? [
+      { offset: 0,   opacity: 0, transform: at(s * 0.86), easing: "cubic-bezier(.2, .7, .3, 1)" },
+      { offset: .32, opacity: 1, transform: at(s), easing: travel },
+      { offset: 1,   opacity: 1, transform: "translateX(-50%) translateY(0px) scale(1)" },
+    ] : [
       Object.assign({ offset: 0,   opacity: 0, transform: at(s * 0.86) }, blur(18)),
       Object.assign({ offset: .34, opacity: 1, transform: at(s), easing: "linear" }, blur(0)),
       Object.assign({ offset: .46, opacity: 1, transform: at(s), easing: E }, blur(0)),
