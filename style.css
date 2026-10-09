@@ -1402,3 +1402,24 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
   .email-pop, .email-pop.on { scale: 1; filter: none; }
 }
 @media (prefers-reduced-transparency: reduce) { .copied-pill, .email-pop { background: #141414; -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* ---------- Safe areas (iPhone notch / Dynamic Island / home indicator) ----------
+   Every page uses viewport-fit=cover, so the black and the ambient light run to the very edges of the
+   glass; the fixed controls step in by the insets so nothing sits under the notch or the home bar. */
+:root {
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px);
+  --pad: max(clamp(18px, 3.4vw, 42px), var(--sal), var(--sar));
+}
+.nav { top: calc(14px + var(--sat)); }
+.skip-stills:not(.go-more) { top: calc(92px + var(--sat)); }
+.hud { bottom: calc(18px + var(--sab)); }
+.plight-close, .viewer-close { top: calc(22px + var(--sat)); }
+.plight-meta { bottom: calc(22px + var(--sab)); }
+:is(.plight, .vplay) { padding: calc(clamp(20px, 5vw, 64px) + var(--sat)) calc(clamp(20px, 5vw, 64px) + var(--sar))
+  calc(clamp(20px, 5vw, 64px) + var(--sab)) calc(clamp(20px, 5vw, 64px) + var(--sal)); }
+.pin { padding: var(--sat) var(--sar) var(--sab) var(--sal); }
+@media (max-width: 720px) {
+  .skip-stills:not(.go-more) { top: calc(84px + var(--sat)); }
+  .hud { bottom: calc(14px + var(--sab)); }
+}
