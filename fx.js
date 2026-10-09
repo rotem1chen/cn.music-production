@@ -17,7 +17,8 @@
      A ResizeObserver rebuilds the lens when the element changes size (the HUD does on every film). */
   const isChromium = !!(navigator.userAgentData && navigator.userAgentData.brands &&
     navigator.userAgentData.brands.some((b) => /Chromium/.test(b.brand)));
-  const noGlass = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
+  // no lens when transparency is reduced or contrast is raised (style.css makes the glass solid then)
+  const noGlass = window.matchMedia("(prefers-reduced-transparency: reduce), (prefers-contrast: more)").matches;
   const GLASS = ".nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close, .v-nav, .pin-pad button:not(.pin-del), .pin-boxes span, " +
     ".lm-card, .lm-go, .pool-btn:not(.primary), .file, .rv-controls, .rv-form, .rv-note, .rv-bigplay, .vload-box";
   let lensSvg = null, lensN = 0;

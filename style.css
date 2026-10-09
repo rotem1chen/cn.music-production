@@ -1443,3 +1443,23 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
 @media (prefers-reduced-motion: reduce) {
   .viewer-close, .v-handle, .v-nav, .plight-close, .plight-nav { scale: 1 !important; filter: none !important; }
 }
+
+/* ---------- Increased contrast (prefers-contrast: more) ----------
+   Glass becomes a near-solid dark surface with a defined light border, secondary text is brightened,
+   and text on glass goes pure white. The yellow stays the yellow. (fx.js skips its refraction lens here.) */
+@media (prefers-contrast: more) {
+  :root { --muted: rgba(244,244,242,.82); --line: rgba(244,244,242,.5); }
+  :is(.nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close, .v-nav, .copied-pill, .email-pop,
+      .still-cap, .still-count, .v-wait, .pin-pad button:not(.pin-del), .pin-boxes span,
+      .pool-page :is(.lm-card, .lm-go, .file, .rv-form, .rv-note, .vload-box, .pool-btn:not(.primary), .rv-controls, .rv-bigplay, .dl, .pool-folder-title)) {
+    background: rgba(8,8,8,.94) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.85), 0 8px 24px rgba(0,0,0,.6) !important;
+  }
+  :is(.nav, .hud, .skip-stills, .reel-more, .plight-close, .plight-nav, .viewer-close, .v-nav)::after { display: none; }   /* no sheen */
+  :is(.nav a, .hud-title, .plight-close, .plight-nav, .viewer-close, .v-nav, .email-pop :is(button, a), .still-cap small, .v-wait) { color: #fff; opacity: 1; }
+  .hud :is(.hud-format, .hud-artist, .hud-index) { color: rgba(255,255,255,.9); }
+  .nav a.on, .copied-pill, :is(.plight-close, .viewer-close, .plight-nav, .v-nav):hover { color: var(--accent); }
+  .nav-blob { background: rgba(255,212,0,.16); box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .v-handle { background: #fff; box-shadow: 0 0 0 1.5px #000; }
+  .plight-meta { color: #fff; text-shadow: 0 1px 3px #000; }
+}
