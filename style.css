@@ -1595,3 +1595,25 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
 .v-teaser i.front { z-index: 1; }
 .v-teaser i.show { opacity: 1; animation: teaserPush .9s cubic-bezier(.2,.7,.3,1) both; }
 @keyframes teaserPush { from { transform: scale(1); } to { transform: scale(1.07); } }
+
+/* Grid frames — the eight boxes of the 3x3 around the opening film (app.js showCells).
+   Each lands (fade + settle) on its beat, then eases back slowly; on the grow they are pushed off
+   toward the screen edges, away from the film. Opacity + transform only. */
+.v-cells { position: absolute; inset: 0; z-index: 100; pointer-events: none; }
+.v-cells i { position: absolute; overflow: hidden; border-radius: 8px; background: #0b0b0b; opacity: 0; transform: scale(.92);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 24px 60px -24px rgba(0,0,0,.9);
+  transition: opacity .7s var(--ease), transform 1s var(--ease); }
+.v-cells i[hidden] { display: none; }
+.v-cells i b { position: absolute; inset: 0; background: center/cover no-repeat; transform: scale(1.14); transition: transform 3.6s cubic-bezier(.2,.6,.3,1); }
+.v-cells i::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.22); }   /* a touch dimmer: the film stays the focus */
+.v-cells.on i.in { opacity: 1; transform: none; }
+.v-cells.on i.in b { transform: scale(1.02); }
+.v-cells.out i, .v-cells.out i.in { opacity: 0; transform: translate(calc(var(--dx) * 45%), calc(var(--dy) * 45%)) scale(.9);
+  transition: opacity .75s ease, transform 1.15s var(--ease); }
+/* the grid draws itself more slowly than the rest of the viewer's moves */
+.viewer.gridding .v-lead { transition-duration: 1.6s, .5s; }
+.viewer.gridding .viewer-stage { transition-duration: 1.6s; }
+@media (prefers-reduced-motion: reduce) {
+  .v-cells i, .v-cells.out i { transform: none !important; transition: opacity .3s ease; }
+  .v-cells i b { transform: none !important; }
+}

@@ -599,6 +599,51 @@
     im.onload = () => { if (im.naturalWidth > 200 && items[film] === c) apply(`url("${u}")`); };
     im.src = u;
   }
+  /* Grid frames: as the yellow grid locks onto the film, the eight boxes around it fill with stills from
+     the film, one after another clockwise from top-left (in story order), each easing back slowly. When the
+     film grows they are pushed out to the screen edges, away from it. Stills: storyboards.js `cells`. */
+  const cells = document.createElement("div");
+  cells.className = "v-cells"; cells.setAttribute("aria-hidden", "true");
+  cells.innerHTML = "<i><b></b></i>".repeat(8);
+  if (vAmb) vAmb.after(cells); else viewer.prepend(cells);
+  const cellEls = [...cells.children];
+  const CELL_ORDER = [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [1, 2], [0, 2], [0, 1]];
+  let cellTok = 0;
+  // the box the film sits in while the grid holds: the tile itself, unless that leaves no room around it
+  // (a phone's tile is nearly full width) — then a smaller box, so all eight frames get space
+  function gridRect(r) {
+    const W = window.innerWidth, H = window.innerHeight, M = 64;
+    const gw = Math.min(r.width, W * 0.5), gh = gw * r.height / r.width;
+    const cx = Math.max(gw / 2 + M, Math.min(W - gw / 2 - M, r.left + r.width / 2));
+    const cy = Math.max(gh / 2 + M, Math.min(H - gh / 2 - M, r.top + r.height / 2));
+    return { left: cx - gw / 2, top: cy - gh / 2, right: cx + gw / 2, bottom: cy + gh / 2, width: gw, height: gh };
+  }
+  function showCells(c, g) {
+    hideCells();
+    const sb = c && c.v.type === "youtube" && window.STORYBOARDS && window.STORYBOARDS[c.v.id];
+    if (!sb || !sb.cells || sb.cells.length < 8) return;
+    const t = ++cellTok, W = window.innerWidth, H = window.innerHeight, GAP = 8;
+    const xs = [0, g.left, g.right, W], ys = [0, g.top, g.bottom, H], t0 = performance.now();
+    CELL_ORDER.forEach(([col, row], n) => {
+      const el = cellEls[n];
+      const x = xs[col] + GAP, y = ys[row] + GAP, w = xs[col + 1] - xs[col] - 2 * GAP, h = ys[row + 1] - ys[row] - 2 * GAP;
+      el.classList.remove("in");
+      if (w < 48 || h < 40) { el.hidden = true; return; }
+      el.hidden = false;
+      el.style.left = x + "px"; el.style.top = y + "px"; el.style.width = w + "px"; el.style.height = h + "px";
+      el.style.setProperty("--dx", col - 1); el.style.setProperty("--dy", row - 1);   // pushed straight away from the film
+      el.firstChild.style.backgroundImage = `url("${sb.cells[n]}")`;
+      // each lands on its beat once the lines have nearly arrived — and never before its still has loaded
+      const due = t0 + (reducedMotion ? 400 : 750 + n * 110);
+      const im = new Image(); im.src = sb.cells[n];
+      const go = () => { if (t === cellTok) setTimeout(() => { if (t === cellTok) el.classList.add("in"); }, Math.max(0, due - performance.now())); };
+      if (im.decode) im.decode().then(go, go); else im.onload = go;
+    });
+    cells.classList.remove("out"); cells.classList.add("on");
+  }
+  function pushCells() { cellTok++; cells.classList.add("out"); }
+  function hideCells() { cellTok++; cells.classList.remove("on", "out"); cellEls.forEach((el) => el.classList.remove("in")); }
+
   /* Teaser: tap a film and, while the yellow grid forms and the film grows, five key moments from the
      clip cut on the stage like a trailer (each a short push-in, a soft cut between). If the film still
      isn't playing after the grow, it keeps cutting until it is, then fades into the real film. */
@@ -776,13 +821,23 @@
     document.body.style.overflow = "hidden";
     phase = "grid";
 
-    // BEAT 1: lines glide inward from the edges to frame the small photo (the grid forms)
-    requestAnimationFrame(() => { if (phase === "grid" && !vfxOn()) setLines(r.top, r.bottom, r.left, r.right); });
+    // BEAT 1: lines glide inward from the edges to frame the film (the grid forms); the film eases into
+    // the centre box, and the eight boxes around it fill with frames from the film
+    const g = gridRect(r);
+    viewer.classList.add("gridding");
+    requestAnimationFrame(() => {
+      if (phase !== "grid" || vfxOn()) return;
+      setStage(g.left, g.top, g.width, g.height);
+      setLines(g.top, g.bottom, g.left, g.right);
+    });
+    showCells(c, g);
 
-    // BEAT 2: once the grid has settled, grow the photo + spread the lines back outward
-    const GRID_HOLD = 1450;
+    // BEAT 2: once the grid has been seen, grow the film + spread the lines back outward, pushing the frames off
+    const GRID_HOLD = 2900;
     stage._grow = setTimeout(() => {
       phase = "grow";
+      viewer.classList.remove("gridding");
+      pushCells();
       const B = bigRect(clipAspect(c));
       setStage(B.x, B.y, B.w, B.h);
       setLines(B.y, B.y + B.h, B.x, B.x + B.w);
@@ -807,7 +862,7 @@
   }
 
   function closeViewer() {
-    stopTeaser();
+    stopTeaser(); hideCells(); viewer.classList.remove("gridding");
     if (viewer.hidden || phase === "closing") return;
     // anything still moving (the opening, a drag, a swipe) reverses from where it is on screen right now
     if (phase !== "open" || vfxOn()) { springClose({ x: 0, y: 0 }); return; }
@@ -889,6 +944,7 @@
     let b = stageBox, lines = linesAt.slice(), a = 1;
     if (phase === "grid" || phase === "grow") {
       clearTimeout(stage._grow); clearTimeout(stage._timer);
+      pushCells(); viewer.classList.remove("gridding");     // a finger took the film: the frames make way
       const cs = getComputedStyle(stage);
       b = { x: parseFloat(cs.left), y: parseFloat(cs.top), w: parseFloat(cs.width), h: parseFloat(cs.height) };
       lines = beamsEls.map((el, k) => { const m = new DOMMatrixReadOnly(getComputedStyle(el).transform); return k < 2 ? m.m42 : m.m41; });
@@ -922,7 +978,7 @@
     viewer.classList.remove("vfx");
   }
   function hardReset() {                             // drop everything at once (a new film interrupting a close)
-    stopTeaser();
+    stopTeaser(); hideCells(); viewer.classList.remove("gridding");
     if (vraf) { cancelAnimationFrame(vraf); vraf = null; }
     vEnd = null; pendingFilm = 0; vd = null;
     clearTimeout(closeT);
