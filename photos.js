@@ -83,4 +83,16 @@ const CONCERTS = [  {
       "01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg", "06.jpg", "07.jpg", "08.jpg", "09.jpg",
     ],
   },
+
+  {
+    artist: "אוחנה",
+    venue: "",
+    date: "February 2026",
+    dir: "photos/ohana/",
+    cover: "06.jpg",
+    shots: [
+      "01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg", "06.jpg", "07.jpg", "08.jpg",
+      "09.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg",
+    ],
+  },
 ];

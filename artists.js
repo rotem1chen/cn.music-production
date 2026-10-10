@@ -25,4 +25,5 @@ const ARTISTS = [
   { name: "עדן מניוב",     spotify: "", instagram: "" },
   { name: "ירין",          spotify: "", instagram: "" },
   { name: "הילה רוח",      spotify: "", instagram: "" },
+  { name: "אוחנה",         spotify: "", instagram: "" },
 ];
