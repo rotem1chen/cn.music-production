@@ -219,6 +219,36 @@
       S.y.jump(r.top + r.height / 2 - (f.top + f.height / 2));
       return true;
     }
+    /* Before / after: if this photo has a raw version (o.rawFor), a handle you drag across the photo
+       shows the raw shot on its left and the edit on its right. Nothing appears for photos without one. */
+    const split = document.createElement("div");
+    split.className = "p-split"; split.hidden = true;
+    split.innerHTML = '<img class="p-raw" alt="" decoding="async"><span class="p-split-line"><i aria-hidden="true">\u2194</i></span>' +
+      '<b class="p-lab l">Raw</b><b class="p-lab r">Edit</b>';
+    stage.appendChild(split);
+    const rawImg = split.querySelector(".p-raw"), knob = split.querySelector(".p-split-line");
+    function updateSplit() {
+      const u = o.rawFor ? o.rawFor() : null;
+      split.hidden = !u;
+      if (!u) { rawImg.removeAttribute("src"); return; }
+      rawImg.src = u; split.style.setProperty("--sx", "50%");
+    }
+    let sd = null;
+    knob.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      try { knob.setPointerCapture(e.pointerId); } catch (_) {}
+      sd = { id: e.pointerId, r: split.getBoundingClientRect() };
+      split.classList.add("dragging");
+    });
+    knob.addEventListener("pointermove", (e) => {
+      if (!sd || e.pointerId !== sd.id) return;
+      const p = Math.max(0, Math.min(1, (e.clientX - sd.r.left) / sd.r.width));
+      split.style.setProperty("--sx", (p * 100).toFixed(2) + "%");
+    });
+    const sUp = (e) => { if (sd && e.pointerId === sd.id) { sd = null; split.classList.remove("dragging"); } };
+    knob.addEventListener("pointerup", sUp);
+    knob.addEventListener("pointercancel", sUp);
+
     function open(sourceEl) {
       source = sourceEl || null;
       closing = false;
@@ -234,7 +264,7 @@
       }
       const wasHidden = root.hidden;
       root.hidden = false;
-      lightFrom(); sheen(); markEnds();
+      lightFrom(); sheen(); markEnds(); updateSplit();
       if (wasHidden) {
         S.a.jump(0); S.o.jump(1); S.sp.jump(1); S.zs.jump(1); S.zx.jump(0); S.zy.jump(0);
         const r = thumbRect();
@@ -304,7 +334,7 @@
     function swap() {
       const dir = pendingSwap; pendingSwap = 0;
       o.step(dir);
-      lightFrom(); sheen(); markEnds();
+      lightFrom(); sheen(); markEnds(); updateSplit();
       const v = S.x.v;
       S.zs.jump(1); S.zx.jump(0); S.zy.jump(0);       // a new photo always arrives unzoomed
       S.x.jump(dir * width() * 0.6);                 // enter from the side it was thrown toward

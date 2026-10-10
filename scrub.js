@@ -15,6 +15,8 @@
   const mm = (q) => !!(window.matchMedia && window.matchMedia(q).matches);
   const fine = mm("(hover: hover) and (pointer: fine)");
   const SLOP = 10, HOVER_DELAY = 250, LINGER = 650;
+  const reduced = mm("(prefers-reduced-motion: reduce)");
+  const LIVE_STEP = 700, LIVE_WAIT = 900;             // living cover: one scene every 0.7s, after 0.9s on the film
   const loaded = {};                                  // sheet url → true once decoded, false while loading
   const waiting = new Set();                          // draws held for a sheet that is still on its way
 
@@ -43,7 +45,8 @@
     const per = sb.cols * sb.rows;
     let ui = null, frameEl = null, barEl = null, timeEl = null;
     const st = { mode: "idle", pid: -1, x0: 0, y0: 0, rect: null, W: 0, p: 0, frame: -1, sheet: -1, bucket: -1,
-                 raf: 0, linger: 0, hoverT: 0, inside: false, armX: null, hx: 0, seek: null, seekUntil: 0, swallow: false, time: "" };
+                 raf: 0, linger: 0, hoverT: 0, inside: false, armX: null, hx: 0, seek: null, seekUntil: 0, swallow: false, time: "",
+                 liveT: 0, liveI: 0, live: false };
 
     function build() {
       ui = document.createElement("div");
@@ -56,6 +59,7 @@
     // the gesture takes over: the one layout read (where the tile is now), then only writes
     function begin(mode) {
       if (!ui) build();
+      stopLive(true);
       clearTimeout(st.linger);
       st.mode = mode;
       if (mode === "hover") st.ptype = "mouse";
@@ -111,6 +115,37 @@
       if (linger) st.linger = setTimeout(hide, LINGER); else hide();
       st.mode = "idle";
       if (opts.onEnd) opts.onEnd(st.ptype);
+    }
+
+    /* Living cover: while this is the film in the yellow frame, its scenes play as a silent flipbook,
+       like an animated album cover. A gentle step, never a video; any touch hands over to the scrub. */
+    function liveTick() {
+      if (!st.live || st.mode !== "idle") return;
+      st.liveI = (st.liveI + 1) % sb.count;
+      st.p = (st.liveI + 0.5) / sb.count;
+      draw();
+      st.liveT = setTimeout(liveTick, LIVE_STEP);
+    }
+    function startLive() {
+      if (reduced || st.live || st.mode !== "idle") return;
+      st.live = true; preload(sb);
+      st.liveT = setTimeout(() => {
+        if (!st.live) return;
+        if (!ui) build();
+        st.W = el.offsetWidth;
+        const s = Math.max(el.offsetWidth / sb.w, el.offsetHeight / sb.h) * 1.02;
+        frameEl.style.transform = `translate(-50%, -50%) scale(${s.toFixed(4)})`;
+        st.frame = -1; st.liveI = Math.floor(sb.count * 0.12) - 1;   // skip the opening titles
+        waiting.add(draw);
+        el.classList.add("scrub-on", "scrub-live");
+        liveTick();
+      }, LIVE_WAIT);
+    }
+    function stopLive(handover) {
+      if (!st.live) return;
+      st.live = false; clearTimeout(st.liveT);
+      el.classList.remove("scrub-live");
+      if (!handover) { waiting.delete(draw); el.classList.remove("scrub-on", "scrub-ready"); }
     }
 
     el.addEventListener("pointerdown", (e) => {
@@ -174,7 +209,8 @@
         const s = st.seek; st.seek = null;
         return s != null && performance.now() < st.seekUntil ? s : null;
       },
-      reset() { if (st.mode !== "idle") end(false); else { clearTimeout(st.linger); el.classList.remove("scrub-on", "scrub-ready"); } },
+      reset() { stopLive(false); if (st.mode !== "idle") end(false); else { clearTimeout(st.linger); el.classList.remove("scrub-on", "scrub-ready"); } },
+      live(on) { if (on) startLive(); else stopLive(false); },
     });
   }
 
@@ -183,5 +219,6 @@
     has: (id) => !!(SB[id] && SB[id].sheets && SB[id].sheets.length),
     takeSeek: (el) => (el && el._scrub ? el._scrub.takeSeek() : null),
     reset: (el) => { if (el && el._scrub) el._scrub.reset(); },
+    live: (el, on) => { if (el && el._scrub) el._scrub.live(on); },
   };
 })();

@@ -127,12 +127,45 @@
     el.addEventListener("mouseleave", () => { cursor.classList.remove("big"); if (hoverIdx === i) { hoverIdx = -1; refresh(); } });
     el.addEventListener("click", () => openViewer(el, c));
     el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openViewer(el, c); } });
+    holdCredits(el, c);
     // drag sideways across the film to flip through its scenes (scrub.js); the target treats it as the active film
     if (window.cnScrub && c.v.type === "youtube") window.cnScrub.attach(el, c.v.id, {
       onStart: () => { if (hoverIdx !== i) { hoverIdx = i; refresh(); } },
       onEnd: (pt) => { if (pt !== "mouse" && hoverIdx === i) { hoverIdx = -1; refresh(); } },
     });
     return el;
+  }
+
+  /* Press and hold a film: it turns over like a card and shows its credits — song, artist, your role.
+     Let go and it turns back. Moving first is a scroll or a scrub, never a hold; a hold never opens the film. */
+  function holdCredits(el, c) {
+    const back = document.createElement("div");
+    back.className = "clip-back"; back.setAttribute("aria-hidden", "true");
+    const meta = [c.format, c.year].filter(Boolean).map(esc).join(" · ");
+    back.innerHTML = `<span class="cb-k">Credits</span><b class="cb-title">${esc(c.title || "Untitled")}</b>` +
+      (c.artist ? `<span class="cb-artist">${esc(c.artist)}</span>` : "") +
+      `<span class="cb-role">${esc(c.role || "Directed · Shot · Edited — CN PROD")}</span>` +
+      (meta ? `<span class="cb-meta">${meta}</span>` : "");
+    el.appendChild(back);
+    let t = 0, x0 = 0, y0 = 0, held = false, swallow = false;
+    const cancel = () => clearTimeout(t);
+    el.addEventListener("pointerdown", (e) => {
+      if (!e.isPrimary || e.button !== 0) return;
+      x0 = e.clientX; y0 = e.clientY; swallow = false;
+      cancel();
+      t = setTimeout(() => {
+        held = true; swallow = true;
+        el.classList.add("credits");
+        if (window.cnHaptic) window.cnHaptic(12);
+      }, 450);
+    });
+    el.addEventListener("pointermove", (e) => { if (!held && Math.hypot(e.clientX - x0, e.clientY - y0) > 8) cancel(); });
+    const letGo = () => { cancel(); if (held) { held = false; el.classList.remove("credits"); } };
+    el.addEventListener("pointerup", letGo);
+    el.addEventListener("pointercancel", letGo);
+    el.addEventListener("pointerleave", letGo);
+    el.addEventListener("contextmenu", (e) => { if (held || swallow) e.preventDefault(); });
+    el.addEventListener("click", (e) => { if (swallow) { swallow = false; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
   }
 
   /* The reel is ONE list that grows. It starts with the first five; past the last film sits a pull
@@ -256,6 +289,7 @@
   let bars = [];
 
   let hoverIdx = -1;
+  let liveEl = null;              // the reel film whose scenes are playing as a living cover
   let activeIdx = -1;
   let viewerOpen = false;
   let animatingScroll = false, scrollRAF = null;
@@ -325,6 +359,8 @@
     // after the viewer closes or the page re-renders) and never more than one per 150ms of scrolling
     if (el !== lockedEl) { lockedEl = el; if (window.cnHaptic) window.cnHaptic(8, 150); }
     document.dispatchEvent(new CustomEvent("cn:active", { detail: { el } }));   // fx.js: ambient light + HUD refresh
+    // the film in the frame comes alive (scrub.js plays its scenes as a flipbook); the last one rests
+    if (window.cnScrub) { if (liveEl && liveEl !== el) window.cnScrub.live(liveEl, false); liveEl = isSub ? null : el; if (liveEl) window.cnScrub.live(el, true); }
   }
 
   function startPreview(el, c) {
@@ -385,6 +421,29 @@
   const layoutJobs = [];                    // re-measure when the page's size changes (images, fonts, paging)
   if (window.ResizeObserver) new ResizeObserver(() => layoutJobs.forEach((f) => f())).observe(document.body);
   onFrame.push(pullFrame); layoutJobs.push(measurePull);   // the reel's pull zone (above)
+  /* Scroll fast and the reel turns into a strip of film: sprocket holes run down both sides of the films,
+     moving with the page, and fade out as you slow down. Speed only — nothing to press. */
+  const sprock = document.createElement("div");
+  sprock.className = "sprockets"; sprock.setAttribute("aria-hidden", "true");
+  sprock.innerHTML = "<i></i><i></i>";
+  document.body.appendChild(sprock);
+  let spY = window.scrollY, spT = performance.now(), spV = 0, spOff = 0;
+  onFrame.push(() => {
+    const y = window.scrollY, t = performance.now();
+    const v = Math.abs(y - spY) / Math.max(1, t - spT);
+    spV = Math.max(v, spV * 0.85); spY = y; spT = t;
+    const inReel = !chrome.classList.contains("hide");
+    const a = reducedMotion || !inReel ? 0 : Math.max(0, Math.min(1, (spV - 0.8) / 1.6));
+    sprock.style.opacity = a.toFixed(3);
+    sprock.style.setProperty("--y", (-(y % 28)).toFixed(1) + "px");
+    if (a > 0 && !spOff) spOff = setInterval(() => {         // let it fade after the scroll stops
+      if (performance.now() - spT < 120) return;           // still scrolling: the frame callback drives it
+      spV *= 0.8;
+      const b = Math.max(0, Math.min(1, (spV - 0.8) / 1.6));
+      sprock.style.opacity = b.toFixed(3);
+      if (b === 0) { clearInterval(spOff); spOff = 0; }
+    }, 50);
+  });
   const after = window.cnScrollFrame = [];  // fx.js (depth, scrollspy) joins this same frame
   let ticking = false;
   window.addEventListener("scroll", () => {
@@ -539,10 +598,13 @@
   function bigRect(aspect) {
     const a = aspect > 0 ? aspect : 0.5625;
     const vw = window.innerWidth, vh = window.innerHeight;
+    // a film with a scene strip leaves room for it under the film (strip 46px + gap 16px + air)
+    const c = typeof film === "number" ? items[film] : null;
+    const room = c && c.v.type === "youtube" && window.STORYBOARDS && window.STORYBOARDS[c.v.id] ? 84 : 0;
     const tw = Math.min(vw * 0.92, 1320);
-    const th = Math.min(vh * 0.82, tw * a);
+    const th = Math.min(vh * 0.82 - room, tw * a);
     const fw = Math.min(tw, th / a), fh = fw * a;
-    return { x: (vw - fw) / 2, y: (vh - fh) / 2, w: fw, h: fh };
+    return { x: (vw - fw) / 2, y: (vh - fh - room) / 2, w: fw, h: fh };
   }
 
   /* The film on the stage is one of ALL the films (not just this page's five): you can swipe through
@@ -562,6 +624,70 @@
     im.onload = () => { if (im.naturalWidth > 200 && items[film] === c) apply(`url("${u}")`); };
     im.src = u;
   }
+  /* Scene strip under the open film: ten of its scenes (the scrub's storyboard frames) in a glass row.
+     Tap or drag along it to jump the film there; a yellow playhead follows the film as it plays. */
+  const strip = document.createElement("div");
+  strip.className = "v-strip"; strip.setAttribute("aria-label", "Scenes");
+  strip.innerHTML = '<div class="v-strip-row"></div><i class="v-strip-head"></i><span class="v-strip-time"></span>';
+  stage.appendChild(strip);
+  const stripRow = strip.firstChild, stripHead = strip.querySelector(".v-strip-head"), stripTime = strip.querySelector(".v-strip-time");
+  let stripSB = null, stripPoll = 0, stripDrag = null;
+  const N_SCENES = 10;
+  function fmtT(s) { s = Math.max(0, Math.round(s)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
+  function buildStrip(c) {
+    clearInterval(stripPoll);
+    const sb = c && c.v.type === "youtube" && window.STORYBOARDS && window.STORYBOARDS[c.v.id];
+    stripSB = sb && sb.sheets && sb.sheets.length ? sb : null;
+    strip.hidden = !stripSB;
+    if (!stripSB) return;
+    const W = parseFloat(stage.style.width) || stage.offsetWidth;
+    const tw = W / N_SCENES, sc = tw / sb.w, per = sb.cols * sb.rows;
+    stripRow.innerHTML = "";
+    for (let k = 0; k < N_SCENES; k++) {
+      const idx = Math.min(sb.count - 1, Math.floor((k + 0.5) / N_SCENES * sb.count));
+      const sh = Math.floor(idx / per), j = idx - sh * per;
+      const t = document.createElement("span");
+      t.style.backgroundImage = `url("${sb.sheets[Math.min(sh, sb.sheets.length - 1)]}")`;
+      t.style.backgroundSize = `${(sb.cols * sb.w * sc).toFixed(1)}px ${(sb.rows * sb.h * sc).toFixed(1)}px`;
+      t.style.backgroundPosition = `${(-(j % sb.cols) * sb.w * sc).toFixed(1)}px ${(-Math.floor(j / sb.cols) * sb.h * sc).toFixed(1)}px`;
+      stripRow.appendChild(t);
+    }
+    setHead(0);
+    stripPoll = setInterval(() => {                    // the playhead follows the film (YouTube's own clock)
+      if (stripDrag || !ytPlayer || !ytPlayer.getCurrentTime) return;
+      try { const d = ytPlayer.getDuration() || stripSB.duration; setHead(ytPlayer.getCurrentTime() / d); } catch (_) {}
+    }, 400);
+  }
+  function setHead(p) {
+    p = Math.max(0, Math.min(1, p));
+    stripHead.style.transform = `translateX(${(p * strip.offsetWidth).toFixed(1)}px)`;
+    if (stripSB) stripTime.textContent = fmtT(p * stripSB.duration);
+    stripTime.style.transform = `translateX(${Math.max(0, Math.min(strip.offsetWidth - 52, p * strip.offsetWidth - 26)).toFixed(1)}px)`;
+    return p;
+  }
+  function stripP(e) { const r = strip.getBoundingClientRect(); return (e.clientX - r.left) / r.width; }
+  strip.addEventListener("pointerdown", (e) => {
+    if (!stripSB) return;
+    e.stopPropagation();
+    try { strip.setPointerCapture(e.pointerId); } catch (_) {}
+    stripDrag = { id: e.pointerId, p: setHead(stripP(e)) };
+    strip.classList.add("dragging");
+  });
+  strip.addEventListener("pointermove", (e) => { if (stripDrag && e.pointerId === stripDrag.id) stripDrag.p = setHead(stripP(e)); });
+  function stripUp(e) {
+    if (!stripDrag || e.pointerId !== stripDrag.id) return;
+    const p = stripDrag.p; stripDrag = null;
+    strip.classList.remove("dragging");
+    if (e.type === "pointercancel") return;
+    try {                                              // jump the film there and keep it playing
+      const d = (ytPlayer && ytPlayer.getDuration && ytPlayer.getDuration()) || stripSB.duration;
+      ytPlayer.seekTo(p * d, true); ytPlayer.playVideo();
+    } catch (_) {}
+    if (window.cnHaptic) window.cnHaptic(10);
+  }
+  strip.addEventListener("pointerup", stripUp);
+  strip.addEventListener("pointercancel", stripUp);
+
   function showPoster(c) {
     posterFor(c, (bg) => {
       stage.style.backgroundImage = bg;
@@ -570,6 +696,7 @@
     });
     // the neighbours' covers are ready before the swipe
     [film - 1, film + 1].forEach((j) => { const n = items[j]; if (n && (n.thumb || n.v.thumb)) new Image().src = n.thumb || n.v.thumb; });
+    buildStrip(c);
   }
   function canFilm(dir) { const j = film + dir; return j >= 0 && j < items.length; }
   function markFilmEnds() {
@@ -609,6 +736,7 @@
     // opened straight after scrubbing it: the film starts where the scrub left it
     const seek = window.cnScrub ? window.cnScrub.takeSeek(el) : null;
     if (window.cnScrub) window.cnScrub.reset(el);
+    if (window.cnScrub && liveEl) { window.cnScrub.live(liveEl, false); liveEl = null; }   // the flipbook rests while a film plays
 
     // start over the small clip; lines begin OUT at the screen edges (invisible frame)
     const r = el.getBoundingClientRect();
@@ -910,7 +1038,7 @@
   let vd = null, vJustDragged = false;
   viewer.addEventListener("pointerdown", (e) => {
     if (!V || viewer.hidden || phase === "closing" || phase === "closed" || e.button > 0) return;
-    if (e.target.closest("button, a, iframe, video")) return;
+    if (e.target.closest("button, a, iframe, video, .v-strip")) return;
     vd = { id: e.pointerId, x0: e.clientX, y0: e.clientY, axis: null, hist: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }] };
   });
   viewer.addEventListener("pointermove", (e) => {
@@ -1017,8 +1145,67 @@
         img.style.viewTransitionName = "still-cover";
         try { sessionStorage.setItem("cn_last_concert", String(ci)); } catch (_) {}
       });
+      flipThrough(card, con, shots, cover);
       concertsWrap.appendChild(card);
     });
+  }
+
+  /* Drag (or, on a computer, move the mouse) across a concert cover to flip through its photos without
+     opening the gallery. Twelve shots spread across the set keep it light; a tap still opens the gallery. */
+  function flipThrough(card, con, shots, cover) {
+    if (shots.length < 2) return;
+    const N = Math.min(12, shots.length);
+    const pick = Array.from({ length: N }, (_, k) => shots[Math.floor(k * shots.length / N)]);
+    const url = (f) => (con.dir || "") + "thumb/" + f;
+    const flip = document.createElement("img");
+    flip.className = "still-flip"; flip.alt = ""; flip.decoding = "async";
+    card.insertBefore(flip, card.querySelector(".still-count"));
+    const count = card.querySelector(".still-count"), total = shots.length;
+    let warmed = false, cur = -1, drag = null, swallow = false;
+    const warm = () => { if (!warmed) { warmed = true; pick.forEach((f) => { new Image().src = url(f); }); } };
+    function show(p) {
+      const k = Math.max(0, Math.min(N - 1, Math.floor(p * N)));
+      if (k === cur) return;
+      cur = k;
+      flip.src = url(pick[k]);
+      card.classList.add("flipping");
+      count.textContent = String(Math.floor(k * total / N) + 1).padStart(2, "0") + " / " + total;
+      if (drag && window.cnHaptic) window.cnHaptic(6, 60);
+    }
+    function rest() { cur = -1; card.classList.remove("flipping"); count.textContent = total; }
+    const pAt = (e, r) => (e.clientX - r.left) / r.width;
+    card.addEventListener("pointerdown", (e) => {
+      if (!e.isPrimary || e.button !== 0) return;
+      warm(); swallow = false;
+      drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, on: false, r: null };
+    });
+    card.addEventListener("pointermove", (e) => {
+      if (drag && e.pointerId === drag.id) {
+        const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+        if (!drag.on) {
+          if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+            drag.on = true; drag.r = card.getBoundingClientRect();
+            try { card.setPointerCapture(e.pointerId); } catch (_) {}
+          } else if (Math.abs(dy) > 10) { drag = null; return; }
+          else return;
+        }
+        show(pAt(e, drag.r));
+        return;
+      }
+      if (e.pointerType === "mouse" && !e.buttons && matchMedia("(hover: hover)").matches) {
+        warm(); show(pAt(e, card.getBoundingClientRect()));
+      }
+    });
+    const up = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (drag.on) { swallow = true; setTimeout(rest, 700); }
+      drag = null;
+    };
+    card.addEventListener("pointerup", up);
+    card.addEventListener("pointercancel", up);
+    card.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse" && !drag) rest(); });
+    card.addEventListener("click", (e) => { if (swallow) { swallow = false; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+    card.addEventListener("dragstart", (e) => e.preventDefault());
   }
 
   const plight = document.getElementById("plight");
@@ -1044,6 +1231,7 @@
       step: (dir) => { pShot += dir; showPhoto(); },
       count: () => ((concertsData[pCon] || {}).shots || []).length,
       index: () => pShot,                               // stops at the first / last photo (rubber band), no wrap
+      rawFor: () => { const con = concertsData[pCon]; return con && con.raw ? (con.dir || "") + "raw/" + con.shots[pShot] : null; },
       sourceEl: () => shotEls[pCon + ":" + pShot] || null,
       onClosed: () => { plightImg.src = ""; document.body.style.overflow = ""; },
     });
