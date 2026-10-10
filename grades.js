@@ -16,7 +16,7 @@
 
 const GRADES = [
   { before: "photos/grade/01-raw.jpg?v=3", after: "photos/grade/01-graded.jpg?v=3", thumb: "photos/grade/thumb/01.jpg?v=3", film: "אני ואור", artist: "רון עשהל" },
-  { before: "photos/grade/02-raw.jpg?v=3", after: "photos/grade/02-graded.jpg?v=3", thumb: "photos/grade/thumb/02.jpg?v=3", film: "", artist: "" },
+  { before: "photos/grade/02-raw.jpg?v=3", after: "photos/grade/02-graded.jpg?v=3", thumb: "photos/grade/thumb/02.jpg?v=3", film: "", artist: "אנה זק" },
   { before: "photos/grade/03-raw.jpg?v=3", after: "photos/grade/03-graded.jpg?v=3", thumb: "photos/grade/thumb/03.jpg?v=3", film: "גברת קארמה", artist: "סיד" },
   { before: "photos/grade/04-raw.jpg?v=3", after: "photos/grade/04-graded.jpg?v=3", thumb: "photos/grade/thumb/04.jpg?v=3", film: "פוקוס", artist: "עדן מניוב, ירין" },
   { before: "photos/grade/05-raw.jpg?v=3", after: "photos/grade/05-graded.jpg?v=3", thumb: "photos/grade/thumb/05.jpg?v=3", film: "דרעק", artist: "ayubii" },
