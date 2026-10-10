@@ -92,6 +92,8 @@ a { color: inherit; text-decoration: none; }
    The lock-on snap is a separate `translate` animation, so the two never fight. */
 .target .corner { top: 0; left: 0; right: auto; bottom: auto; will-change: transform;
   transition: transform .42s var(--ease); }
+/* following the scroll: glued to the film, no glide (a glide restarted every frame trails the film) */
+.target.track .corner { transition: none; }
 
 /* ---------- Reel ---------- */
 .reel {

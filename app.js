@@ -316,8 +316,12 @@
      next film never animates top/left/width/height (that was a layout pass on every scroll frame). */
   const corners = ["tl", "tr", "bl", "br"].map((k) => target.querySelector(".corner." + k));
   const CORNER = 18, cornerAt = [];
-  function positionTarget(i, r) {
+  // track = following the scroll: the corners stay glued to the film, no glide. A CSS glide restarted on
+  // every scroll frame made them trail the film by ~0.4s on phones (they're fixed, the film scrolls).
+  // The glide is only for a pointer moving the target onto another film without scrolling.
+  function positionTarget(i, r, track) {
     const el = elAt(i); if (!el) return;
+    target.classList.toggle("track", !!track);
     r = r || el.getBoundingClientRect();
     const pad = 10, x0 = r.left - pad, y0 = r.top - pad, x1 = r.right + pad - CORNER, y1 = r.bottom + pad - CORNER;
     if (!cornerAt.length) {                    // first placement: appear in place, don't glide in from 0,0
@@ -390,7 +394,7 @@
   }
 
   const html = document.documentElement;
-  function refresh() {
+  function refresh(track) {
     if (viewerOpen || swapping) return;
     // during the opening the brackets ride the films' rise on the compositor (opening.js), already parked
     // on their final place — reading rects here would measure the moving films and count the rise twice
@@ -405,7 +409,7 @@
 
     if (a >= 0 && show) {
       if (a !== activeIdx) setActive(a);
-      positionTarget(a, rects[a]);
+      positionTarget(a, rects[a], track && !useHover);
     }
 
   }
@@ -426,7 +430,7 @@
     requestAnimationFrame((now) => {
       ticking = false;
       const y = window.scrollY;             // the frame's one fresh read; fx.js reuses it after the writes
-      onFrame.forEach((f) => f()); refresh();
+      onFrame.forEach((f) => f()); refresh(true);
       after.forEach((f) => f(now, y));
     });
   }, { passive: true });

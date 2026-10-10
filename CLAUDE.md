@@ -77,6 +77,7 @@ a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that pa
 - **Scroll-linked properties never have a CSS transition.** The reel tilt (`transform`) and desktop blur (`filter`) are
   written straight onto each frame; a transition restarted per frame trails the scroll in steps (the old "boxy" feel).
   The hover lean eases in JS instead.
+- **The brackets follow the scroll with no glide** (`.target.track`): they are fixed and the film scrolls, so a CSS transition restarted per frame made them trail the film on phones. The .42s glide is only for a mouse pointing at another film; locking onto a new film is the corner snap-in animation.
 - **Compositor only for motion:** the yellow brackets are four corners placed by `transform` (not top/left/width/height);
   the viewer's beams likewise; the left film bars grow by `scale`, not `width`. The lock-on snap and the HUD text
   re-forming are Web Animations, so nothing restarts a CSS animation with a forced reflow.
