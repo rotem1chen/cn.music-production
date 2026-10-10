@@ -492,6 +492,7 @@
     if (play.start) play.start();                       // rewind, sound on, play — then show
     viewer.classList.remove("waiting");
     viewer.classList.add("loaded");
+    stopTeaser(true);
   }
   function ready(t) { if (t === play.token) { play.ready = true; settle(t); } }
 
@@ -598,6 +599,47 @@
     im.onload = () => { if (im.naturalWidth > 200 && items[film] === c) apply(`url("${u}")`); };
     im.src = u;
   }
+  /* Teaser: tap a film and, while the yellow grid forms and the film grows, five key moments from the
+     clip cut on the stage like a trailer (each a short push-in, a soft cut between). If the film still
+     isn't playing after the grow, it keeps cutting until it is, then fades into the real film. */
+  const teaser = document.createElement("div");
+  teaser.className = "v-teaser"; teaser.setAttribute("aria-hidden", "true");
+  teaser.innerHTML = "<i></i><i></i>";
+  stage.insertBefore(teaser, stage.firstChild);
+  // five 720p stills per film (storyboards.js `keys`), each shown as a plain cover image
+  const tLayers = teaser.querySelectorAll("i");
+  let tTimer = 0, tFront = 0, tStep = 0, tImgs = [];
+  function startTeaser(c) {
+    stopTeaser();
+    const sb = c && c.v.type === "youtube" && window.STORYBOARDS && window.STORYBOARDS[c.v.id];
+    if (!sb || !sb.keys || !sb.keys.length || reducedMotion) return;
+    tStep = 0;
+    tImgs = sb.keys.map((u) => { const im = new Image(); im.decoding = "async"; im.src = u; return im; });
+    teaser.classList.add("on");
+    const cut = () => {
+      tTimer = setTimeout(cut, 520);
+      const im = tImgs[tStep % tImgs.length];
+      if (!im.complete || !im.naturalWidth) return;  // not here yet: hold the last frame, try on the next beat
+      tStep++;
+      tFront = 1 - tFront;
+      const L = tLayers[tFront], old = tLayers[1 - tFront];
+      L.style.backgroundImage = `url("${im.src}")`;
+      // the new frame lands on top; the old one stays solid underneath until the cut is done (no dip to the poster)
+      old.classList.remove("front"); L.classList.add("front");
+      L.classList.remove("show"); void L.offsetWidth; L.classList.add("show");
+      setTimeout(() => { if (L.classList.contains("front")) old.classList.remove("show"); }, 160);
+    };
+    tTimer = setTimeout(cut, 260);                     // the first cut lands as the yellow grid locks on
+  }
+  let tSoft = 0;
+  function stopTeaser(soft) {
+    clearTimeout(tTimer); tTimer = 0; clearTimeout(tSoft);
+    const clear = () => { teaser.classList.remove("on"); tLayers.forEach((L) => L.classList.remove("show", "front")); };
+    // the film is playing: hold the last frame while the film fades in over it, then clear (no flash of the poster)
+    if (soft) tSoft = setTimeout(clear, 700); else clear();
+  }
+
+
   /* Scene strip under the open film: ten of its scenes (the scrub's storyboard frames) in a glass row.
      Tap or drag along it to jump the film there; a yellow playhead follows the film as it plays. */
   const strip = document.createElement("div");
@@ -710,6 +752,7 @@
     // opened straight after scrubbing it: the film starts where the scrub left it
     const seek = window.cnScrub ? window.cnScrub.takeSeek(el) : null;
     if (window.cnScrub) window.cnScrub.reset(el);
+    if (seek == null) startTeaser(c);                 // just scrubbed to a moment: go straight there, no trailer
 
     // start over the small clip; lines begin OUT at the screen edges (invisible frame)
     const r = el.getBoundingClientRect();
@@ -764,6 +807,7 @@
   }
 
   function closeViewer() {
+    stopTeaser();
     if (viewer.hidden || phase === "closing") return;
     // anything still moving (the opening, a drag, a swipe) reverses from where it is on screen right now
     if (phase !== "open" || vfxOn()) { springClose({ x: 0, y: 0 }); return; }
@@ -878,6 +922,7 @@
     viewer.classList.remove("vfx");
   }
   function hardReset() {                             // drop everything at once (a new film interrupting a close)
+    stopTeaser();
     if (vraf) { cancelAnimationFrame(vraf); vraf = null; }
     vEnd = null; pendingFilm = 0; vd = null;
     clearTimeout(closeT);
@@ -980,6 +1025,7 @@
   function swapFilm() {
     const dir = pendingFilm; pendingFilm = 0;
     film += dir;
+    startTeaser(items[film]);
     const c = items[film];
     dropMedia();
     const B = bigRect(clipAspect(c));
