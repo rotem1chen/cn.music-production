@@ -877,7 +877,10 @@
     viewer.classList.toggle("at-last", !canFilm(1));
   }
   // the tile this film closes back into, on screen (turning the reel's page / scrolling while unseen)
+  // opened from outside the reel (an artist's chip): it closes back into that chip, unless you swiped away
+  let openedFrom = null;
   function sourceTile() {
+    if (openedFrom && openedFrom.film === film && openedFrom.el.isConnected) { lastFocused = openedFrom.el; return openedFrom.el; }
     const c = items[film]; if (!c) return lastFocused;
     let i = pageItems.indexOf(c);
     if (i < 0) { renderPage(Math.ceil((film + 1) / PAGE_SIZE) * PAGE_SIZE); i = pageItems.indexOf(c); }
@@ -905,6 +908,7 @@
     viewerOpen = true;
     lastFocused = el;
     film = items.indexOf(c);
+    openedFrom = el.classList && el.classList.contains("clip") ? null : { el, film };
     stopPreview(el);
     // opened straight after scrubbing it: the film starts where the scrub left it
     const seek = window.cnScrub ? window.cnScrub.takeSeek(el) : null;
@@ -1586,17 +1590,49 @@
   /* ---------- ARTISTS: everyone we've worked with ---------- */
   // COVER ART data first: the artist rows below check it for their "Cover art" chip
   const coverData = ((typeof COVERS !== "undefined" && Array.isArray(COVERS)) ? COVERS : []).filter((c) => c && c.img);
+  /* ARTISTS: every row links to the work done with that artist — their films (▶ opens it right here: the film
+     grows out of the chip, and closing shrinks it back into it), their concert album (Photos → its gallery),
+     their cover art. Tapping the name does the main one. A film's artist field can name several people
+     ("עדן מניוב, ירין") and a row can be a short form of the name ("פנחסוב" for "אביהו פנחסוב"). */
   (function artistList() {
     const wrap = document.getElementById("artistList");
     const data = (typeof ARTISTS !== "undefined" && Array.isArray(ARTISTS)) ? ARTISTS : [];
     if (!wrap || !data.length) return;
+    const shows = (typeof CONCERTS !== "undefined" && Array.isArray(CONCERTS)) ? CONCERTS : [];
+    const parts = (s) => String(s || "").split(/,|&|\/|\bfeat\.?|\bft\.?|\bx\b/i).map((t) => t.trim().toLowerCase()).filter(Boolean);
+    const isThem = (name, field) => {
+      const n = String(name || "").trim().toLowerCase();
+      return !!n && parts(field).some((p) => p === n || p.includes(n) || (p.length > 2 && n.includes(p)));
+    };
+    const posterFor = (c) => { const u = c.thumb || c.v.thumb || c.v.thumbFallback; return u ? { style: { backgroundImage: `url("${u}")` } } : null; };
 
     data.forEach((a, i) => {
       const row = document.createElement("div"); row.className = "artist";
-      row.innerHTML = '<span class="a-idx">' + String(i + 1).padStart(2, "0") + '</span>' +
-                      '<span class="a-name">' + esc(a.name || "") + '</span>';
-
+      row.innerHTML = '<span class="a-idx">' + String(i + 1).padStart(2, "0") + '</span>';
       const links = document.createElement("span"); links.className = "a-links";
+      const works = [];                                   // [element, action] — the first is what the name does
+
+      items.forEach((c) => {                              // their films: open in the viewer, from this chip
+        if (!isThem(a.name, c.artist)) return;
+        const el = document.createElement("button");
+        el.type = "button"; el.className = "a-link a-work"; el.textContent = "\u25b6 " + (c.title || "Film");
+        el.setAttribute("aria-label", "Watch " + (c.title || "the film"));
+        const go = (from) => { from._poster = posterFor(c); openViewer(from, c); };
+        el.addEventListener("click", () => go(el));
+        links.appendChild(el); works.push(go);
+      });
+      shows.forEach((con, k) => {                         // their concert: the photo album
+        if (!isThem(a.name, con.artist)) return;
+        const el = document.createElement("a");
+        el.className = "a-link a-work"; el.textContent = "Photos" + (con.venue ? " \u00b7 " + con.venue : "");
+        el.href = "show.html?c=" + k;
+        links.appendChild(el); works.push(() => { location.href = el.href; });
+      });
+      if (coverData.some((c) => isThem(a.name, c.artist))) {   // their cover art
+        const el = document.createElement("a");
+        el.className = "a-link a-work"; el.textContent = "Cover art"; el.href = "#covers";
+        links.appendChild(el); works.push(() => el.click());
+      }
       [["spotify", "Spotify"], ["youtube", "YouTube"], ["instagram", "Instagram"]].forEach(([k, label]) => {
         if (!a[k]) return;                                  // no link → no chip
         const el = document.createElement("a");
@@ -1604,12 +1640,12 @@
         el.href = a[k]; el.target = "_blank"; el.rel = "noopener";
         links.appendChild(el);
       });
-      // they have a cover in COVER ART: a chip that jumps there
-      if (coverData.some((c) => c.artist && a.name && c.artist.trim() === a.name.trim())) {
-        const el = document.createElement("a");
-        el.className = "a-link a-cover"; el.textContent = "Cover art"; el.href = "#covers";
-        links.prepend(el);
-      }
+
+      // the name: their main work (a film first, else the album, else the covers); plain text if there's none
+      const name = document.createElement(works.length ? "button" : "span");
+      name.className = "a-name" + (works.length ? " a-go" : ""); name.textContent = a.name || "";
+      if (works.length) { name.type = "button"; name.addEventListener("click", () => works[0](name)); }
+      row.appendChild(name);
       row.appendChild(links);
       wrap.appendChild(row);
     });

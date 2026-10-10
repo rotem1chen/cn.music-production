@@ -1729,7 +1729,6 @@ body.grade-in .skip-stills { opacity: 0 !important; pointer-events: none !import
   .cover-list.solo .cover { flex-direction: column; align-items: stretch; }
   .cover-list.solo .cv-art { width: 100%; }
 }
-.a-cover { color: var(--accent); border-color: rgba(255,212,0,.45); }
 /* phones: three covers become a sideways carousel that snaps cover to cover (each stays big) */
 @media (max-width: 640px) {
   .cover-list:not(.solo) { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
@@ -1737,3 +1736,9 @@ body.grade-in .skip-stills { opacity: 0 !important; pointer-events: none !import
   .cover-list:not(.solo)::-webkit-scrollbar { display: none; }
   .cover-list:not(.solo) .cover { flex: 0 0 78%; scroll-snap-align: start; }
 }
+
+/* ARTISTS: each row links to the work — ▶ films, Photos (concert album), Cover art — in yellow; the name does the main one */
+.a-work { color: var(--accent); border-color: rgba(255,212,0,.45); background: none; font-family: inherit; cursor: pointer; }
+.a-work:hover, .a-work:focus-visible { color: #0a0a08; background: var(--accent); border-color: var(--accent); outline: none; }
+button.a-name { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: start; cursor: pointer; }
+.a-go:focus-visible { outline: none; color: var(--accent); }
