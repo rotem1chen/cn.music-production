@@ -1451,7 +1451,8 @@
     [pShot + 1, pShot - 1].forEach((i) => { new Image().src = (con.dir || "") + shots[wrap(i)]; });   // neighbours ready before the swipe
   }
 
-  if (plight) {
+  // (guarded: if plight-fx.js ever failed to load, only the lightbox is lost — not everything after this line)
+  if (plight && typeof PlightFX === "function") {
     const fx = PlightFX({
       root: plight, stage: document.getElementById("plightStage"), img: plightImg,
       step: (dir) => { pShot += dir; showPhoto(); },
