@@ -1684,6 +1684,8 @@
       if (!es[0].isIntersecting || seen) return;
       seen = true; io.disconnect(); setTimeout(() => sweep(1, 0.5, 1300), 250);
     }, { threshold: 0.45 }).observe(st);
+    // the side "skip to stills / other work" pills would float over the frame: they step aside while it's on screen
+    new IntersectionObserver((es) => document.body.classList.toggle("grade-in", es[0].isIntersecting), { threshold: 0.15 }).observe(st);
     const at = (e) => { const r = drag ? drag.r : st.getBoundingClientRect(); return (e.clientX - r.left) / r.width; };
     // computers: the line just follows the mouse across the frame
     if (fine) st.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" && !drag) { cancelAnimationFrame(raf); set(at(e)); } });

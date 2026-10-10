@@ -1675,3 +1675,4 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
 .sh-tag { font-family: var(--ui); font-size: 10px; font-weight: 600; letter-spacing: .22em; color: #0a0a08; padding: 6px 10px;
   border-radius: 999px; background: radial-gradient(120% 140% at 30% 0%, #fff4a6 0%, #ffd400 45%, #e0b100 100%);
   box-shadow: 0 0 18px rgba(255,212,0,.35); }
+body.grade-in .skip-stills { opacity: 0 !important; pointer-events: none !important; }
