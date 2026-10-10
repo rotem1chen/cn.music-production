@@ -500,6 +500,7 @@
   window.onYouTubeIframeAPIReady = function () {
     ytApiReady = true;
     if (pendingMount) { const f = pendingMount; pendingMount = null; f(); }
+    warmKept();                                        // phones: a player waiting for the first tap
   };
   // the API is a chain of scripts: fetch it once the opening is over and the page is idle, not while it
   // plays (a phone's main thread is busiest right then). Opening a film earlier loads it on the spot.
@@ -513,14 +514,10 @@
      film is actually playing; until then the poster shows a liquid loading state (.waiting). */
   let play = { token: 0 };
   const soundBtn = document.getElementById("vSound");
-  /* Phones (iPhone above all) only let a video start with sound if the play comes straight from a tap
-     ON that player; ours starts ~2.5s after the tap that opened it, so it has to start muted, and the
-     "Tap for sound" pill is that tap. A brand-new YouTube player is muted again — so phones keep ONE
-     player for the whole visit and only switch the video in it: once sound has been tapped on, every
-     film after that (swiped to, or opened again) plays with sound. If the phone refuses anyway, it
-     drops back to muted and the pill. The kept player's frame never leaves the page (moving or
-     removing an iframe reloads it), it is just hidden while another kind of film or nothing is shown. */
-  let ytSound = false, ytKeep = null, ytCur = null;
+  /* Phones keep ONE YouTube player for the whole visit and only switch the video in it. Its frame never
+     leaves the page (moving or removing an iframe reloads it): it is just hidden while another kind of
+     film, or nothing, is on the stage. See warmKept below for why it exists before the first tap. */
+  let ytKeep = null, ytCur = null;
   const ytWrap = document.createElement("div");
   ytWrap.className = "yt-keep"; ytWrap.hidden = true;
   function clearMedia() { [...mediaBox.children].forEach((ch) => { if (ch !== ytWrap) ch.remove(); }); }
@@ -528,7 +525,6 @@
     e.stopPropagation();
     try { ytPlayer.unMute(); ytPlayer.setVolume(100); ytPlayer.playVideo(); } catch (_) {}
     soundBtn.hidden = true;
-    ytSound = true;
   });
   function settle(t) {                                  // called whenever "grown" or "ready" changes
     if (t !== play.token || !play.grown || !play.ready || play.revealed) return;
@@ -587,29 +583,56 @@
       play.start = () => { v.currentTime = 0; v.muted = false; const pr = v.play(); if (pr && pr.catch) pr.catch(() => { v.muted = true; v.play(); }); };
     }
   }
-  // phones: the one kept YouTube player — made on the first film, then only told to switch videos
+  /* Phones: the kept player is made as soon as the YouTube API is here (empty, hidden), so that the TAP
+     that opens a film can start it — with sound — right inside that tap. YouTube on a phone mutes any
+     play that doesn't come from a tap (and shows its own small unmute button); a play started 2.5s
+     later, after the opening, never counts. The film then waits, paused, until the stage has grown. */
+  let keptReady = false, ytPre = null;
+  function warmKept() {
+    if (!isTouch || ytKeep || !ytApiReady) return;
+    if (!ytWrap.isConnected) mediaBox.appendChild(ytWrap);
+    ytWrap.innerHTML = '<div id="ytHost"></div>';
+    ytKeep = new YT.Player("ytHost", {
+      width: "100%", height: "100%",
+      playerVars: { autoplay: 0, controls: 1, modestbranding: 1, rel: 0, playsinline: 1, fs: 1, iv_load_policy: 3 },
+      events: {
+        onReady: () => { keptReady = true; },
+        onStateChange: (e) => keptState(e.target, e.data),
+      },
+    });
+  }
+  function startKept(id, from) {                      // call only inside a tap: that's what allows the sound
+    try { ytKeep.unMute(); ytKeep.setVolume(100); ytKeep.loadVideoById({ videoId: id, startSeconds: Math.floor(from || 0) }); } catch (_) {}
+  }
   function mountKept(c, t, from) {
     clearMedia();
     ytCur = { t, from, primed: false };
     ytWrap.hidden = false;
     if (!ytWrap.isConnected) mediaBox.appendChild(ytWrap);
-    if (ytKeep) {
+    if (ytKeep && keptReady) {
       ytPlayer = ytKeep;
-      try {
-        ytKeep.mute();                                 // loads hidden during the opening: silent until it's shown
-        ytKeep.loadVideoById({ videoId: c.v.id, startSeconds: Math.floor(from) });
-      } catch (_) {}
-    } else {
+      if (ytPre && ytPre.id === c.v.id) {              // already started inside the swipe's touch (goFilm)
+        ytPre = null;
+        let st = -1; try { st = ytKeep.getPlayerState(); } catch (_) {}
+        if (st === YT.PlayerState.PLAYING) keptState(ytKeep, st);
+      } else startKept(c.v.id, from);                  // openViewer runs inside the tap on the tile
+    } else if (!ytKeep) {
+      // the API arrived only with this tap: no player yet to start inside it — this one starts muted
       ytWrap.innerHTML = '<div id="ytHost"></div>';
       ytKeep = ytPlayer = new YT.Player("ytHost", {
         videoId: c.v.id, width: "100%", height: "100%",
         playerVars: Object.assign({ autoplay: 1, mute: 1, controls: 1, modestbranding: 1, rel: 0, playsinline: 1, fs: 1, iv_load_policy: 3 },
           from ? { start: Math.floor(from) } : {}),
         events: {
-          onReady: (e) => { try { e.target.mute(); e.target.playVideo(); } catch (_) {} },
+          onReady: (e) => { keptReady = true; try { e.target.mute(); e.target.playVideo(); } catch (_) {} },
           onStateChange: (e) => keptState(e.target, e.data),
         },
       });
+    } else {                                           // made but not ready yet: start it the moment it is
+      const wait = setInterval(() => {
+        if (!ytCur || ytCur.t !== t) { clearInterval(wait); return; }
+        if (keptReady) { clearInterval(wait); ytPlayer = ytKeep; startKept(c.v.id, from); }
+      }, 100);
     }
     // Low Power Mode refuses even muted autoplay: show YouTube's own play button soon
     setTimeout(() => { if (ytCur && ytCur.t === t && !ytCur.primed) ready(t); }, 2500);
@@ -620,21 +643,19 @@
     cur.primed = true;                                 // it plays: buffered and decoding. Hold it until we show it.
     if (!play.grown) { try { p.pauseVideo(); } catch (_) {} }
     play.start = () => {
-      try { p.seekTo(cur.from, true); if (ytSound) { p.unMute(); p.setVolume(100); } p.playVideo(); } catch (_) {}
-      soundBtn.hidden = ytSound;
-      if (!ytSound) return;
-      // sound was allowed before; if the phone refuses it this time the film doesn't play — nudge it once
-      // (a just-switched video can still be settling), and if it still won't: back to muted + the pill
-      const playing = () => { let st = -1; try { st = p.getPlayerState(); } catch (_) {} return st === YT.PlayerState.PLAYING || st === YT.PlayerState.BUFFERING; };
+      try { p.seekTo(cur.from, true); p.unMute(); p.setVolume(100); p.playVideo(); } catch (_) {}
+      soundBtn.hidden = true;
+      // if YouTube kept it muted after all (or it won't play), our big "Tap for sound" — not its small button
       const live = () => ytCur === cur && cur.t === play.token;
+      const playing = () => { let st = -1; try { st = p.getPlayerState(); } catch (_) {} return st === YT.PlayerState.PLAYING || st === YT.PlayerState.BUFFERING; };
+      const muted = () => { try { return p.isMuted(); } catch (_) { return false; } };
       setTimeout(() => {
-        if (!live() || playing()) return;
-        try { p.playVideo(); } catch (_) {}
+        if (!live()) return;
+        if (!playing()) { try { p.playVideo(); } catch (_) {} }
         setTimeout(() => {
-          if (!live() || playing()) return;
-          ytSound = false;
-          try { p.mute(); p.playVideo(); } catch (_) {}
-          soundBtn.hidden = false;
+          if (!live()) return;
+          if (!playing()) { try { p.mute(); p.playVideo(); } catch (_) {} soundBtn.hidden = false; }
+          else if (muted()) soundBtn.hidden = false;
         }, 900);
       }, 1400);
     };
@@ -651,12 +672,12 @@
     settle(t);
   }
   // stop whatever is playing or still loading for the film on the stage
-  function dropMedia() {
+  function dropMedia(swap) {                         // swap: the next film was already started by the swipe
     clearTimeout(play.waitT); clearTimeout(play.safety);
     play = { token: play.token + 1 };                  // anything still loading for this film is ignored
     pendingMount = null;
-    if (ytPlayer && ytPlayer === ytKeep) {           // phones: keep the player (and its permission for sound), just stop it
-      try { ytKeep.pauseVideo(); } catch (_) {}
+    if (ytPlayer && ytPlayer === ytKeep) {           // phones: keep the player, just stop it
+      if (!(swap && ytPre)) { ytPre = null; try { ytKeep.pauseVideo(); } catch (_) {} }
       ytPlayer = null;
     } else if (ytPlayer && ytPlayer.destroy) { try { ytPlayer.destroy(); } catch (_) {} ytPlayer = null; }
     ytCur = null;
@@ -1161,6 +1182,9 @@
     takeOver();
     try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (_) {}
     const v = mediaBox.querySelector("video"); if (v) v.pause();
+    // phones: start the next film now, inside this swipe's touch — later it could only play muted
+    const nx = items[film + dir];
+    if (isTouch && ytKeep && keptReady && nx && nx.v.type === "youtube") { ytPre = { id: nx.v.id }; startKept(nx.v.id, 0); }
     pendingFilm = dir;
     if (reducedV) { swapFilm(); return; }
     V.x.to(-dir * window.innerWidth, { response: 0.32, velocity: velocity || 0 });
@@ -1171,7 +1195,7 @@
     const dir = pendingFilm; pendingFilm = 0;
     film += dir;
     const c = items[film];
-    dropMedia();
+    dropMedia(true);
     const B = bigRect(clipAspect(c));
     setStage(B.x, B.y, B.w, B.h); box = stageBox;
     showPoster(c);
