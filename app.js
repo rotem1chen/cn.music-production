@@ -1584,6 +1584,8 @@
   })();
 
   /* ---------- ARTISTS: everyone we've worked with ---------- */
+  // COVER ART data first: the artist rows below check it for their "Cover art" chip
+  const coverData = ((typeof COVERS !== "undefined" && Array.isArray(COVERS)) ? COVERS : []).filter((c) => c && c.img);
   (function artistList() {
     const wrap = document.getElementById("artistList");
     const data = (typeof ARTISTS !== "undefined" && Array.isArray(ARTISTS)) ? ARTISTS : [];
@@ -1602,9 +1604,42 @@
         el.href = a[k]; el.target = "_blank"; el.rel = "noopener";
         links.appendChild(el);
       });
+      // they have a cover in COVER ART: a chip that jumps there
+      if (coverData.some((c) => c.artist && a.name && c.artist.trim() === a.name.trim())) {
+        const el = document.createElement("a");
+        el.className = "a-link a-cover"; el.textContent = "Cover art"; el.href = "#covers";
+        links.prepend(el);
+      }
       row.appendChild(links);
       wrap.appendChild(row);
     });
+  })();
+
+  /* COVER ART (covers.js): album / single artwork shot by CN PROD. One cover → a feature (the cover beside
+     its details); more → a grid. Each opens the release. Artists with a cover get a "Cover art" chip (below). */
+  (function coverArt() {
+    const sec = document.getElementById("covers"), list = document.getElementById("coverList"), note = document.getElementById("coverNote");
+    if (!sec || !list || !coverData.length) return;
+    const N = (typeof COVERS_NOTE !== "undefined" && COVERS_NOTE) || {};
+    if (N.text) {
+      note.textContent = N.text + " ";
+      if (N.link) { const a = document.createElement("a"); a.className = "a-link cv-note-link"; a.href = N.link; a.target = "_blank"; a.rel = "noopener"; a.textContent = (N.linkLabel || "Listen") + " \u2197"; note.appendChild(a); }
+    } else note.hidden = true;
+    list.classList.toggle("solo", coverData.length === 1);
+    coverData.forEach((c) => {
+      const card = document.createElement(c.link ? "a" : "div");
+      card.className = "cover";
+      if (c.link) { card.href = c.link; card.target = "_blank"; card.rel = "noopener"; }
+      const kind = [c.type, c.year].filter(Boolean).join(" \u00b7 ");
+      card.innerHTML = '<span class="cv-art"><img src="' + esc(c.img) + '" alt="' + esc((c.title || "") + (c.artist ? " — " + c.artist : "")) + ' cover" loading="lazy" decoding="async"></span>' +
+        '<span class="cv-info">' + (kind ? '<span class="cv-kind">' + esc(kind) + '</span>' : "") +
+        '<span class="cv-title">' + esc(c.title || "") + '</span>' +
+        (c.artist ? '<span class="cv-artist">' + esc(c.artist) + '</span>' : "") +
+        '<span class="cv-credit">Cover photography \u2014 CN PROD</span>' +
+        (c.link ? '<span class="cv-listen">Listen \u2197</span>' : "") + '</span>';
+      list.appendChild(card);
+    });
+    sec.hidden = false;
   })();
 
   /* NEXT SHOOTS (shows.js): upcoming shows, soonest first; a show drops off the day after its date and the
@@ -1667,7 +1702,7 @@
         if (animate) sweep(1, 0.5, 1000);
       }, animate === false ? 0 : 160);
       film.textContent = [g.film, g.artist].filter(Boolean).join(" \u2014 ");
-      count.textContent = data.length > 1 ? String(i + 1).padStart(2, "0") + " / " + String(data.length).padStart(2, "0") : "";
+      count.textContent = String(i + 1).padStart(2, "0") + " / " + String(data.length).padStart(2, "0");
       [...thumbs.children].forEach((b, k) => { b.classList.toggle("on", k === i); b.setAttribute("aria-pressed", k === i); });
       const on = thumbs.children[i];                  // keep the chosen thumbnail in view (the row scrolls sideways on phones)
       if (on && thumbs.scrollWidth > thumbs.clientWidth) thumbs.scrollTo({ left: on.offsetLeft - (thumbs.clientWidth - on.offsetWidth) / 2, behavior: reducedMotion ? "auto" : "smooth" });
@@ -1693,9 +1728,21 @@
     new IntersectionObserver((es) => document.body.classList.toggle("grade-in", es[0].isIntersecting), { threshold: 0.15 }).observe(st);
     const at = (e) => { const r = drag ? drag.r : st.getBoundingClientRect(); return (e.clientX - r.left) / r.width; };
     // computers: the line just follows the mouse across the frame
-    if (fine) st.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" && !drag) { cancelAnimationFrame(raf); set(at(e)); } });
+    if (fine) st.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" && !drag && !e.target.closest("button")) { cancelAnimationFrame(raf); set(at(e)); } });
     // phones (and click-drag): a sideways drag moves the line; up / down is still the page's scroll
+    // next / previous: the arrows by the counter, the arrows on the frame's sides (computers), ← → keys
+    const step = (d) => show((idx + d + data.length) % data.length, true);
+    sec.querySelectorAll("[data-step]").forEach((b) => {
+      if (data.length < 2) { b.hidden = true; return; }
+      b.addEventListener("click", (e) => { e.stopPropagation(); step(+b.dataset.step); });
+      b.addEventListener("pointerdown", (e) => e.stopPropagation());   // pressing an arrow never moves the line
+    });
+    sec.addEventListener("keydown", (e) => {
+      if (data.length < 2 || e.target === line || !(e.key === "ArrowLeft" || e.key === "ArrowRight")) return;
+      e.preventDefault(); step(e.key === "ArrowRight" ? 1 : -1);
+    });
     st.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button")) return;
       if (e.pointerType === "mouse" && fine) return;
       drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, on: false, r: st.getBoundingClientRect() };
     });

@@ -9,7 +9,8 @@ const SITE = {
   tagline: "Directing · Production · Post-production",
   about:
     "CN Prod is a music video and clip production studio — producing, " +
-    "directing and post-producing cinematic work for artists and labels.",
+    "directing and post-producing cinematic work for artists and labels — " +
+    "plus album artwork and music photography.",
   email: "rotem1chen@gmail.com",
   socials: {
     instagram: "https://www.instagram.com/cn__prod/",

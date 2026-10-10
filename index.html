@@ -48,7 +48,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=169" />
+  <link rel="stylesheet" href="style.css?v=173" />
   <!-- opening: decide before first paint, so nothing flashes in its final place (opening.js plays it) -->
   <script>
     try {
@@ -125,8 +125,12 @@
       <img class="gr-before" alt="" decoding="async">
       <span class="gr-line" role="slider" tabindex="0" aria-label="Before and after the grade" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><i aria-hidden="true">↔</i></span>
       <b class="gr-lab l">Raw</b><b class="gr-lab r">Graded</b>
+      <button class="gr-side prev" type="button" data-step="-1" aria-label="Previous frame">‹</button>
+      <button class="gr-side next" type="button" data-step="1" aria-label="Next frame">›</button>
     </div>
-    <div class="gr-meta"><span class="gr-film"></span><span class="gr-count"></span></div>
+    <div class="gr-meta"><span class="gr-film"></span>
+      <span class="gr-nav"><button class="gr-step" type="button" data-step="-1" aria-label="Previous frame">‹</button><span class="gr-count"></span><button class="gr-step" type="button" data-step="1" aria-label="Next frame">›</button></span>
+    </div>
     <div class="gr-thumbs" id="grThumbs"></div>
   </section>
 
@@ -144,6 +148,13 @@
     <div class="concerts" id="concerts"></div>
   </section>
 
+  <!-- COVER ART — album / single artwork (covers.js); hides itself when there are none -->
+  <section class="panel covers" id="covers" hidden>
+    <span class="panel-label">[ COVER ART ]</span>
+    <p class="cv-note" id="coverNote"></p>
+    <div class="cover-list" id="coverList"></div>
+  </section>
+
   <!-- ARTISTS — everyone we've worked with -->
   <section class="panel artists" id="artists">
     <span class="panel-label">[ ARTISTS ]</span>
@@ -159,7 +170,7 @@
   <!-- ABOUT / CONTACT -->
   <section class="panel about" id="about">
     <span class="panel-label">[ ABOUT ]</span>
-    <p class="panel-text" data-about>CN Prod is a music video and clip production studio — producing, directing and post-producing cinematic work for artists and labels.</p>
+    <p class="panel-text" data-about>CN Prod is a music video and clip production studio — producing, directing and post-producing cinematic work for artists and labels — plus album artwork and music photography.</p>
   </section>
   <section class="panel contact" id="contact">
     <span class="panel-label">[ CONTACT ]</span>
@@ -208,16 +219,17 @@
   <!-- cursor ring (follows the mouse) -->
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="clips.js?v=166"></script>
+  <script src="clips.js?v=173"></script>
   <script src="photos.js?v=165"></script>
   <script src="artists.js?v=111"></script>
   <script src="shows.js?v=165"></script>
-  <script src="grades.js?v=171"></script>
-  <script src="plight-fx.js?v=166"></script>
+  <script src="grades.js?v=174"></script>
+  <script src="covers.js?v=172"></script>
+  <script src="plight-fx.js?v=173"></script>
   <script src="storyboards.js?v=151"></script>
   <script src="scrub.js?v=153"></script>
-  <script src="app.js?v=169"></script>
-  <script src="fx.js?v=166"></script>
+  <script src="app.js?v=173"></script>
+  <script src="fx.js?v=173"></script>
   <script src="opening.js?v=136"></script>
 </body>
 </html>
