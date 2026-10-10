@@ -24,4 +24,5 @@ const ARTISTS = [
   { name: "Yuvi",          spotify: "https://open.spotify.com/track/1pwY6GXfMPgpxsvY6CNozQ", instagram: "https://www.instagram.com/uv_raps" },
   { name: "עדן מניוב",     spotify: "", instagram: "" },
   { name: "ירין",          spotify: "", instagram: "" },
+  { name: "הילה רוח",      spotify: "", instagram: "" },
 ];

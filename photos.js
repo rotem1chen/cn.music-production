@@ -72,4 +72,15 @@ const CONCERTS = [  {
       "25.jpg", "26.jpg", "27.jpg", "28.jpg", "29.jpg", "30.jpg", "31.jpg",
     ],
   },
+
+  {
+    artist: "הילה רוח",
+    venue: "",
+    date: "June 2026",
+    dir: "photos/hila-ruach/",
+    cover: "09.jpg",
+    shots: [
+      "01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg", "06.jpg", "07.jpg", "08.jpg", "09.jpg",
+    ],
+  },
 ];
