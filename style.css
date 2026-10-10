@@ -1594,3 +1594,12 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
   .v-cells i, .v-cells.out i { transform: none !important; transition: opacity .3s ease; }
   .v-cells i b { transform: none !important; }
 }
+
+/* Phones: the yellow corners sit inside the active film (app.js tileCorners) and scroll with it natively;
+   the fixed, script-placed corners can't keep up with a phone's compositor scroll, so they're hidden. */
+.tile-target .target { display: none; }
+.tile-corners { position: absolute; inset: 8px; z-index: 5; pointer-events: none; }
+.tile-corners .corner { width: 16px; height: 16px; border-width: 1.5px; filter: drop-shadow(0 0 4px rgba(255,212,0,.6)); }
+/* phones: two whole frames, never cropped (the box is the frame's own 16:9; contain guards other shapes) */
+.v-cells.fit i b, .v-cells.fit.on i.in b { background-size: contain; background-position: center !important; transform: none; }
+.v-cells.fit i::after { background: rgba(0,0,0,.12); }

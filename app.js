@@ -315,12 +315,21 @@
   /* The brackets move on the compositor: each corner has its own translate, so gliding onto the
      next film never animates top/left/width/height (that was a layout pass on every scroll frame). */
   const corners = ["tl", "tr", "bl", "br"].map((k) => target.querySelector(".corner." + k));
+  /* Phones: the corners live INSIDE the active film, so they scroll with it natively. The page scrolls on
+     the compositor there and anything placed by script each frame (the fixed corners) slips behind it, a
+     few px to a whole film on a fast flick, however lean the frame. Same inset look as the open viewer. */
+  const touchUI = !!(window.matchMedia && window.matchMedia("(hover: none), (pointer: coarse)").matches);
+  const tileCorners = document.createElement("div");
+  tileCorners.className = "tile-corners"; tileCorners.setAttribute("aria-hidden", "true");
+  tileCorners.innerHTML = '<span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>';
+  if (touchUI) document.documentElement.classList.add("tile-target");
   const CORNER = 18, cornerAt = [];
   // track = following the scroll: the corners stay glued to the film, no glide. A CSS glide restarted on
   // every scroll frame made them trail the film by ~0.4s on phones (they're fixed, the film scrolls).
   // The glide is only for a pointer moving the target onto another film without scrolling.
   function positionTarget(i, r, track) {
     const el = elAt(i); if (!el) return;
+    if (touchUI) { if (tileCorners.parentNode !== el) el.appendChild(tileCorners); return; }
     target.classList.toggle("track", !!track);
     r = r || el.getBoundingClientRect();
     const pad = 10, x0 = r.left - pad, y0 = r.top - pad, x1 = r.right + pad - CORNER, y1 = r.bottom + pad - CORNER;
@@ -338,7 +347,7 @@
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function lockOn() {
     if (!target.animate || reducedMotion) return;
-    corners.forEach((c, k) => c.animate([{ opacity: 0, translate: LOCK_FROM[k].join(" ") }, { opacity: 1, translate: "0 0" }],
+    (touchUI ? [...tileCorners.children] : corners).forEach((c, k) => c.animate([{ opacity: 0, translate: LOCK_FROM[k].join(" ") }, { opacity: 1, translate: "0 0" }],
       { duration: 450, easing: "cubic-bezier(.16,1,.3,1)" }));
   }
 
@@ -614,31 +623,51 @@
   let cellTok = 0;
   // the grid is an even 3x3 over the whole screen: the film sits in the middle box, the frames fill the
   // other eight — all the same size
+  // Phones show two whole frames instead of eight cropped ones: the film's box is a full 16:9, with one
+  // frame above and one below it (side by side when the phone is turned), each the film's size, uncropped.
+  const mobileGrid = () => touchUI || window.innerWidth < 700;
+  const MG = 10;                                         // gap between the film and a frame on phones
   function gridRect() {
     const W = window.innerWidth, H = window.innerHeight;
-    return { left: W / 3, top: H / 3, right: W * 2 / 3, bottom: H * 2 / 3, width: W / 3, height: H / 3 };
+    let w = W / 3, h = H / 3;
+    if (mobileGrid()) {
+      const M = 16, a = 9 / 16;
+      w = H >= W ? Math.min(W - 2 * M, (H - 2 * M - 2 * MG) / 3 / a) : Math.min((W - 2 * M - 2 * MG) / 3, (H - 2 * M) / a);
+      h = w * a;
+    }
+    const left = (W - w) / 2, top = (H - h) / 2;
+    return { left, top, right: left + w, bottom: top + h, width: w, height: h };
   }
   function showCells(c, g) {
     hideCells();
     const sb = c && c.v.type === "youtube" && window.STORYBOARDS && window.STORYBOARDS[c.v.id];
     if (!sb || !sb.cells || sb.cells.length < 8) return;
-    const t = ++cellTok, W = window.innerWidth, H = window.innerHeight, GAP = 8;
-    const xs = [0, g.left, g.right, W], ys = [0, g.top, g.bottom, H], t0 = performance.now();
+    const t = ++cellTok, GAP = 8, t0 = performance.now();
+    // computers: nine equal boxes, the whole screen in thirds
+    const xs = [0, g.left, g.right, window.innerWidth], ys = [0, g.top, g.bottom, window.innerHeight];
+    // phones: just two, the film's size — above/below it (upright) or either side (turned)
+    const two = mobileGrid(), port = window.innerHeight >= window.innerWidth;
+    const spots = !two ? null : port ? { 1: [g.left, g.top - g.height - MG], 5: [g.left, g.bottom + MG] }
+                                     : { 7: [g.left - g.width - MG, g.top], 3: [g.right + MG, g.top] };
+    cells.classList.toggle("fit", two);
     CELL_ORDER.forEach(([col, row], n) => {
       const el = cellEls[n];
-      const x = xs[col] + GAP, y = ys[row] + GAP, w = xs[col + 1] - xs[col] - 2 * GAP, h = ys[row + 1] - ys[row] - 2 * GAP;
+      let x = xs[col] + GAP, y = ys[row] + GAP, w = xs[col + 1] - xs[col] - 2 * GAP, h = ys[row + 1] - ys[row] - 2 * GAP;
+      // phones: the earlier moment above / on the left, the later one below / on the right, in that order
+      const first = two && (n === 1 || n === 7), still = two ? (first ? 1 : 5) : n;
+      if (two) { if (!spots[n]) { el.hidden = true; return; } [x, y] = spots[n]; w = g.width; h = g.height; }
       el.classList.remove("in");
       if (w < 48 || h < 40) { el.hidden = true; return; }
       el.hidden = false;
       el.style.left = x + "px"; el.style.top = y + "px"; el.style.width = w + "px"; el.style.height = h + "px";
       el.style.setProperty("--dx", col - 1); el.style.setProperty("--dy", row - 1);   // pushed straight away from the film
-      el.firstChild.style.backgroundImage = `url("${sb.cells[n]}")`;
+      el.firstChild.style.backgroundImage = `url("${sb.cells[still]}")`;
       // crop toward the subject (a tall phone box shows only a slice of a wide frame)
-      const f = sb.focus && sb.focus[n];
+      const f = sb.focus && sb.focus[still];
       el.firstChild.style.backgroundPosition = f ? `${(f[0] * 100).toFixed(1)}% ${(f[1] * 100).toFixed(1)}%` : "";
       // each lands on its beat once the lines have nearly arrived — and never before its still has loaded
-      const due = t0 + (reducedMotion ? 400 : 750 + n * 110);
-      const im = new Image(); im.src = sb.cells[n];
+      const due = t0 + (reducedMotion ? 400 : 750 + (two ? (first ? 0 : 280) : n * 110));
+      const im = new Image(); im.src = sb.cells[still];
       const go = () => { if (t === cellTok) setTimeout(() => { if (t === cellTok) el.classList.add("in"); }, Math.max(0, due - performance.now())); };
       if (im.decode) im.decode().then(go, go); else im.onload = go;
     });
