@@ -315,21 +315,40 @@
   /* The brackets move on the compositor: each corner has its own translate, so gliding onto the
      next film never animates top/left/width/height (that was a layout pass on every scroll frame). */
   const corners = ["tl", "tr", "bl", "br"].map((k) => target.querySelector(".corner." + k));
-  /* Phones: the corners live INSIDE the active film, so they scroll with it natively. The page scrolls on
-     the compositor there and anything placed by script each frame (the fixed corners) slips behind it, a
-     few px to a whole film on a fast flick, however lean the frame. Same inset look as the open viewer. */
+  /* Phones: the same corners and the same glide as on a computer, but placed on the PAGE (position:absolute
+     in document coordinates) instead of fixed to the screen. A phone scrolls on the compositor, and anything
+     moved by script every scroll frame slips behind it — so these are written only when the film they
+     frame changes (then they glide there, .42s), and in between they simply scroll with the page. Their
+     place comes from the layout (offsetTop/Left), not the tilted on-screen rect, so it holds still. */
   const touchUI = !!(window.matchMedia && window.matchMedia("(hover: none), (pointer: coarse)").matches);
-  const tileCorners = document.createElement("div");
-  tileCorners.className = "tile-corners"; tileCorners.setAttribute("aria-hidden", "true");
-  tileCorners.innerHTML = '<span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>';
-  if (touchUI) document.documentElement.classList.add("tile-target");
+  const docTarget = document.createElement("div");
+  docTarget.className = "doc-target"; docTarget.setAttribute("aria-hidden", "true");
+  docTarget.innerHTML = '<span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>';
+  const docCorners = [...docTarget.children], docAt = [];
+  if (touchUI) { document.documentElement.classList.add("doc-targeting"); document.body.appendChild(docTarget); }
+  function docBox(el) {                                // layout position on the page (transforms ignored)
+    let x = 0, y = 0;
+    for (let n = el; n; n = n.offsetParent) { x += n.offsetLeft; y += n.offsetTop; }
+    return { left: x, top: y, right: x + el.offsetWidth, bottom: y + el.offsetHeight };
+  }
   const CORNER = 18, cornerAt = [];
   // track = following the scroll: the corners stay glued to the film, no glide. A CSS glide restarted on
   // every scroll frame made them trail the film by ~0.4s on phones (they're fixed, the film scrolls).
   // The glide is only for a pointer moving the target onto another film without scrolling.
   function positionTarget(i, r, track) {
     const el = elAt(i); if (!el) return;
-    if (touchUI) { if (tileCorners.parentNode !== el) el.appendChild(tileCorners); return; }
+    if (touchUI) {
+      const b = docBox(el), pad = 10;
+      const x0 = b.left - pad, y0 = b.top - pad, x1 = b.right + pad - CORNER, y1 = b.bottom + pad - CORNER;
+      const first = !docAt.length;
+      if (first) docCorners.forEach((c) => { c.style.transition = "none"; });
+      [[x0, y0], [x1, y0], [x0, y1], [x1, y1]].forEach(([x, y], k) => {
+        const v = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+        if (docAt[k] !== v) { docAt[k] = v; docCorners[k].style.transform = v; }   // unchanged → nothing written
+      });
+      if (first) requestAnimationFrame(() => requestAnimationFrame(() => docCorners.forEach((c) => { c.style.transition = ""; })));
+      return;
+    }
     target.classList.toggle("track", !!track);
     r = r || el.getBoundingClientRect();
     const pad = 10, x0 = r.left - pad, y0 = r.top - pad, x1 = r.right + pad - CORNER, y1 = r.bottom + pad - CORNER;
@@ -347,7 +366,7 @@
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function lockOn() {
     if (!target.animate || reducedMotion) return;
-    (touchUI ? [...tileCorners.children] : corners).forEach((c, k) => c.animate([{ opacity: 0, translate: LOCK_FROM[k].join(" ") }, { opacity: 1, translate: "0 0" }],
+    (touchUI ? docCorners : corners).forEach((c, k) => c.animate([{ opacity: 0, translate: LOCK_FROM[k].join(" ") }, { opacity: 1, translate: "0 0" }],
       { duration: 450, easing: "cubic-bezier(.16,1,.3,1)" }));
   }
 
@@ -414,6 +433,7 @@
     const show = a >= 0 && (useHover || bestD < window.innerHeight * 0.7);
 
     chrome.classList.toggle("hide", !show);
+    docTarget.classList.toggle("hide", !show);
     hud.classList.toggle("hide", !show);
 
     if (a >= 0 && show) {

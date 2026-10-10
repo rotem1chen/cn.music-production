@@ -374,7 +374,7 @@ a { color: inherit; text-decoration: none; }
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
   html { scroll-snap-type: none; scroll-behavior: auto; }
   .target, .viewer-stage, .v-lead { transition-property: opacity !important; }   /* jump into place, fade */
-  .target .corner { transition: none !important; }
+  .target .corner, .doc-target .corner { transition: none !important; }
   .shot img, .vid img, :is(.ll-sub, .reel-more, .concert-all, .skip-stills, .pool-btn, .lm-go, .file) .ar { transition: none !important; transform: none !important; }
   .artist, .file { transition-property: color, border-color !important; }
 }
@@ -1595,11 +1595,13 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
   .v-cells i b { transform: none !important; }
 }
 
-/* Phones: the yellow corners sit inside the active film (app.js tileCorners) and scroll with it natively;
-   the fixed, script-placed corners can't keep up with a phone's compositor scroll, so they're hidden. */
-.tile-target .target { display: none; }
-.tile-corners { position: absolute; inset: 8px; z-index: 5; pointer-events: none; }
-.tile-corners .corner { width: 16px; height: 16px; border-width: 1.5px; filter: drop-shadow(0 0 4px rgba(255,212,0,.6)); }
+/* Phones: the corners ride on the page (app.js docTarget) — same look and glide as a computer, but they
+   scroll with the films natively instead of being re-placed by script on every scroll frame. */
+.doc-targeting .target { display: none; }
+.doc-target { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 29; pointer-events: none;
+  transition: opacity .45s var(--ease); }
+.doc-target.hide, .opening-run .doc-target { opacity: 0; }
+.doc-target .corner { top: 0; left: 0; right: auto; bottom: auto; will-change: transform; transition: transform .42s var(--ease); }
 /* phones: two whole frames, never cropped (the box is the frame's own 16:9; contain guards other shapes) */
 .v-cells.fit i b, .v-cells.fit.on i.in b { background-size: contain; background-position: center !important; transform: none; }
 .v-cells.fit i::after { background: rgba(0,0,0,.12); }
