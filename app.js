@@ -640,24 +640,19 @@
   function keptState(p, state) {
     const cur = ytCur;
     if (!cur || state !== YT.PlayerState.PLAYING || cur.primed || cur.t !== play.token) return;
-    cur.primed = true;                                 // it plays: buffered and decoding. Hold it until we show it.
-    if (!play.grown) { try { p.pauseVideo(); } catch (_) {} }
+    cur.primed = true;
+    // NOT paused for the opening (a computer pauses it there): on an iPhone the play that resumes it
+    // later isn't a tap, so it's refused and the film waits for YouTube's play button. So it just keeps
+    // playing from the tap — the music starts while the grid forms, the picture fades in once grown.
     play.start = () => {
-      try { p.seekTo(cur.from, true); p.unMute(); p.setVolume(100); p.playVideo(); } catch (_) {}
       soundBtn.hidden = true;
-      // if YouTube kept it muted after all (or it won't play), our big "Tap for sound" — not its small button
+      // if YouTube kept it muted after all (a tap before the player was ready), our big "Tap for sound"
       const live = () => ytCur === cur && cur.t === play.token;
-      const playing = () => { let st = -1; try { st = p.getPlayerState(); } catch (_) {} return st === YT.PlayerState.PLAYING || st === YT.PlayerState.BUFFERING; };
-      const muted = () => { try { return p.isMuted(); } catch (_) { return false; } };
       setTimeout(() => {
         if (!live()) return;
-        if (!playing()) { try { p.playVideo(); } catch (_) {} }
-        setTimeout(() => {
-          if (!live()) return;
-          if (!playing()) { try { p.mute(); p.playVideo(); } catch (_) {} soundBtn.hidden = false; }
-          else if (muted()) soundBtn.hidden = false;
-        }, 900);
-      }, 1400);
+        let m = false; try { m = p.isMuted(); } catch (_) {}
+        if (m) soundBtn.hidden = false;
+      }, 600);
     };
     ready(cur.t);
   }
