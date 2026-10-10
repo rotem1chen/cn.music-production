@@ -28,7 +28,6 @@
       im.src = u;
     });
   }
-  function fmt(s) { s = Math.max(0, Math.round(s)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
   function haptic() {
     if (window.cnHaptic) return window.cnHaptic(8, 70);
     // pages without plight-fx.js: same guard (Android only — iOS has no vibrate API)
@@ -41,15 +40,15 @@
     opts = opts || {};
     el.classList.add("scrubbable");
     const per = sb.cols * sb.rows;
-    let ui = null, frameEl = null, barEl = null, timeEl = null;
+    let ui = null, frameEl = null;
     const st = { mode: "idle", pid: -1, x0: 0, y0: 0, rect: null, W: 0, p: 0, frame: -1, sheet: -1, bucket: -1,
-                 raf: 0, linger: 0, hoverT: 0, inside: false, armX: null, hx: 0, seek: null, seekUntil: 0, swallow: false, time: "" };
+                 raf: 0, linger: 0, hoverT: 0, inside: false, armX: null, hx: 0, seek: null, seekUntil: 0, swallow: false };
 
     function build() {
       ui = document.createElement("div");
       ui.className = "scrub"; ui.setAttribute("aria-hidden", "true");
-      ui.innerHTML = '<div class="scrub-frame"></div><div class="scrub-bar"><i></i></div><span class="scrub-time"></span>';
-      frameEl = ui.firstChild; barEl = ui.querySelector(".scrub-bar i"); timeEl = ui.querySelector(".scrub-time");
+      ui.innerHTML = '<div class="scrub-frame"></div>';     // just the frame: no timeline, no time label
+      frameEl = ui.firstChild;
       frameEl.style.width = sb.w + "px"; frameEl.style.height = sb.h + "px";
       el.appendChild(ui);
     }
@@ -91,13 +90,7 @@
         }
         el.classList.add("scrub-ready");
       }
-      barEl.style.transform = `scaleX(${p.toFixed(4)})`;
-      const t = fmt(p * sb.duration);
-      if (t !== st.time) { st.time = t; timeEl.textContent = t; }
-      // the chip rides above the playhead, kept inside the tile (its width is fixed in CSS: 56px)
-      const cx = Math.max(34, Math.min(st.W - 34, p * st.W));
-      timeEl.style.transform = `translateX(${(cx - 28).toFixed(1)}px)`;
-      el.dataset.scrubFrame = idx; el.dataset.scrubTime = t;
+      el.dataset.scrubFrame = idx;
       // Android: a very light tick every 10% of the film — only for a deliberate drag
       const b = Math.floor(p * 10);
       if (st.mode === "drag" && st.bucket >= 0 && b !== st.bucket) haptic();
