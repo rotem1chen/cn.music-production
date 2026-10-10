@@ -6,7 +6,6 @@
    dir   — the folder the shots live in (inside the site)
    shots — the image filenames inside that folder, in order
    cover — optional: the shot shown on the home page card (default: the first shot)
-   raw   — optional: true if photos/<name>/raw/ holds the unedited versions (same filenames) → before/after in the lightbox
    ============================================================ */
 
 const CONCERTS = [  {

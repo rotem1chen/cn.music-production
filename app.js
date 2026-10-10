@@ -683,6 +683,7 @@
     } else if (ytPlayer && ytPlayer.destroy) { try { ytPlayer.destroy(); } catch (_) {} ytPlayer = null; }
     ytCur = null;
     ytWrap.hidden = true;
+    if (typeof closeGrade === "function") closeGrade(false);
     clearMedia();
     viewer.classList.remove("loaded", "waiting");
     if (soundBtn) soundBtn.hidden = true;
@@ -861,6 +862,77 @@
   strip.addEventListener("pointerup", stripUp);
   strip.addEventListener("pointercancel", stripUp);
 
+  /* Before / after the grade (clips.js `grade: [{ before, after }]`): RAW / GRADE opens two stills of the
+     film over it — the raw frame on the left, the graded one on the right — split by a yellow line you drag.
+     It sweeps in from the edge to reveal the grade. ✕ / Esc goes back to the film (and plays it again). */
+  const gBtn = document.createElement("button");
+  gBtn.type = "button"; gBtn.className = "g-btn"; gBtn.hidden = true;
+  gBtn.innerHTML = '<span class="g-half" aria-hidden="true"></span>Raw / Grade';
+  viewer.appendChild(gBtn);
+  const gs = document.createElement("div");
+  gs.className = "g-split"; gs.hidden = true;
+  gs.innerHTML = '<img class="g-after" alt="" decoding="async"><img class="g-before" alt="" decoding="async">' +
+    '<span class="g-line"><i aria-hidden="true">\u2194</i></span><b class="g-lab l">Raw</b><b class="g-lab r">Graded</b>' +
+    '<div class="g-pairs"></div><button class="g-close" type="button" aria-label="Back to the film">\u2715</button>';
+  stage.appendChild(gs);
+  const gAfter = gs.querySelector(".g-after"), gBefore = gs.querySelector(".g-before"), gPairs = gs.querySelector(".g-pairs");
+  let gPair = [], gIdx = 0, gRaf = 0, gDrag = null;
+  function setGradeFor(c) {
+    gPair = c && Array.isArray(c.grade) ? c.grade.filter((g) => g && g.before && g.after) : [];
+    gBtn.hidden = !gPair.length;
+    closeGrade(false);
+    gPairs.innerHTML = gPair.length > 1 ? gPair.map((_, i) => `<button type="button" aria-label="Frame ${i + 1}"></button>`).join("") : "";
+    gPair.forEach((g) => { new Image().src = g.after; });   // warm, so the split opens on a ready picture
+  }
+  const gAt = (p) => gs.style.setProperty("--sx", (p * 100).toFixed(2) + "%");
+  function gSweep(from, to, ms) {                  // the line glides across (ease-out), revealing the grade
+    cancelAnimationFrame(gRaf);
+    if (reducedMotion) { gAt(to); return; }
+    const t0 = performance.now();
+    const step = (now) => { const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3); gAt(from + (to - from) * e); if (k < 1) gRaf = requestAnimationFrame(step); };
+    gRaf = requestAnimationFrame(step);
+  }
+  function showPair(i) {
+    gIdx = i;
+    gAfter.src = gPair[i].after; gBefore.src = gPair[i].before;
+    [...gPairs.children].forEach((b, k) => b.classList.toggle("on", k === i));
+    gSweep(1, 0.5, 900);
+  }
+  function openGrade() {
+    if (!gPair.length) return;
+    try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (_) {}
+    const v = mediaBox.querySelector("video"); if (v) v.pause();
+    gs.hidden = false; viewer.classList.add("grading");
+    showPair(gIdx < gPair.length ? gIdx : 0);
+  }
+  function closeGrade(resume) {
+    if (gs.hidden) return;
+    cancelAnimationFrame(gRaf);
+    gs.hidden = true; viewer.classList.remove("grading");
+    if (!resume) return;                             // this tap is what lets a phone play again
+    try { if (ytPlayer && ytPlayer.playVideo) ytPlayer.playVideo(); } catch (_) {}
+    const v = mediaBox.querySelector("video"); if (v) v.play();
+  }
+  gBtn.addEventListener("click", (e) => { e.stopPropagation(); if (gs.hidden) openGrade(); else closeGrade(true); });
+  gs.querySelector(".g-close").addEventListener("click", (e) => { e.stopPropagation(); closeGrade(true); });
+  gPairs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { e.stopPropagation(); showPair([...gPairs.children].indexOf(b)); } });
+  // drag (or tap) anywhere on the stills: the line follows the finger / mouse
+  gs.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return;
+    e.stopPropagation(); cancelAnimationFrame(gRaf);
+    try { gs.setPointerCapture(e.pointerId); } catch (_) {}
+    gDrag = { id: e.pointerId, r: gs.getBoundingClientRect() };
+    gs.classList.add("dragging");
+    gAt(Math.max(0, Math.min(1, (e.clientX - gDrag.r.left) / gDrag.r.width)));
+  });
+  gs.addEventListener("pointermove", (e) => {
+    if (!gDrag || e.pointerId !== gDrag.id) return;
+    gAt(Math.max(0, Math.min(1, (e.clientX - gDrag.r.left) / gDrag.r.width)));
+  });
+  const gUp = (e) => { if (gDrag && e.pointerId === gDrag.id) { gDrag = null; gs.classList.remove("dragging"); } };
+  gs.addEventListener("pointerup", gUp); gs.addEventListener("pointercancel", gUp);
+  gs.addEventListener("click", (e) => e.stopPropagation());
+
   function showPoster(c) {
     posterFor(c, (bg) => {
       stage.style.backgroundImage = bg;
@@ -870,6 +942,7 @@
     // the neighbours' covers are ready before the swipe
     [film - 1, film + 1].forEach((j) => { const n = items[j]; if (n && (n.thumb || n.v.thumb)) new Image().src = n.thumb || n.v.thumb; });
     buildStrip(c);
+    setGradeFor(c);
   }
   function canFilm(dir) { const j = film + dir; return j >= 0 && j < items.length; }
   function markFilmEnds() {
@@ -1254,7 +1327,7 @@
   }
   viewer.addEventListener("pointerdown", (e) => {
     if (!V || viewer.hidden || phase === "closing" || phase === "closed" || e.button > 0) return;
-    if (e.target.closest("button, a, iframe, video, .v-strip")) return;
+    if (e.target.closest("button, a, iframe, video, .v-strip, .g-split")) return;
     vd = { id: e.pointerId, x0: e.clientX, y0: e.clientY, axis: null, hist: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }] };
     stage.getAnimations && stage.getAnimations().forEach((an) => { if (an.effect && an.effect.getKeyframes()[1] && "translate" in an.effect.getKeyframes()[1]) an.cancel(); });
   });
@@ -1332,7 +1405,7 @@
   viewer.addEventListener("click", (e) => { if (e.target === viewer) closeViewer(); });
   document.addEventListener("keydown", (e) => {
     if (viewer.hidden || phase === "closing") return;
-    if (e.key === "Escape") closeViewer();
+    if (e.key === "Escape") { if (!gs.hidden) closeGrade(true); else closeViewer(); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); goFilm(-1); }
     else if (e.key === "ArrowRight") { e.preventDefault(); goFilm(1); }
   });
@@ -1453,7 +1526,6 @@
       step: (dir) => { pShot += dir; showPhoto(); },
       count: () => ((concertsData[pCon] || {}).shots || []).length,
       index: () => pShot,                               // stops at the first / last photo (rubber band), no wrap
-      rawFor: () => { const con = concertsData[pCon]; return con && con.raw ? (con.dir || "") + "raw/" + con.shots[pShot] : null; },
       sourceEl: () => shotEls[pCon + ":" + pShot] || null,
       onClosed: () => { plightImg.src = ""; document.body.style.overflow = ""; },
     });
@@ -1606,6 +1678,36 @@
       row.appendChild(links);
       wrap.appendChild(row);
     });
+  })();
+
+  /* NEXT SHOOTS (shows.js): upcoming shows, soonest first; a show drops off the day after its date and the
+     section stays hidden when nothing is coming up. The soonest one wears a yellow NEXT UP (TONIGHT on the day). */
+  (function nextShoots() {
+    const sec = document.getElementById("shows"), list = document.getElementById("showList");
+    const data = (typeof SHOWS !== "undefined" && Array.isArray(SHOWS)) ? SHOWS : [];
+    if (!sec || !list) return;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const day = (d) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || ""); return m ? new Date(+m[1], m[2] - 1, +m[3]) : null; };
+    const up = data.map((s) => ({ ...s, d: day(s.date) })).filter((s) => s.d && s.d >= today).sort((a, b) => a.d - b.d);
+    if (!up.length) return;
+    const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    up.forEach((s, i) => {
+      const row = document.createElement("div"); row.className = "show-row" + (i === 0 ? " next" : "");
+      const tonight = +s.d === +today;
+      row.innerHTML =
+        '<span class="sh-date"><b>' + String(s.d.getDate()).padStart(2, "0") + '</b><i>' + MON[s.d.getMonth()] + '</i></span>' +
+        '<span class="sh-main"><span class="sh-artist">' + esc(s.artist || "") + '</span>' +
+        '<span class="sh-where">' + esc([s.venue, s.city].filter(Boolean).join(" · ")) + '</span></span>' +
+        (i === 0 ? '<span class="sh-tag">' + (tonight ? "TONIGHT" : "NEXT UP") + '</span>' : "");
+      if (s.link) {
+        const a = document.createElement("a");
+        a.className = "a-link sh-link"; a.textContent = "Tickets \u2197";
+        a.href = s.link; a.target = "_blank"; a.rel = "noopener";
+        row.appendChild(a);
+      }
+      list.appendChild(row);
+    });
+    sec.hidden = false;
   })();
 
   /* ---------- Structured data for the work itself ----------

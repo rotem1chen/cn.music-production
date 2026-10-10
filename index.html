@@ -48,7 +48,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=160" />
+  <link rel="stylesheet" href="style.css?v=165" />
   <!-- opening: decide before first paint, so nothing flashes in its final place (opening.js plays it) -->
   <script>
     try {
@@ -137,6 +137,12 @@
     <div class="artist-list" id="artistList"></div>
   </section>
 
+  <!-- NEXT SHOOTS — upcoming shows (shows.js); hides itself when there are none -->
+  <section class="panel shows" id="shows" hidden>
+    <span class="panel-label">[ NEXT SHOOTS ]</span>
+    <div class="show-list" id="showList"></div>
+  </section>
+
   <!-- ABOUT / CONTACT -->
   <section class="panel about" id="about">
     <span class="panel-label">[ ABOUT ]</span>
@@ -189,14 +195,15 @@
   <!-- cursor ring (follows the mouse) -->
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="clips.js?v=111"></script>
-  <script src="photos.js?v=143"></script>
+  <script src="clips.js?v=165"></script>
+  <script src="photos.js?v=165"></script>
   <script src="artists.js?v=111"></script>
-  <script src="plight-fx.js?v=142"></script>
+  <script src="shows.js?v=165"></script>
+  <script src="plight-fx.js?v=165"></script>
   <script src="storyboards.js?v=151"></script>
   <script src="scrub.js?v=153"></script>
-  <script src="app.js?v=164"></script>
-  <script src="fx.js?v=141"></script>
+  <script src="app.js?v=165"></script>
+  <script src="fx.js?v=165"></script>
   <script src="opening.js?v=136"></script>
 </body>
 </html>

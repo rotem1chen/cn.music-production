@@ -50,7 +50,6 @@
     step: (dir) => { pShot += dir; showPhoto(); },
     count: () => shots.length,
     index: () => pShot,                                 // stops at the first / last photo (rubber band), no wrap
-    rawFor: () => (CON.raw ? (CON.dir || "") + "raw/" + shots[pShot] : null),   // before / after (photos.js `raw: true`)
     sourceEl: () => shotEls[pShot],
     onClosed: () => { plightImg.src = ""; document.body.style.overflow = ""; },
   });

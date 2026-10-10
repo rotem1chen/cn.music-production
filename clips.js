@@ -29,6 +29,11 @@ const SITE = {
    ratio:    OPTIONAL shape, e.g. "1/1" for a square social post, "9/16" for a
              vertical one. Leave it out for normal 16:9 films. The tile keeps the
              same height as the others and just gets narrower — no black bars.
+   grade:    OPTIONAL before / after your colour grade. A list of still pairs:
+             grade: [{ before: "photos/grade/drek/1-raw.jpg", after: "photos/grade/drek/1-graded.jpg" }]
+             The open film then gets a RAW / GRADE button that lays a drag-to-compare split over it.
+             Same frame, same size, two exports (DaVinci: Gallery → grab still with the grade and
+             one with it bypassed → Export, ~1920px JPG). Several pairs → dots to switch.
    ============================================================ */
 
 const CLIPS = [

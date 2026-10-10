@@ -1551,20 +1551,42 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
 .cb-meta { font-family: var(--ui); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: rgba(244,244,242,.55); }
 @media (prefers-reduced-motion: reduce) { .clip-back, .clip.credits .clip-back { transform: none; transition: opacity .2s; } }
 
-/* ---------- Before / after in the photo lightbox (plight-fx.js; photos.js `raw: true`) ---------- */
-.p-split { position: absolute; inset: 0; z-index: 2; --sx: 50%; pointer-events: none; border-radius: inherit; overflow: hidden; }
-.p-split[hidden] { display: none; }
-.p-raw { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; clip-path: inset(0 calc(100% - var(--sx)) 0 0); }
-.p-split-line { position: absolute; top: 0; bottom: 0; left: var(--sx); width: 2px; margin-left: -1px; background: var(--accent);
-  box-shadow: 0 0 10px rgba(255,212,0,.8); pointer-events: auto; touch-action: none; cursor: ew-resize; }
-.p-split-line::before { content: ""; position: absolute; inset: 0 -22px; }          /* a wide, easy hit area */
-.p-split-line i { position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+/* ---------- Before / after the grade, over an open film (app.js openGrade; clips.js `grade`) ---------- */
+.g-split { position: absolute; inset: 0; z-index: 6; --sx: 50%; border-radius: inherit; overflow: hidden; background: #000;
+  touch-action: none; cursor: ew-resize; animation: gIn .35s var(--ease) both; }
+.g-split[hidden] { display: none; }
+@keyframes gIn { from { opacity: 0; } to { opacity: 1; } }
+.g-split img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; }
+.g-before { clip-path: inset(0 calc(100% - var(--sx)) 0 0); }
+.g-line { position: absolute; top: 0; bottom: 0; left: var(--sx); width: 2px; margin-left: -1px; background: var(--accent);
+  box-shadow: 0 0 10px rgba(255,212,0,.8); pointer-events: none; }
+.g-line i { position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
   display: grid; place-items: center; font-style: normal; font-size: 18px; color: #0a0a08;
-  background: radial-gradient(120% 140% at 30% 0%, #fff4a6 0%, #ffd400 45%, #e0b100 100%); box-shadow: 0 6px 20px rgba(0,0,0,.5); }
-.p-split.dragging .p-split-line i { scale: 1.1; }
-.p-lab { position: absolute; top: 14px; padding: 5px 10px; border-radius: 999px; font-family: var(--ui); font-size: 10px; font-weight: 600;
-  letter-spacing: .2em; text-transform: uppercase; color: var(--text); background: rgba(10,10,12,.7); }
-.p-lab.l { left: 14px; } .p-lab.r { right: 14px; }
+  background: radial-gradient(120% 140% at 30% 0%, #fff4a6 0%, #ffd400 45%, #e0b100 100%); box-shadow: 0 6px 20px rgba(0,0,0,.5);
+  transition: scale .2s var(--ease); }
+.g-split.dragging .g-line i { scale: 1.12; }
+.g-lab { position: absolute; top: 14px; padding: 5px 10px; border-radius: 999px; font-family: var(--ui); font-size: 10px; font-weight: 600;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--text); background: rgba(10,10,12,.7); pointer-events: none; }
+.g-lab.l { left: 14px; } .g-lab.r { right: 54px; }
+.g-close { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 0; border-radius: 50%; padding: 0;
+  display: grid; place-items: center; font-size: 13px; color: var(--text); background: rgba(10,10,12,.7); cursor: pointer; }
+.g-close:hover { color: var(--accent); }
+.g-pairs { position: absolute; left: 50%; bottom: 12px; translate: -50% 0; display: flex; gap: 8px; }
+.g-pairs button { width: 9px; height: 9px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.45); cursor: pointer; }
+.g-pairs button.on { background: var(--accent); box-shadow: 0 0 8px rgba(255,212,0,.7); }
+/* the RAW / GRADE button: bottom-right of the screen while a film is open (only films with grade stills) */
+.g-btn { position: absolute; right: max(var(--pad), env(safe-area-inset-right, 0px)); bottom: max(22px, env(safe-area-inset-bottom, 0px));
+  z-index: 104; display: inline-flex; align-items: center; gap: 9px; padding: 10px 16px; border: 0; border-radius: 999px;
+  font-family: var(--ui); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--text); cursor: pointer;
+  background: rgba(16,16,18,.72); box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 0 0 1px rgba(255,255,255,.1), 0 10px 30px rgba(0,0,0,.45);
+  opacity: 0; pointer-events: none; transition: opacity .35s ease, color .2s; }
+.g-btn[hidden] { display: none; }
+.viewer.ready .g-btn { opacity: 1; pointer-events: auto; transition-delay: .2s, 0s; }
+.viewer.ready.vfx .g-btn { opacity: var(--va, 1); transition: color .2s; }
+.viewer.grading .g-btn, .g-btn:hover { color: var(--accent); }
+.g-half { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid currentColor;
+  background: linear-gradient(90deg, transparent 50%, currentColor 50%); }
+@media (hover: none), (pointer: coarse) { .g-btn { background: rgba(16,16,18,.9); } }
 .rp-s { text-align: center; max-width: 240px; line-height: 1.6; }
 /* small phone tiles: the credits card keeps the essentials only */
 @media (max-width: 760px) {
@@ -1636,3 +1658,21 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
 /* phones: the one YouTube player kept for the whole visit (app.js mountKept) */
 .viewer-media .yt-keep { position: absolute; inset: 0; }
 .viewer-media .yt-keep[hidden] { display: none; }
+
+/* ---------- Next shoots (shows.js, app.js nextShoots) — the ARTISTS rows' rhythm, a big date in front ---------- */
+.shows[hidden] { display: none; }
+.show-list { border-top: 1px solid var(--line); }
+.show-row { display: flex; align-items: center; gap: clamp(14px, 3vw, 34px); flex-wrap: wrap;
+  padding: 20px 4px; border-bottom: 1px solid var(--line); transition: padding-left .3s var(--ease); }
+.show-row:hover { padding-left: 14px; }
+.sh-date { display: flex; flex-direction: column; align-items: center; min-width: 56px; line-height: 1; font-family: var(--ui); }
+.sh-date b { font-size: clamp(26px, 4vw, 40px); font-weight: 700; letter-spacing: -.02em; }
+.sh-date i { margin-top: 6px; font-style: normal; font-size: 10px; letter-spacing: .24em; color: var(--muted); }
+.show-row.next .sh-date b { color: var(--accent); }
+.sh-main { display: flex; flex-direction: column; gap: 6px; margin-right: auto; min-width: 0; }
+.sh-artist { font-size: clamp(17px, 2.6vw, 28px); font-weight: 700; transition: color .25s; }
+.show-row:hover .sh-artist { color: var(--accent); }
+.sh-where { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.sh-tag { font-family: var(--ui); font-size: 10px; font-weight: 600; letter-spacing: .22em; color: #0a0a08; padding: 6px 10px;
+  border-radius: 999px; background: radial-gradient(120% 140% at 30% 0%, #fff4a6 0%, #ffd400 45%, #e0b100 100%);
+  box-shadow: 0 0 18px rgba(255,212,0,.35); }
