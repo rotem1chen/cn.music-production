@@ -513,10 +513,22 @@
      film is actually playing; until then the poster shows a liquid loading state (.waiting). */
   let play = { token: 0 };
   const soundBtn = document.getElementById("vSound");
+  /* Phones (iPhone above all) only let a video start with sound if the play comes straight from a tap
+     ON that player; ours starts ~2.5s after the tap that opened it, so it has to start muted, and the
+     "Tap for sound" pill is that tap. A brand-new YouTube player is muted again — so phones keep ONE
+     player for the whole visit and only switch the video in it: once sound has been tapped on, every
+     film after that (swiped to, or opened again) plays with sound. If the phone refuses anyway, it
+     drops back to muted and the pill. The kept player's frame never leaves the page (moving or
+     removing an iframe reloads it), it is just hidden while another kind of film or nothing is shown. */
+  let ytSound = false, ytKeep = null, ytCur = null;
+  const ytWrap = document.createElement("div");
+  ytWrap.className = "yt-keep"; ytWrap.hidden = true;
+  function clearMedia() { [...mediaBox.children].forEach((ch) => { if (ch !== ytWrap) ch.remove(); }); }
   if (soundBtn) soundBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     try { ytPlayer.unMute(); ytPlayer.setVolume(100); ytPlayer.playVideo(); } catch (_) {}
     soundBtn.hidden = true;
+    ytSound = true;
   });
   function settle(t) {                                  // called whenever "grown" or "ready" changes
     if (t !== play.token || !play.grown || !play.ready || play.revealed) return;
@@ -531,9 +543,11 @@
   function mountPlayer(c, t) {
     if (c.v.type === "youtube") {
       if (!ytApiReady) { pendingMount = () => mountPlayer(c, t); loadYTApi(); return; }
-      mediaBox.innerHTML = '<div id="ytHost"></div>';
-      let primed = false;
       const from = play.seek || 0;                     // scrubbed to a point just before opening (scrub.js)
+      if (isTouch) { mountKept(c, t, from); return; }
+      clearMedia();
+      mediaBox.insertAdjacentHTML("beforeend", '<div id="ytHost"></div>');
+      let primed = false;
       ytPlayer = new YT.Player("ytHost", {
         videoId: c.v.id, width: "100%", height: "100%",
         playerVars: Object.assign({ autoplay: 1, mute: 1, controls: 1, modestbranding: 1, rel: 0, playsinline: 1, fs: 1, iv_load_policy: 3 },
@@ -561,16 +575,72 @@
     } else if (c.v.type === "vimeo") {
       // Vimeo would autoplay with sound while still hidden, so it is mounted when the stage has grown
       play.mountLater = () => {
-        mediaBox.innerHTML = `<iframe src="${c.v.player}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+        clearMedia();
+        mediaBox.insertAdjacentHTML("beforeend", `<iframe src="${c.v.player}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`);
         mediaBox.querySelector("iframe").addEventListener("load", () => setTimeout(() => ready(t), 400), { once: true });
       };
     } else {
-      mediaBox.innerHTML = `<video src="${c.v.player}" controls playsinline preload="auto" muted></video>`;
+      clearMedia();
+      mediaBox.insertAdjacentHTML("beforeend", `<video src="${c.v.player}" controls playsinline preload="auto" muted></video>`);
       const v = mediaBox.querySelector("video");
       v.addEventListener("canplay", () => ready(t), { once: true });
       play.start = () => { v.currentTime = 0; v.muted = false; const pr = v.play(); if (pr && pr.catch) pr.catch(() => { v.muted = true; v.play(); }); };
     }
   }
+  // phones: the one kept YouTube player — made on the first film, then only told to switch videos
+  function mountKept(c, t, from) {
+    clearMedia();
+    ytCur = { t, from, primed: false };
+    ytWrap.hidden = false;
+    if (!ytWrap.isConnected) mediaBox.appendChild(ytWrap);
+    if (ytKeep) {
+      ytPlayer = ytKeep;
+      try {
+        ytKeep.mute();                                 // loads hidden during the opening: silent until it's shown
+        ytKeep.loadVideoById({ videoId: c.v.id, startSeconds: Math.floor(from) });
+      } catch (_) {}
+    } else {
+      ytWrap.innerHTML = '<div id="ytHost"></div>';
+      ytKeep = ytPlayer = new YT.Player("ytHost", {
+        videoId: c.v.id, width: "100%", height: "100%",
+        playerVars: Object.assign({ autoplay: 1, mute: 1, controls: 1, modestbranding: 1, rel: 0, playsinline: 1, fs: 1, iv_load_policy: 3 },
+          from ? { start: Math.floor(from) } : {}),
+        events: {
+          onReady: (e) => { try { e.target.mute(); e.target.playVideo(); } catch (_) {} },
+          onStateChange: (e) => keptState(e.target, e.data),
+        },
+      });
+    }
+    // Low Power Mode refuses even muted autoplay: show YouTube's own play button soon
+    setTimeout(() => { if (ytCur && ytCur.t === t && !ytCur.primed) ready(t); }, 2500);
+  }
+  function keptState(p, state) {
+    const cur = ytCur;
+    if (!cur || state !== YT.PlayerState.PLAYING || cur.primed || cur.t !== play.token) return;
+    cur.primed = true;                                 // it plays: buffered and decoding. Hold it until we show it.
+    if (!play.grown) { try { p.pauseVideo(); } catch (_) {} }
+    play.start = () => {
+      try { p.seekTo(cur.from, true); if (ytSound) { p.unMute(); p.setVolume(100); } p.playVideo(); } catch (_) {}
+      soundBtn.hidden = ytSound;
+      if (!ytSound) return;
+      // sound was allowed before; if the phone refuses it this time the film doesn't play — nudge it once
+      // (a just-switched video can still be settling), and if it still won't: back to muted + the pill
+      const playing = () => { let st = -1; try { st = p.getPlayerState(); } catch (_) {} return st === YT.PlayerState.PLAYING || st === YT.PlayerState.BUFFERING; };
+      const live = () => ytCur === cur && cur.t === play.token;
+      setTimeout(() => {
+        if (!live() || playing()) return;
+        try { p.playVideo(); } catch (_) {}
+        setTimeout(() => {
+          if (!live() || playing()) return;
+          ytSound = false;
+          try { p.mute(); p.playVideo(); } catch (_) {}
+          soundBtn.hidden = false;
+        }, 900);
+      }, 1400);
+    };
+    ready(cur.t);
+  }
+
   // the stage has grown: show the film if it's ready, otherwise the poster gets the liquid loading state
   function grown(t) {
     if (t !== play.token) return;
@@ -585,8 +655,13 @@
     clearTimeout(play.waitT); clearTimeout(play.safety);
     play = { token: play.token + 1 };                  // anything still loading for this film is ignored
     pendingMount = null;
-    if (ytPlayer && ytPlayer.destroy) { try { ytPlayer.destroy(); } catch (_) {} ytPlayer = null; }
-    mediaBox.innerHTML = "";
+    if (ytPlayer && ytPlayer === ytKeep) {           // phones: keep the player (and its permission for sound), just stop it
+      try { ytKeep.pauseVideo(); } catch (_) {}
+      ytPlayer = null;
+    } else if (ytPlayer && ytPlayer.destroy) { try { ytPlayer.destroy(); } catch (_) {} ytPlayer = null; }
+    ytCur = null;
+    ytWrap.hidden = true;
+    clearMedia();
     viewer.classList.remove("loaded", "waiting");
     if (soundBtn) soundBtn.hidden = true;
   }
@@ -822,7 +897,7 @@
       const u = /url\(["']?([^"')]+)["']?\)/.exec(stage.style.backgroundImage || "");
       if (u && window.cnSoftBg) window.cnSoftBg(vAmb, u[1]); else vAmb.style.backgroundImage = stage.style.backgroundImage;
     }
-    mediaBox.innerHTML = "";
+    clearMedia();
 
     cursor.classList.remove("show", "big"); cursorShown = false;   // hide the ring over the player
     viewer.hidden = false;

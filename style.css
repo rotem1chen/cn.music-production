@@ -1633,3 +1633,6 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
 /* a turned phone has no room above the film for words: the handle alone */
 @media (orientation: landscape) and (max-height: 500px) { .v-hint { display: none !important; } }
 @media (prefers-reduced-motion: reduce) { .v-hint-ch { animation: none !important; } }
+/* phones: the one YouTube player kept for the whole visit (app.js mountKept) */
+.viewer-media .yt-keep { position: absolute; inset: 0; }
+.viewer-media .yt-keep[hidden] { display: none; }
