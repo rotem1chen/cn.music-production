@@ -65,6 +65,7 @@ a single video can override with its own `ratio: "9 / 16"`. Bump `?v` in that pa
 - Contact email: one tap copies it ("Copied ✓" glass pill at the tap) and opens a Copy / Email glass popover anchored at the tap.
 - Haptics (Android only): target lock on a new film (max one per 150ms), photo flick commit, film swipe commit, email copied.
 - Glass controls in the viewer and lightbox materialise (blur + scale on computers, opacity + scale on phones). `prefers-contrast: more` turns all glass near-solid with a light border (fx.js skips the lens).
+- Phones close a film by **dragging it down** (from the handle or the dark around the film — the YouTube player itself takes touches on the picture); the CLOSE button is hidden there but kept for screen readers/keyboards. A "Swipe down to close" label with a bobbing arrow sits above the handle and becomes a yellow "Release to close" once letting go will close (same test as the release: projected travel > 180px). The film dips once per visit to show it moves. After one drag-close the label stops showing on that phone (`localStorage cnDragClose`). Tapping outside the film still closes.
 - Mobile: films autoplay **muted** (phones only allow muted autoplay) and a yellow "Tap for sound" pill under the video turns the sound on. Films load on click (hidden) so they are buffered by the time the open animation ends; if not, the poster shows a liquid loading state.
 
 ## Smoothness rules (scroll + motion) — keep these when touching app.js / fx.js / opening.js

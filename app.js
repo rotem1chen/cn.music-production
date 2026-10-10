@@ -867,7 +867,7 @@
     stage._timer = setTimeout(() => {
       if (t !== play.token) return;
       phase = "open";
-      viewer.classList.add("ready");                  // swipe / arrows / handle are live from here
+      viewer.classList.add("ready"); filmReady();                  // swipe / arrows / handle are live from here
       showPoster(c);                                   // (warms the neighbours' covers)
       grown(t);
     }, GRID_HOLD + 1250);
@@ -1065,7 +1065,7 @@
       setStage(B.x, B.y, B.w, B.h); box = stageBox;
       V.x.jump(0); V.y.jump(0); V.s.jump(1); vRender();
       phase = "open";
-      viewer.classList.add("ready");
+      viewer.classList.add("ready"); filmReady();
       showPoster(items[film]);
       grown(play.token);
       backToRest();
@@ -1124,10 +1124,39 @@
 
   /* ---------- direct manipulation (anywhere but the film itself: YouTube keeps its own gestures) ---------- */
   let vd = null, vJustDragged = false;
+
+  /* Phones close a film by dragging it down (the CLOSE button is hidden there, kept for screen readers).
+     To make that obvious: a "Swipe down to close" label above the film with an arrow bobbing toward the
+     handle, a one-time dip-and-spring of the film the first time it opens, and while dragging the label
+     turns into a yellow "Release to close" once letting go WILL close it (a light tick on Android).
+     After one drag-close on this phone the label stops showing; the handle stays. */
+  const hint = document.createElement("div");
+  hint.className = "v-hint"; hint.setAttribute("aria-hidden", "true");
+  hint.innerHTML = '<span class="a">Swipe down to close</span><span class="b">Release to close</span><i class="v-hint-ch"></i>';
+  stage.appendChild(hint);
+  const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (_) { return null; } };
+  let dragLearned = store("cnDragClose") === "1", nudged = false;
+  function filmReady() {                             // the film has arrived and can be grabbed
+    if (!isTouch) return;
+    viewer.classList.toggle("hinting", !dragLearned);
+    if (dragLearned || nudged || reducedV || !stage.animate) return;
+    nudged = true;                                    // once per visit: the film dips toward the gesture and springs back
+    setTimeout(() => {
+      if (phase !== "open" || vd || vfxOn()) return;
+      stage.animate([{ translate: "0 0" }, { translate: "0 22px", offset: 0.38 }, { translate: "0 -4px", offset: 0.72 }, { translate: "0 0" }],
+        { duration: 1100, easing: "cubic-bezier(.33,0,.2,1)" });
+    }, 650);
+  }
+  function setWillClose(on) {
+    if (viewer.classList.contains("will-close") === on) return;
+    viewer.classList.toggle("will-close", on);
+    if (on && window.cnHaptic) window.cnHaptic(8);
+  }
   viewer.addEventListener("pointerdown", (e) => {
     if (!V || viewer.hidden || phase === "closing" || phase === "closed" || e.button > 0) return;
     if (e.target.closest("button, a, iframe, video, .v-strip")) return;
     vd = { id: e.pointerId, x0: e.clientX, y0: e.clientY, axis: null, hist: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }] };
+    stage.getAnimations && stage.getAnimations().forEach((an) => { if (an.effect && an.effect.getKeyframes()[1] && "translate" in an.effect.getKeyframes()[1]) an.cancel(); });
   });
   viewer.addEventListener("pointermove", (e) => {
     if (!vd || e.pointerId !== vd.id) return;
@@ -1159,6 +1188,7 @@
       V.s.jump(s);
       V.x.jump(e.clientX - cx - vd.lx * s); V.y.jump(e.clientY - cy - vd.ly * s);
       V.a.jump(Math.min(vd.ba, 1 - Math.min(1, Math.abs(travel) / (H * 0.6))));   // backdrop, glow and beams fade with it
+      setWillClose(Math.abs(travel + PF.project(PF.velocity(vd.hist).y)) > 180);   // same test as the release
     }
     vRender(); vKick();
   });
@@ -1180,7 +1210,11 @@
       return;
     }
     const end = V.y.x + PF.project(v.y);
-    if (e.type !== "pointercancel" && Math.abs(end) > 180) { springClose(v); return; }
+    setWillClose(false);
+    if (e.type !== "pointercancel" && Math.abs(end) > 180) {
+      if (isTouch && !dragLearned) { dragLearned = true; store("cnDragClose", "1"); viewer.classList.remove("hinting"); }
+      springClose(v); return;
+    }
     if (phase === "open") {                           // not far enough: back into place, a little bounce from the throw
       V.x.to(0, { damping: 0.8, response: 0.32, velocity: v.x });
       V.y.to(0, { damping: 0.8, response: 0.32, velocity: v.y });

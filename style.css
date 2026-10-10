@@ -1605,3 +1605,31 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
 /* phones: two whole frames, never cropped (the box is the frame's own 16:9; contain guards other shapes) */
 .v-cells.fit i b, .v-cells.fit.on i.in b { background-size: contain; background-position: center !important; transform: none; }
 .v-cells.fit i::after { background: rgba(0,0,0,.12); }
+
+/* ---------- Phones: drag down to close (app.js filmReady / setWillClose) ----------
+   No CLOSE button on phones (kept for screen readers and keyboards, just not drawn); the handle carries
+   a label and an arrow that bobs toward it, and the label turns into a yellow "Release to close" once
+   letting go will close. Tapping the dark around the film still closes it too. */
+.v-hint { display: none; }
+@media (hover: none), (pointer: coarse) {
+  .viewer-close { position: fixed !important; width: 1px; height: 1px; padding: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; opacity: 0 !important; }
+  .v-hint { display: flex; position: absolute; left: 50%; bottom: calc(100% + 34px); translate: -50% 0; z-index: 5;
+    flex-direction: column; align-items: center; gap: 7px; pointer-events: none; white-space: nowrap;
+    font-family: var(--ui); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.78);
+    text-shadow: 0 1px 10px rgba(0,0,0,.8); opacity: 0; transition: opacity .35s ease, color .2s ease; }
+  .viewer.ready.hinting .v-hint, .viewer.ready.will-close .v-hint { opacity: 1; transition-delay: .25s, 0s; }
+  .viewer.ready.vfx.hinting .v-hint { opacity: 1; }
+  .v-hint .b { display: none; }
+  .viewer.will-close .v-hint .a { display: none; }
+  .viewer.will-close .v-hint .b { display: inline; }
+  .viewer.will-close .v-hint { color: var(--accent); transition-delay: 0s; }
+  .v-hint-ch { width: 9px; height: 9px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    rotate: 45deg; margin-top: -3px; }
+  .viewer.ready.hinting .v-hint-ch { animation: hintBob 1.5s cubic-bezier(.45,0,.55,1) .6s 4; }
+  .viewer.will-close .v-handle { background: var(--accent); box-shadow: 0 0 14px rgba(255,212,0,.7); }
+}
+@keyframes hintBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 6px; } }
+/* a turned phone has no room above the film for words: the handle alone */
+@media (orientation: landscape) and (max-height: 500px) { .v-hint { display: none !important; } }
+@media (prefers-reduced-motion: reduce) { .v-hint-ch { animation: none !important; } }
