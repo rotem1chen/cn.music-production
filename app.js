@@ -629,6 +629,9 @@
       el.style.left = x + "px"; el.style.top = y + "px"; el.style.width = w + "px"; el.style.height = h + "px";
       el.style.setProperty("--dx", col - 1); el.style.setProperty("--dy", row - 1);   // pushed straight away from the film
       el.firstChild.style.backgroundImage = `url("${sb.cells[n]}")`;
+      // crop toward the subject (a tall phone box shows only a slice of a wide frame)
+      const f = sb.focus && sb.focus[n];
+      el.firstChild.style.backgroundPosition = f ? `${(f[0] * 100).toFixed(1)}% ${(f[1] * 100).toFixed(1)}%` : "";
       // each lands on its beat once the lines have nearly arrived — and never before its still has loaded
       const due = t0 + (reducedMotion ? 400 : 750 + n * 110);
       const im = new Image(); im.src = sb.cells[n];
