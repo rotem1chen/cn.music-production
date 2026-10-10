@@ -289,7 +289,6 @@
   let bars = [];
 
   let hoverIdx = -1;
-  let liveEl = null;              // the reel film whose scenes are playing as a living cover
   let activeIdx = -1;
   let viewerOpen = false;
   let animatingScroll = false, scrollRAF = null;
@@ -359,8 +358,6 @@
     // after the viewer closes or the page re-renders) and never more than one per 150ms of scrolling
     if (el !== lockedEl) { lockedEl = el; if (window.cnHaptic) window.cnHaptic(8, 150); }
     document.dispatchEvent(new CustomEvent("cn:active", { detail: { el } }));   // fx.js: ambient light + HUD refresh
-    // the film in the frame comes alive (scrub.js plays its scenes as a flipbook); the last one rests
-    if (window.cnScrub) { if (liveEl && liveEl !== el) window.cnScrub.live(liveEl, false); liveEl = isSub ? null : el; if (liveEl) window.cnScrub.live(el, true); }
   }
 
   function startPreview(el, c) {
@@ -421,29 +418,6 @@
   const layoutJobs = [];                    // re-measure when the page's size changes (images, fonts, paging)
   if (window.ResizeObserver) new ResizeObserver(() => layoutJobs.forEach((f) => f())).observe(document.body);
   onFrame.push(pullFrame); layoutJobs.push(measurePull);   // the reel's pull zone (above)
-  /* Scroll fast and the reel turns into a strip of film: sprocket holes run down both sides of the films,
-     moving with the page, and fade out as you slow down. Speed only — nothing to press. */
-  const sprock = document.createElement("div");
-  sprock.className = "sprockets"; sprock.setAttribute("aria-hidden", "true");
-  sprock.innerHTML = "<i></i><i></i>";
-  document.body.appendChild(sprock);
-  let spY = window.scrollY, spT = performance.now(), spV = 0, spOff = 0;
-  onFrame.push(() => {
-    const y = window.scrollY, t = performance.now();
-    const v = Math.abs(y - spY) / Math.max(1, t - spT);
-    spV = Math.max(v, spV * 0.85); spY = y; spT = t;
-    const inReel = !chrome.classList.contains("hide");
-    const a = reducedMotion || !inReel ? 0 : Math.max(0, Math.min(1, (spV - 0.8) / 1.6));
-    sprock.style.opacity = a.toFixed(3);
-    sprock.style.setProperty("--y", (-(y % 28)).toFixed(1) + "px");
-    if (a > 0 && !spOff) spOff = setInterval(() => {         // let it fade after the scroll stops
-      if (performance.now() - spT < 120) return;           // still scrolling: the frame callback drives it
-      spV *= 0.8;
-      const b = Math.max(0, Math.min(1, (spV - 0.8) / 1.6));
-      sprock.style.opacity = b.toFixed(3);
-      if (b === 0) { clearInterval(spOff); spOff = 0; }
-    }, 50);
-  });
   const after = window.cnScrollFrame = [];  // fx.js (depth, scrollspy) joins this same frame
   let ticking = false;
   window.addEventListener("scroll", () => {
@@ -736,7 +710,6 @@
     // opened straight after scrubbing it: the film starts where the scrub left it
     const seek = window.cnScrub ? window.cnScrub.takeSeek(el) : null;
     if (window.cnScrub) window.cnScrub.reset(el);
-    if (window.cnScrub && liveEl) { window.cnScrub.live(liveEl, false); liveEl = null; }   // the flipbook rests while a film plays
 
     // start over the small clip; lines begin OUT at the screen edges (invisible frame)
     const r = el.getBoundingClientRect();
