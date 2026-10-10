@@ -35,17 +35,20 @@ func stats(_ img: CGImage) -> (lum: Double, std: Double, detail: Double, sig: [I
 for path in CommandLine.arguments.dropFirst() {
   guard let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil),
         let img = CGImageSourceCreateImageAtIndex(src, 0, nil) else { continue }
-  let faces = VNDetectFaceRectanglesRequest()
+  // faces Vision is sure of, each with its capture quality (sharp, open, facing the camera = high)
+  let faces = VNDetectFaceCaptureQualityRequest()
   let people = VNDetectHumanRectanglesRequest()
   people.upperBodyOnly = false
   try? VNImageRequestHandler(cgImage: img, options: [:]).perform([faces, people])
-  let fr = (faces.results ?? []).map { $0.boundingBox }
+  let good = (faces.results ?? []).filter { $0.confidence > 0.6 }
+  let fr = good.map { $0.boundingBox }
+  let faceQ = good.map { Double($0.faceCaptureQuality ?? 0) }.max() ?? 0
   let pr = (people.results ?? []).filter { $0.confidence > 0.5 }.map { $0.boundingBox }
   // the subject: the biggest face, else the biggest person (Vision's y runs bottom-up)
   let best = (fr.max { $0.width * $0.height < $1.width * $1.height }) ?? (pr.max { $0.width * $0.height < $1.width * $1.height })
   let s = stats(img)
   var o: [String: Any] = ["path": path, "lum": s.lum, "std": s.std, "detail": s.detail,
-    "sig": s.sig, "faces": fr.count, "faceArea": fr.map { $0.width * $0.height }.max() ?? 0,
+    "sig": s.sig, "faceQ": faceQ, "faces": fr.count, "faceArea": fr.map { $0.width * $0.height }.max() ?? 0,
     "people": pr.count, "personArea": pr.map { $0.width * $0.height }.max() ?? 0]
   if let b = best { o["fx"] = b.midX; o["fy"] = 1 - b.midY }
   let d = try! JSONSerialization.data(withJSONObject: o)

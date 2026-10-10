@@ -76,8 +76,10 @@ function pickCells(id, src, dur, dir) {
   const files = readdirSync(tmp).filter((f) => f.endsWith(".jpg")).sort().map((f) => join(tmp, f));
   const res = run(scorer(), files).stdout.trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
   const scored = res.map((r, i) => {
-    const subj = r.faceArea > 0.003 ? 1.4 + Math.min(r.faceArea * 25, 1) : r.personArea > 0.04 ? 1 + Math.min(r.personArea, 0.6) : 0;
-    const exposed = r.lum > 0.12 && r.lum < 0.86 && r.std > 0.1;
+    // a clear face is best (bigger and better-shot = better); a person with no clear face only counts when
+    // they fill a good part of the frame — a back in a corner or a shirt in the dark is not a subject
+    const subj = r.faceArea > 0.004 ? 1.4 + Math.min(r.faceArea * 25, 1) + r.faceQ : r.personArea > 0.15 ? 0.8 + Math.min(r.personArea, 0.6) : 0;
+    const exposed = r.lum > 0.16 && r.lum < 0.86 && r.std > 0.1;
     const sharp = Math.min(r.detail / 0.06, 1);
     return { ...r, i, subj, good: subj > 0 && exposed && r.detail > 0.025, score: subj * 3 + sharp * 1.5 + Math.min(r.std * 4, 1) - Math.abs(r.lum - 0.42) };
   });
@@ -90,9 +92,12 @@ function pickCells(id, src, dur, dir) {
   const byScore = (x, y) => y.score - x.score;
   for (let n = 0; n < CELLS; n++) {
     const seg = scored.slice(Math.floor(n * per), Math.floor((n + 1) * per));
-    // best: a good, new-looking shot from this eighth; else one from nearby in the film; only then
+    // best: a clear face, new-looking, from this eighth (or just around it); then a clear person; only then
     // settle for a repeat of a shot already used, and last of all anything in this eighth
-    const best = seg.filter((c) => c.good && fresh(c)).sort(byScore)[0] ||
+    const face = (c) => c.good && c.faceArea > 0.004, close = (c) => Math.abs(c.i - (n + 0.5) * per) <= per * 1.5;
+    const best = seg.filter((c) => face(c) && fresh(c)).sort(byScore)[0] ||
+      scored.filter((c) => face(c) && fresh(c) && close(c)).sort(near(n))[0] ||     // a face from just before/after
+      seg.filter((c) => c.good && fresh(c)).sort(byScore)[0] ||                    // then a clear person here
       scored.filter((c) => c.good && fresh(c)).sort(near(n))[0] ||
       seg.filter((c) => c.good && free(c)).sort(byScore)[0] ||
       scored.filter((c) => c.good && free(c)).sort(near(n))[0] ||
@@ -100,18 +105,19 @@ function pickCells(id, src, dur, dir) {
     picks.push(best);
   }
   picks.sort((x, y) => x.i - y.i);                       // keep story order around the grid
-  const cells = [], focus = [];
+  const cells = [], focus = [], tag = Date.now().toString(36);
   readdirSync(dir).filter((f) => /^G\d+\./.test(f)).forEach((f) => rmSync(join(dir, f)));
   picks.forEach((c, n) => {
     const wp = join(dir, `G${n + 1}.webp`);
     if (run("cwebp", ["-quiet", "-q", "74", "-m", "6", c.path, "-o", wp]).status !== 0) copyFileSync(c.path, wp.replace(/webp$/, "jpg"));
-    cells.push(`${OUT_DIR}/${id}/${existsSync(wp) ? `G${n + 1}.webp` : `G${n + 1}.jpg`}`);
+    // ?v= changes with every pick, so a browser never keeps showing an older still under the same name
+    cells.push(`${OUT_DIR}/${id}/${existsSync(wp) ? `G${n + 1}.webp` : `G${n + 1}.jpg`}?v=${tag}`);
     focus.push([+(c.fx ?? 0.5).toFixed(3), +(c.fy ?? 0.4).toFixed(3)]);
   });
   rmSync(tmp, { recursive: true, force: true });
   const weak = picks.filter((c) => !c.good).length;
   const repeats = picks.filter((c, k) => picks.some((p, j) => j < k && sameShot(p, c))).length;
-  console.log(`  ${id}: grid stills ${picks.map((c) => (c.faceArea > 0.003 ? "F" : c.personArea > 0.04 ? "P" : "·")).join("")}${weak ? ` (${weak} without a clear subject)` : ""}${repeats ? ` (${repeats} similar — the film has few set-ups)` : ""}`);
+  console.log(`  ${id}: grid stills ${picks.map((c) => (c.faceArea > 0.004 ? "F" : c.personArea > 0.15 ? "P" : "·")).join("")}${weak ? ` (${weak} without a clear subject)` : ""}${repeats ? ` (${repeats} similar — the film has few set-ups)` : ""}`);
   return { cells, focus };
 }
 
@@ -120,7 +126,7 @@ for (const id of ids) {
   const have = prev[id] && prev[id].sheets && prev[id].sheets[0] && prev[id].sheets[0].startsWith(OUT_DIR) &&
     prev[id].sheets.every((s) => existsSync(join(ROOT, s)));
   const haveKeys = have && !reCells && prev[id].cells && prev[id].cells.length === CELLS && prev[id].focus &&
-    prev[id].cells.every((s) => existsSync(join(ROOT, s)));
+    prev[id].cells.every((s) => existsSync(join(ROOT, s.split("?")[0])));
   if (have && haveKeys && !force) { out[id] = prev[id]; console.log(`  ${id}: kept`); continue; }
 
   let src = join(CACHE, id + ".mp4");
