@@ -22,4 +22,8 @@ const COVERS_NOTE = {
 const COVERS = [
   { img: "photos/covers/sid-ad-shehakochavim-noflim.jpg", title: "עד שהכוכבים נופלים", artist: "סיד", year: "2026", type: "Album",
     link: "https://open.spotify.com/album/6j3wzFzMugtWHmmp4TY38m" },
+  { img: "photos/covers/sid-september.jpg", title: "ספטמבר", artist: "סיד", year: "2025", type: "Single",
+    link: "https://open.spotify.com/track/6oTEmSkhPT4D9Cy4JXI8fd" },
+  { img: "photos/covers/sid-halev-beritza.jpg", title: "הלב בריצה", artist: "סיד", year: "2025", type: "Single",
+    link: "https://open.spotify.com/track/25NJeHteIMJSUm0WtODW9v" },
 ];
