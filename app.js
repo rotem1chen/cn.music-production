@@ -683,7 +683,6 @@
     } else if (ytPlayer && ytPlayer.destroy) { try { ytPlayer.destroy(); } catch (_) {} ytPlayer = null; }
     ytCur = null;
     ytWrap.hidden = true;
-    if (typeof closeGrade === "function") closeGrade(false);
     clearMedia();
     viewer.classList.remove("loaded", "waiting");
     if (soundBtn) soundBtn.hidden = true;
@@ -862,77 +861,6 @@
   strip.addEventListener("pointerup", stripUp);
   strip.addEventListener("pointercancel", stripUp);
 
-  /* Before / after the grade (clips.js `grade: [{ before, after }]`): RAW / GRADE opens two stills of the
-     film over it — the raw frame on the left, the graded one on the right — split by a yellow line you drag.
-     It sweeps in from the edge to reveal the grade. ✕ / Esc goes back to the film (and plays it again). */
-  const gBtn = document.createElement("button");
-  gBtn.type = "button"; gBtn.className = "g-btn"; gBtn.hidden = true;
-  gBtn.innerHTML = '<span class="g-half" aria-hidden="true"></span>Raw / Grade';
-  viewer.appendChild(gBtn);
-  const gs = document.createElement("div");
-  gs.className = "g-split"; gs.hidden = true;
-  gs.innerHTML = '<img class="g-after" alt="" decoding="async"><img class="g-before" alt="" decoding="async">' +
-    '<span class="g-line"><i aria-hidden="true">\u2194</i></span><b class="g-lab l">Raw</b><b class="g-lab r">Graded</b>' +
-    '<div class="g-pairs"></div><button class="g-close" type="button" aria-label="Back to the film">\u2715</button>';
-  stage.appendChild(gs);
-  const gAfter = gs.querySelector(".g-after"), gBefore = gs.querySelector(".g-before"), gPairs = gs.querySelector(".g-pairs");
-  let gPair = [], gIdx = 0, gRaf = 0, gDrag = null;
-  function setGradeFor(c) {
-    gPair = c && Array.isArray(c.grade) ? c.grade.filter((g) => g && g.before && g.after) : [];
-    gBtn.hidden = !gPair.length;
-    closeGrade(false);
-    gPairs.innerHTML = gPair.length > 1 ? gPair.map((_, i) => `<button type="button" aria-label="Frame ${i + 1}"></button>`).join("") : "";
-    gPair.forEach((g) => { new Image().src = g.after; });   // warm, so the split opens on a ready picture
-  }
-  const gAt = (p) => gs.style.setProperty("--sx", (p * 100).toFixed(2) + "%");
-  function gSweep(from, to, ms) {                  // the line glides across (ease-out), revealing the grade
-    cancelAnimationFrame(gRaf);
-    if (reducedMotion) { gAt(to); return; }
-    const t0 = performance.now();
-    const step = (now) => { const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3); gAt(from + (to - from) * e); if (k < 1) gRaf = requestAnimationFrame(step); };
-    gRaf = requestAnimationFrame(step);
-  }
-  function showPair(i) {
-    gIdx = i;
-    gAfter.src = gPair[i].after; gBefore.src = gPair[i].before;
-    [...gPairs.children].forEach((b, k) => b.classList.toggle("on", k === i));
-    gSweep(1, 0.5, 900);
-  }
-  function openGrade() {
-    if (!gPair.length) return;
-    try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (_) {}
-    const v = mediaBox.querySelector("video"); if (v) v.pause();
-    gs.hidden = false; viewer.classList.add("grading");
-    showPair(gIdx < gPair.length ? gIdx : 0);
-  }
-  function closeGrade(resume) {
-    if (gs.hidden) return;
-    cancelAnimationFrame(gRaf);
-    gs.hidden = true; viewer.classList.remove("grading");
-    if (!resume) return;                             // this tap is what lets a phone play again
-    try { if (ytPlayer && ytPlayer.playVideo) ytPlayer.playVideo(); } catch (_) {}
-    const v = mediaBox.querySelector("video"); if (v) v.play();
-  }
-  gBtn.addEventListener("click", (e) => { e.stopPropagation(); if (gs.hidden) openGrade(); else closeGrade(true); });
-  gs.querySelector(".g-close").addEventListener("click", (e) => { e.stopPropagation(); closeGrade(true); });
-  gPairs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { e.stopPropagation(); showPair([...gPairs.children].indexOf(b)); } });
-  // drag (or tap) anywhere on the stills: the line follows the finger / mouse
-  gs.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("button")) return;
-    e.stopPropagation(); cancelAnimationFrame(gRaf);
-    try { gs.setPointerCapture(e.pointerId); } catch (_) {}
-    gDrag = { id: e.pointerId, r: gs.getBoundingClientRect() };
-    gs.classList.add("dragging");
-    gAt(Math.max(0, Math.min(1, (e.clientX - gDrag.r.left) / gDrag.r.width)));
-  });
-  gs.addEventListener("pointermove", (e) => {
-    if (!gDrag || e.pointerId !== gDrag.id) return;
-    gAt(Math.max(0, Math.min(1, (e.clientX - gDrag.r.left) / gDrag.r.width)));
-  });
-  const gUp = (e) => { if (gDrag && e.pointerId === gDrag.id) { gDrag = null; gs.classList.remove("dragging"); } };
-  gs.addEventListener("pointerup", gUp); gs.addEventListener("pointercancel", gUp);
-  gs.addEventListener("click", (e) => e.stopPropagation());
-
   function showPoster(c) {
     posterFor(c, (bg) => {
       stage.style.backgroundImage = bg;
@@ -942,7 +870,6 @@
     // the neighbours' covers are ready before the swipe
     [film - 1, film + 1].forEach((j) => { const n = items[j]; if (n && (n.thumb || n.v.thumb)) new Image().src = n.thumb || n.v.thumb; });
     buildStrip(c);
-    setGradeFor(c);
   }
   function canFilm(dir) { const j = film + dir; return j >= 0 && j < items.length; }
   function markFilmEnds() {
@@ -1327,7 +1254,7 @@
   }
   viewer.addEventListener("pointerdown", (e) => {
     if (!V || viewer.hidden || phase === "closing" || phase === "closed" || e.button > 0) return;
-    if (e.target.closest("button, a, iframe, video, .v-strip, .g-split")) return;
+    if (e.target.closest("button, a, iframe, video, .v-strip")) return;
     vd = { id: e.pointerId, x0: e.clientX, y0: e.clientY, axis: null, hist: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }] };
     stage.getAnimations && stage.getAnimations().forEach((an) => { if (an.effect && an.effect.getKeyframes()[1] && "translate" in an.effect.getKeyframes()[1]) an.cancel(); });
   });
@@ -1405,7 +1332,7 @@
   viewer.addEventListener("click", (e) => { if (e.target === viewer) closeViewer(); });
   document.addEventListener("keydown", (e) => {
     if (viewer.hidden || phase === "closing") return;
-    if (e.key === "Escape") { if (!gs.hidden) closeGrade(true); else closeViewer(); }
+    if (e.key === "Escape") closeViewer();
     else if (e.key === "ArrowLeft") { e.preventDefault(); goFilm(-1); }
     else if (e.key === "ArrowRight") { e.preventDefault(); goFilm(1); }
   });
@@ -1706,6 +1633,84 @@
         row.appendChild(a);
       }
       list.appendChild(row);
+    });
+    sec.hidden = false;
+  })();
+
+  /* GRADE (grades.js): before / after the colour grade, right after the films. One big frame — raw on
+     the left of the yellow line, graded on the right — and thumbnails to pick another. The line sweeps in
+     the first time the section comes into view; then it follows the mouse (computers) or a sideways drag
+     (phones: the page still scrolls up and down), or the arrow keys. Opacity / clip-path / transform only. */
+  (function gradeSection() {
+    const sec = document.getElementById("grade"), st = document.getElementById("grStage"), thumbs = document.getElementById("grThumbs");
+    const data = ((typeof GRADES !== "undefined" && Array.isArray(GRADES)) ? GRADES : []).filter((g) => g && g.before && g.after);
+    if (!sec || !st || !data.length) return;
+    const after = st.querySelector(".gr-after"), before = st.querySelector(".gr-before"), line = st.querySelector(".gr-line");
+    const film = sec.querySelector(".gr-film"), count = sec.querySelector(".gr-count");
+    const fine = !!(window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches);
+    let idx = 0, p = 0.5, raf = 0, seen = false, drag = null;
+    const set = (v) => { p = Math.max(0, Math.min(1, v)); st.style.setProperty("--sx", (p * 100).toFixed(2) + "%"); line.setAttribute("aria-valuenow", Math.round(p * 100)); };
+    function sweep(from, to, ms) {
+      cancelAnimationFrame(raf);
+      if (reducedMotion) { set(to); return; }
+      const t0 = performance.now();
+      const step = (now) => { const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3); set(from + (to - from) * e); if (k < 1) raf = requestAnimationFrame(step); };
+      raf = requestAnimationFrame(step);
+    }
+    function show(i, animate) {
+      idx = i; const g = data[i];
+      st.classList.add("swap");                       // a quick dip, then the new frame
+      setTimeout(() => {
+        after.src = g.after; before.src = g.before;
+        after.alt = (g.film ? g.film + " — " : "") + "graded"; before.alt = (g.film ? g.film + " — " : "") + "raw";
+        st.classList.remove("swap");
+        if (animate) sweep(1, 0.5, 1000);
+      }, animate === false ? 0 : 160);
+      film.textContent = [g.film, g.artist].filter(Boolean).join(" \u2014 ");
+      count.textContent = data.length > 1 ? String(i + 1).padStart(2, "0") + " / " + String(data.length).padStart(2, "0") : "";
+      [...thumbs.children].forEach((b, k) => { b.classList.toggle("on", k === i); b.setAttribute("aria-pressed", k === i); });
+    }
+    if (data.length > 1) data.forEach((g, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "gr-thumb"; b.setAttribute("aria-label", (g.film || "Frame") + " " + (i + 1));
+      b.style.backgroundImage = `url("${g.after}")`;
+      b.addEventListener("click", () => { if (i !== idx) show(i, true); });
+      thumbs.appendChild(b);
+    });
+    data.forEach((g) => { new Image().src = g.after; new Image().src = g.before; });   // all frames ready to switch to
+    set(1); show(0, false);
+    // the first time it comes into view: the line sweeps in from the right, revealing the grade
+    new IntersectionObserver((es, io) => {
+      if (!es[0].isIntersecting || seen) return;
+      seen = true; io.disconnect(); setTimeout(() => sweep(1, 0.5, 1300), 250);
+    }, { threshold: 0.45 }).observe(st);
+    const at = (e) => { const r = drag ? drag.r : st.getBoundingClientRect(); return (e.clientX - r.left) / r.width; };
+    // computers: the line just follows the mouse across the frame
+    if (fine) st.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" && !drag) { cancelAnimationFrame(raf); set(at(e)); } });
+    // phones (and click-drag): a sideways drag moves the line; up / down is still the page's scroll
+    st.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && fine) return;
+      drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, on: false, r: st.getBoundingClientRect() };
+    });
+    st.addEventListener("pointermove", (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.on) {
+        const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { drag = null; return; }   // scrolling the page
+        if (Math.abs(dx) < 6) return;
+        drag.on = true; cancelAnimationFrame(raf); st.classList.add("dragging");
+        try { st.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      set(at(e));
+    });
+    const up = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.on && e.type === "pointerup") { cancelAnimationFrame(raf); sweep(p, at(e), 380); }   // a tap: glide there
+      drag = null; st.classList.remove("dragging");
+    };
+    st.addEventListener("pointerup", up); st.addEventListener("pointercancel", up);
+    line.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); cancelAnimationFrame(raf); set(p + (e.key === "ArrowRight" ? 0.05 : -0.05)); }
     });
     sec.hidden = false;
   })();

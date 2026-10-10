@@ -313,7 +313,7 @@
 
   /* ---------- reveals ---------- */
   const rvSel = ".subpages .clip, .still-card, .pool-head > :not(.logo-svg), .lm-group > .panel-label, .lm-card, .lm-go, .pool .vid, .pool .shot, .file, .pool-folder-title, .rv-note, " +
-    "#showGrid .shot, .show .panel-label, .show-title, .stills .panel-label, .concert-head, .concert .shot, .artists .panel-label, .artist, .shows .panel-label, .show-row, .about .panel-label, .panel-text, .contact .panel-label, .contact-email, .socials, .colophon, .subpages-wrap .panel-label";
+    "#showGrid .shot, .show .panel-label, .show-title, .stills .panel-label, .concert-head, .concert .shot, .artists .panel-label, .artist, .shows .panel-label, .show-row, .grade .panel-label, .gr-stage, .gr-thumbs, .about .panel-label, .panel-text, .contact .panel-label, .contact-email, .socials, .colophon, .subpages-wrap .panel-label";
   const rvIO = new IntersectionObserver((ents) => {
     ents.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); rvIO.unobserve(en.target); } });
   }, { rootMargin: "0px 0px -8% 0px" });

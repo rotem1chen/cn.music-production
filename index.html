@@ -48,7 +48,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&family=Oswald:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=165" />
+  <link rel="stylesheet" href="style.css?v=166" />
   <!-- opening: decide before first paint, so nothing flashes in its final place (opening.js plays it) -->
   <script>
     try {
@@ -115,6 +115,19 @@
   <section class="subpages-wrap" id="subpagesWrap">
     <span class="panel-label">[ MORE ]</span>
     <div class="subpages" id="subpages"></div>
+  </section>
+
+  <!-- GRADE — before / after the colour grade (grades.js); hides itself when there are no frames -->
+  <section class="panel grade" id="grade" hidden>
+    <span class="panel-label">[ GRADE ]</span>
+    <div class="gr-stage" id="grStage">
+      <img class="gr-after" alt="" decoding="async">
+      <img class="gr-before" alt="" decoding="async">
+      <span class="gr-line" role="slider" tabindex="0" aria-label="Before and after the grade" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><i aria-hidden="true">↔</i></span>
+      <b class="gr-lab l">Raw</b><b class="gr-lab r">Graded</b>
+    </div>
+    <div class="gr-meta"><span class="gr-film"></span><span class="gr-count"></span></div>
+    <div class="gr-thumbs" id="grThumbs"></div>
   </section>
 
   <!-- BOTTOM HUD READOUT (fixed) -->
@@ -195,15 +208,16 @@
   <!-- cursor ring (follows the mouse) -->
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="clips.js?v=165"></script>
+  <script src="clips.js?v=166"></script>
   <script src="photos.js?v=165"></script>
   <script src="artists.js?v=111"></script>
   <script src="shows.js?v=165"></script>
-  <script src="plight-fx.js?v=165"></script>
+  <script src="grades.js?v=166"></script>
+  <script src="plight-fx.js?v=166"></script>
   <script src="storyboards.js?v=151"></script>
   <script src="scrub.js?v=153"></script>
-  <script src="app.js?v=165"></script>
-  <script src="fx.js?v=165"></script>
+  <script src="app.js?v=166"></script>
+  <script src="fx.js?v=166"></script>
   <script src="opening.js?v=136"></script>
 </body>
 </html>
