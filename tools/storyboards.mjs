@@ -1,29 +1,31 @@
 #!/usr/bin/env node
-/* CN PROD — fetch YouTube "storyboard" sprite sheets for the film scrub.
+/* CN PROD — make the film-scrub frames from the films themselves.
    Run from the repo root:   node tools/storyboards.mjs           (only films that are new)
-                             node tools/storyboards.mjs --force   (re-fetch every film)
+                             node tools/storyboards.mjs --force   (re-make every film)
 
-   For each YouTube film in clips.js (and social.js / restaurant.js) it asks yt-dlp for the video's
-   metadata ONCE, picks the ~160px storyboard level (YouTube's L2, "sb1"), downloads that level's
-   sprite sheets into photos/storyboards/<id>/ and writes storyboards.js:
+   For each YouTube film in clips.js (and social.js / restaurant.js) it takes 48 frames spread evenly
+   across the film, 360px tall (640x360 for a 16:9 film), and packs them 4x3 into JPEG sheets in
+   photos/scrub/<id>/, then writes storyboards.js:
 
      window.STORYBOARDS = { <id>: { sheets:[...], cols, rows, w, h, count, interval, duration } }
 
-   The sheets are kept in the repo because their URLs carry a per-video signature (`sigh`) that
-   YouTube can rotate; the local copies never expire. Films already in storyboards.js with their
-   files on disk are skipped, so a re-run only talks to YouTube about new films.
-   Be polite: one yt-dlp call per film, one request per sheet, no retries. Google rate-limits an IP
-   that hammers it (see CLAUDE.md). */
+   (YouTube's own storyboards are only 160px wide — too soft to see anything in a tile.)
+
+   The source video comes from ~/.cache/cn-scrub/<id>.mp4. If it isn't there, yt-dlp downloads it ONCE
+   (video only, up to 720p) — be polite: one download per film, no retries. Google rate-limits an IP
+   that hammers it (see CLAUDE.md). Needs ffmpeg + yt-dlp (Homebrew). */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
+import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_JS = join(ROOT, "storyboards.js");
-const OUT_DIR = "photos/storyboards";
-const WANT_W = 160;                      // frame width to aim for: sharp enough for a tile, light to load
+const OUT_DIR = "photos/scrub";
+const CACHE = join(homedir(), ".cache", "cn-scrub");
+const COUNT = 48, COLS = 4, ROWS = 3, H = 360, QUALITY = 4;   // JPEG q:v (2 best … 31 worst)
 const force = process.argv.includes("--force");
 
 // --- the films: evaluate the config files the same way the browser does
@@ -39,67 +41,57 @@ const ids = [...new Set(urls.map((u) => {
   return m && m[1];
 }).filter(Boolean))];
 
-// --- what we already have
-let have = {};
+// --- what's already made
+const prev = {};
 if (existsSync(OUT_JS)) {
-  const c = vm.createContext({ window: {} });
-  try { vm.runInContext(readFileSync(OUT_JS, "utf8"), c); have = c.window.STORYBOARDS || {}; } catch (_) {}
+  const c2 = vm.createContext({ window: {} });
+  try { vm.runInContext(readFileSync(OUT_JS, "utf8"), c2); Object.assign(prev, c2.window.STORYBOARDS || {}); } catch (_) {}
 }
-const complete = (e) => e && Array.isArray(e.sheets) && e.sheets.length && e.sheets.every((s) => existsSync(join(ROOT, s)));
-
+const run = (cmd, args) => spawnSync(cmd, args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
 const out = {};
-let total = 0;
+mkdirSync(CACHE, { recursive: true });
+
 for (const id of ids) {
-  if (!force && complete(have[id])) { out[id] = have[id]; console.log(`= ${id}  (kept, ${have[id].sheets.length} sheets)`); continue; }
-  const r = spawnSync("yt-dlp", ["-j", "--skip-download", "--no-warnings", "--no-playlist", `https://www.youtube.com/watch?v=${id}`],
-    { encoding: "utf8", maxBuffer: 64 << 20 });
-  if (r.status !== 0 || !r.stdout) {
-    console.warn(`! ${id}  yt-dlp failed: ${(r.stderr || "").trim().split("\n").pop()}`);
-    if (complete(have[id])) out[id] = have[id];          // keep the old copy rather than losing it
-    continue;
-  }
-  const info = JSON.parse(r.stdout);
-  const boards = (info.formats || []).filter((f) => f.format_note === "storyboard" && Array.isArray(f.fragments) && f.fragments.length && f.width);
-  if (!boards.length) { console.warn(`! ${id}  no storyboards`); continue; }
-  // the level whose frames are closest to WANT_W wide (ties → the bigger one)
-  boards.sort((a, b) => Math.abs(a.width - WANT_W) - Math.abs(b.width - WANT_W) || b.width - a.width);
-  const sb = boards[0];
-  const duration = info.duration || sb.fragments.reduce((s, f) => s + (f.duration || 0), 0);
-  const per = sb.rows * sb.columns;
-  const count = Math.max(1, Math.min(per * sb.fragments.length, Math.round(duration * sb.fps)));
-
   const dir = join(ROOT, OUT_DIR, id);
-  if (existsSync(dir)) for (const f of readdirSync(dir)) rmSync(join(dir, f));
-  mkdirSync(dir, { recursive: true });
-  const sheets = [];
-  let bytes = 0, ok = true;
-  for (let k = 0; k < sb.fragments.length; k++) {
-    const res = await fetch(sb.fragments[k].url);
-    if (!res.ok) { console.warn(`! ${id}  sheet ${k}: HTTP ${res.status}`); ok = false; break; }
-    const type = res.headers.get("content-type") || "";
-    const ext = /webp/.test(type) ? "webp" : /png/.test(type) ? "png" : "jpg";
-    const buf = Buffer.from(await res.arrayBuffer());
-    const rel = `${OUT_DIR}/${id}/M${k}.${ext}`;
-    writeFileSync(join(ROOT, rel), buf);
-    sheets.push(rel); bytes += buf.length;
+  const have = prev[id] && prev[id].sheets && prev[id].sheets[0] && prev[id].sheets[0].startsWith(OUT_DIR) &&
+    prev[id].sheets.every((s) => existsSync(join(ROOT, s)));
+  if (have && !force) { out[id] = prev[id]; console.log(`  ${id}: kept`); continue; }
+
+  let src = join(CACHE, id + ".mp4");
+  if (!existsSync(src)) {
+    console.log(`  ${id}: downloading the film once (video only, ≤720p)…`);
+    const d = run("yt-dlp", ["-q", "--no-warnings", "-f", "bv*[height<=720][ext=mp4]/bv*[height<=720]", "-o", src, "--", id]);
+    if (d.status !== 0 || !existsSync(src)) { console.log(`  ${id}: not available (${(d.stderr || "").trim().split("\n").pop()}) — skipped`); continue; }
   }
-  if (!ok) { if (complete(have[id])) out[id] = have[id]; continue; }
-  total += bytes;
-  out[id] = { sheets, cols: sb.columns, rows: sb.rows, w: sb.width, h: sb.height, count,
-              interval: +(duration / count).toFixed(4), duration: +(+duration).toFixed(2) };
-  console.log(`+ ${id}  ${sb.format_id} ${sb.width}x${sb.height}, ${sb.columns}x${sb.rows} grid, ${sheets.length} sheets, ${count} frames, ${(bytes / 1024).toFixed(0)} KB`);
+  const dur = parseFloat(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", src]).stdout);
+  if (!(dur > 0)) { console.log(`  ${id}: can't read the video — skipped`); continue; }
+
+  rmSync(dir, { recursive: true, force: true }); mkdirSync(dir, { recursive: true });
+  // 48 frames at the middle of 48 equal slices of the film, 360px tall, packed 4x3 per sheet
+  const step = dur / COUNT;
+  const vf = `fps=1/${step.toFixed(4)}:start_time=${(step / 2).toFixed(4)},scale=-2:${H}:flags=lanczos,tile=${COLS}x${ROWS}`;
+  const r = run("ffmpeg", ["-loglevel", "error", "-y", "-ss", "0", "-i", src, "-an", "-vf", vf,
+    "-frames:v", String(Math.ceil(COUNT / (COLS * ROWS))), "-c:v", "mjpeg", "-q:v", String(QUALITY), join(dir, "M%d.jpg")]);
+  if (r.status !== 0) { console.log(`  ${id}: ffmpeg failed — ${r.stderr.trim().split("\n").pop()}`); continue; }
+  // smaller to send: WebP via cwebp when it's installed (Homebrew `webp`), else the JPEGs stay
+  for (const f of readdirSync(dir).filter((f) => f.endsWith(".jpg"))) {
+    const j = join(dir, f), wp = j.replace(/\.jpg$/, ".webp");
+    if (run("cwebp", ["-quiet", "-q", "74", "-m", "6", j, "-o", wp]).status === 0 && existsSync(wp)) rmSync(j);
+  }
+  const files = readdirSync(dir).filter((f) => /^M\d+\.(webp|jpg)$/.test(f)).sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
+  // ffmpeg numbers from 1; keep it, the order is what matters
+  const probe = run("ffprobe", ["-v", "error", "-select_streams", "v", "-show_entries", "stream=width,height", "-of", "csv=p=0", join(dir, files[0])]).stdout.trim().split(",");
+  const w = Math.round(+probe[0] / COLS), h = Math.round(+probe[1] / ROWS);
+  out[id] = { sheets: files.map((f) => `${OUT_DIR}/${id}/${f}`), cols: COLS, rows: ROWS, w, h, count: COUNT, interval: +step.toFixed(4), duration: Math.round(dur) };
+  console.log(`  ${id}: ${files.length} sheets, ${w}x${h} frames, ${Math.round(dur)}s`);
 }
 
-// drop folders of films that are gone
-const keep = new Set(Object.keys(out));
-if (existsSync(join(ROOT, OUT_DIR))) for (const d of readdirSync(join(ROOT, OUT_DIR))) {
-  if (!keep.has(d) && /^[A-Za-z0-9_-]{11}$/.test(d)) { rmSync(join(ROOT, OUT_DIR, d), { recursive: true }); console.log(`- ${d}  (removed, no longer a film)`); }
-}
-
-const body = Object.entries(out).map(([id, e]) => `  ${JSON.stringify(id)}: ${JSON.stringify(e)},`).join("\n");
-writeFileSync(OUT_JS,
-  "/* GENERATED by `node tools/storyboards.mjs` — do not edit by hand.\n" +
-  "   Film scrub frames: YouTube storyboard sprite sheets, copied into photos/storyboards/<id>/.\n" +
-  "   sheets: cols x rows frames of w x h each, left→right, top→bottom; `count` frames over `duration` s. */\n" +
-  "window.STORYBOARDS = {\n" + body + "\n};\n");
-console.log(`\nstoryboards.js: ${Object.keys(out).length}/${ids.length} films` + (total ? `, ${(total / 1024).toFixed(0)} KB downloaded` : ""));
+const body = Object.entries(out).map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(",\n");
+writeFileSync(OUT_JS, `/* GENERATED by \`node tools/storyboards.mjs\` — do not edit by hand.
+   Film scrub frames: 48 frames per film made from the film itself (360px tall), in photos/scrub/<id>/.
+   sheets: cols x rows frames of w x h each, left→right, top→bottom; \`count\` frames over \`duration\` s. */
+window.STORYBOARDS = {
+${body}
+};
+`);
+console.log(`wrote storyboards.js (${Object.keys(out).length} films)`);

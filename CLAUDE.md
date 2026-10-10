@@ -5,7 +5,7 @@ Live at **https://music.cn-production.com** (GitHub Pages, this repo's `main` br
 
 ## Deploy
 Every change is pushed to `main`; GitHub Pages rebuilds in ~1–2 min. No build step — plain static HTML/CSS/JS.
-After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v144** (style.css, app.js, fx.js, plight-fx.js, show.js, media.js — referenced from index, show, media, link, review, social, restaurant; opening.js is still v136).
+After editing CSS/JS, **bump the `?v=NN` version** on the `<link>`/`<script>` tags in `index.html` (and `show.html`) so browsers refetch. Current version: **v145** (style.css, app.js, fx.js, plight-fx.js, show.js, media.js — referenced from index, show, media, link, review, social, restaurant; opening.js is still v136).
 Every page's viewport meta has `viewport-fit=cover` — keep it on new pages, and place new fixed controls with the `--sat/--sab/--sal/--sar` safe-area tokens (end of style.css).
 
 ## Files
@@ -243,6 +243,7 @@ The supplied simple CN mark is embedded on the export cover and closing footer,
 and shown on the editor cover; it remains present alongside cover photography.
 
 ## Film & photo extras (scrub.js, app.js, plight-fx.js)
+- **Scrub frames** (`storyboards.js`, `photos/scrub/<id>/`): 48 frames per film, 360px tall, made from the film itself by `node tools/storyboards.mjs` (needs ffmpeg, yt-dlp, and `cwebp` from Homebrew `webp`; the source video is cached in `~/.cache/cn-scrub/`, downloaded once per new film). **Adding a film:** add it to clips.js, run the script, bump `?v`. YouTube's own storyboards are only 160px wide — too soft, don't go back to them.
 - **Scene strip:** under an open film, ten scenes in a row (app.js `buildStrip`); tap or drag to jump the film there (YouTube `seekTo`); a yellow playhead follows playback. Films with a strip get a slightly smaller stage so the strip fits (`bigRect`).
 - **Flip through a concert from its cover:** drag (or, on a computer, move the mouse) across a cover card on the home page; 12 shots spread across the set (app.js `flipThrough`). A tap still opens the gallery.
 - **Credits on press-and-hold:** hold a film ~0.45s and it turns over: title, artist, role, format/year. Optional per film in `CLIPS`: `role:` (default "Directed · Shot · Edited — CN PROD") and `year:`.
