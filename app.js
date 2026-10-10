@@ -506,7 +506,10 @@
   // plays (a phone's main thread is busiest right then). Opening a film earlier loads it on the spot.
   (function preloadYT() {
     const idle = () => (window.requestIdleCallback ? requestIdleCallback(loadYTApi, { timeout: 2000 }) : setTimeout(loadYTApi, 300));
-    if (html.classList.contains("opening")) setTimeout(idle, 2600); else idle();
+    // phones need the waiting player ready before the first tap (that tap is what allows the sound),
+    // so there it loads the moment the opening is over rather than when the page next goes idle
+    const go = isTouch ? loadYTApi : idle;
+    if (html.classList.contains("opening")) setTimeout(go, 2600); else go();
   })();
 
   /* The film starts loading the moment you click, hidden and muted, so it buffers during the
@@ -628,10 +631,13 @@
           onStateChange: (e) => keptState(e.target, e.data),
         },
       });
-    } else {                                           // made but not ready yet: start it the moment it is
-      const wait = setInterval(() => {
-        if (!ytCur || ytCur.t !== t) { clearInterval(wait); return; }
-        if (keptReady) { clearInterval(wait); ytPlayer = ytKeep; startKept(c.v.id, from); }
+    } else {                                           // made but not ready yet: start it the moment it is —
+      const wait = setInterval(() => {                 // no longer inside the tap, so muted (a phone allows
+        if (!ytCur || ytCur.t !== t) { clearInterval(wait); return; }   // that) and the "Tap for sound" pill
+        if (keptReady) {
+          clearInterval(wait); ytPlayer = ytKeep;
+          try { ytKeep.mute(); ytKeep.loadVideoById({ videoId: c.v.id, startSeconds: Math.floor(from || 0) }); } catch (_) {}
+        }
       }, 100);
     }
     // Low Power Mode refuses even muted autoplay: show YouTube's own play button soon
