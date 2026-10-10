@@ -1586,16 +1586,6 @@ html.opening .logo-hero, html.opening-run .logo-hero { will-change: transform, o
   .cb-title { font-size: 22px; } .cb-artist { font-size: 15px; } .cb-role { margin-top: 3px; font-size: 9.5px; letter-spacing: .08em; }
 }
 
-/* Teaser — key frames from the film cut on the stage while it opens (app.js startTeaser).
-   Two cover layers, cross-cut: each frame lands fast and pushes in slowly, like a trailer.
-   When the film plays it fades in on top of the last frame, then the teaser clears (no flash of the poster). */
-.v-teaser { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .5s ease; }
-.v-teaser.on { opacity: 1; }
-.v-teaser i { position: absolute; inset: 0; background: #000 center/cover no-repeat; opacity: 0; transition: opacity .1s linear; z-index: 0; }
-.v-teaser i.front { z-index: 1; }
-.v-teaser i.show { opacity: 1; animation: teaserPush .9s cubic-bezier(.2,.7,.3,1) both; }
-@keyframes teaserPush { from { transform: scale(1); } to { transform: scale(1.07); } }
-
 /* Grid frames — the eight boxes of the 3x3 around the opening film (app.js showCells).
    Each lands (fade + settle) on its beat, then eases back slowly; on the grow they are pushed off
    toward the screen edges, away from the film. Opacity + transform only. */

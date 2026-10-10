@@ -492,7 +492,6 @@
     if (play.start) play.start();                       // rewind, sound on, play — then show
     viewer.classList.remove("waiting");
     viewer.classList.add("loaded");
-    stopTeaser(true);
   }
   function ready(t) { if (t === play.token) { play.ready = true; settle(t); } }
 
@@ -609,14 +608,11 @@
   const cellEls = [...cells.children];
   const CELL_ORDER = [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [1, 2], [0, 2], [0, 1]];
   let cellTok = 0;
-  // the box the film sits in while the grid holds: the tile itself, unless that leaves no room around it
-  // (a phone's tile is nearly full width) — then a smaller box, so all eight frames get space
-  function gridRect(r) {
-    const W = window.innerWidth, H = window.innerHeight, M = 64;
-    const gw = Math.min(r.width, W * 0.5), gh = gw * r.height / r.width;
-    const cx = Math.max(gw / 2 + M, Math.min(W - gw / 2 - M, r.left + r.width / 2));
-    const cy = Math.max(gh / 2 + M, Math.min(H - gh / 2 - M, r.top + r.height / 2));
-    return { left: cx - gw / 2, top: cy - gh / 2, right: cx + gw / 2, bottom: cy + gh / 2, width: gw, height: gh };
+  // the grid is an even 3x3 over the whole screen: the film sits in the middle box, the frames fill the
+  // other eight — all the same size
+  function gridRect() {
+    const W = window.innerWidth, H = window.innerHeight;
+    return { left: W / 3, top: H / 3, right: W * 2 / 3, bottom: H * 2 / 3, width: W / 3, height: H / 3 };
   }
   function showCells(c, g) {
     hideCells();
@@ -643,47 +639,6 @@
   }
   function pushCells() { cellTok++; cells.classList.add("out"); }
   function hideCells() { cellTok++; cells.classList.remove("on", "out"); cellEls.forEach((el) => el.classList.remove("in")); }
-
-  /* Teaser: tap a film and, while the yellow grid forms and the film grows, five key moments from the
-     clip cut on the stage like a trailer (each a short push-in, a soft cut between). If the film still
-     isn't playing after the grow, it keeps cutting until it is, then fades into the real film. */
-  const teaser = document.createElement("div");
-  teaser.className = "v-teaser"; teaser.setAttribute("aria-hidden", "true");
-  teaser.innerHTML = "<i></i><i></i>";
-  stage.insertBefore(teaser, stage.firstChild);
-  // five 720p stills per film (storyboards.js `keys`), each shown as a plain cover image
-  const tLayers = teaser.querySelectorAll("i");
-  let tTimer = 0, tFront = 0, tStep = 0, tImgs = [];
-  function startTeaser(c) {
-    stopTeaser();
-    const sb = c && c.v.type === "youtube" && window.STORYBOARDS && window.STORYBOARDS[c.v.id];
-    if (!sb || !sb.keys || !sb.keys.length || reducedMotion) return;
-    tStep = 0;
-    tImgs = sb.keys.map((u) => { const im = new Image(); im.decoding = "async"; im.src = u; return im; });
-    teaser.classList.add("on");
-    const cut = () => {
-      tTimer = setTimeout(cut, 520);
-      const im = tImgs[tStep % tImgs.length];
-      if (!im.complete || !im.naturalWidth) return;  // not here yet: hold the last frame, try on the next beat
-      tStep++;
-      tFront = 1 - tFront;
-      const L = tLayers[tFront], old = tLayers[1 - tFront];
-      L.style.backgroundImage = `url("${im.src}")`;
-      // the new frame lands on top; the old one stays solid underneath until the cut is done (no dip to the poster)
-      old.classList.remove("front"); L.classList.add("front");
-      L.classList.remove("show"); void L.offsetWidth; L.classList.add("show");
-      setTimeout(() => { if (L.classList.contains("front")) old.classList.remove("show"); }, 160);
-    };
-    tTimer = setTimeout(cut, 260);                     // the first cut lands as the yellow grid locks on
-  }
-  let tSoft = 0;
-  function stopTeaser(soft) {
-    clearTimeout(tTimer); tTimer = 0; clearTimeout(tSoft);
-    const clear = () => { teaser.classList.remove("on"); tLayers.forEach((L) => L.classList.remove("show", "front")); };
-    // the film is playing: hold the last frame while the film fades in over it, then clear (no flash of the poster)
-    if (soft) tSoft = setTimeout(clear, 700); else clear();
-  }
-
 
   /* Scene strip under the open film: ten of its scenes (the scrub's storyboard frames) in a glass row.
      Tap or drag along it to jump the film there; a yellow playhead follows the film as it plays. */
@@ -797,7 +752,6 @@
     // opened straight after scrubbing it: the film starts where the scrub left it
     const seek = window.cnScrub ? window.cnScrub.takeSeek(el) : null;
     if (window.cnScrub) window.cnScrub.reset(el);
-    if (seek == null) startTeaser(c);                 // just scrubbed to a moment: go straight there, no trailer
 
     // start over the small clip; lines begin OUT at the screen edges (invisible frame)
     const r = el.getBoundingClientRect();
@@ -823,7 +777,7 @@
 
     // BEAT 1: lines glide inward from the edges to frame the film (the grid forms); the film eases into
     // the centre box, and the eight boxes around it fill with frames from the film
-    const g = gridRect(r);
+    const g = gridRect();
     viewer.classList.add("gridding");
     requestAnimationFrame(() => {
       if (phase !== "grid" || vfxOn()) return;
@@ -862,7 +816,7 @@
   }
 
   function closeViewer() {
-    stopTeaser(); hideCells(); viewer.classList.remove("gridding");
+    hideCells(); viewer.classList.remove("gridding");
     if (viewer.hidden || phase === "closing") return;
     // anything still moving (the opening, a drag, a swipe) reverses from where it is on screen right now
     if (phase !== "open" || vfxOn()) { springClose({ x: 0, y: 0 }); return; }
@@ -978,7 +932,7 @@
     viewer.classList.remove("vfx");
   }
   function hardReset() {                             // drop everything at once (a new film interrupting a close)
-    stopTeaser(); hideCells(); viewer.classList.remove("gridding");
+    hideCells(); viewer.classList.remove("gridding");
     if (vraf) { cancelAnimationFrame(vraf); vraf = null; }
     vEnd = null; pendingFilm = 0; vd = null;
     clearTimeout(closeT);
@@ -1081,7 +1035,6 @@
   function swapFilm() {
     const dir = pendingFilm; pendingFilm = 0;
     film += dir;
-    startTeaser(items[film]);
     const c = items[film];
     dropMedia();
     const B = bigRect(clipAspect(c));
