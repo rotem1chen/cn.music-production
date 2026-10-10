@@ -1669,17 +1669,22 @@
       film.textContent = [g.film, g.artist].filter(Boolean).join(" \u2014 ");
       count.textContent = data.length > 1 ? String(i + 1).padStart(2, "0") + " / " + String(data.length).padStart(2, "0") : "";
       [...thumbs.children].forEach((b, k) => { b.classList.toggle("on", k === i); b.setAttribute("aria-pressed", k === i); });
+      const on = thumbs.children[i];                  // keep the chosen thumbnail in view (the row scrolls sideways on phones)
+      if (on && thumbs.scrollWidth > thumbs.clientWidth) thumbs.scrollTo({ left: on.offsetLeft - (thumbs.clientWidth - on.offsetWidth) / 2, behavior: reducedMotion ? "auto" : "smooth" });
     }
     if (data.length > 1) data.forEach((g, i) => {
       const b = document.createElement("button");
       b.type = "button"; b.className = "gr-thumb"; b.setAttribute("aria-label", (g.film || "Frame") + " " + (i + 1));
-      b.style.backgroundImage = `url("${g.after}")`;
+      b.style.backgroundImage = `url("${g.thumb || g.after}")`;
       b.addEventListener("click", () => { if (i !== idx) show(i, true); });
       thumbs.appendChild(b);
     });
-    data.forEach((g) => { new Image().src = g.after; new Image().src = g.before; });   // all frames ready to switch to
     set(1); show(0, false);
+    // the other frames are big: fetched once the section is near, so they never slow the films above
+    let warmed = false;
+    const warm = () => { if (warmed) return; warmed = true; data.forEach((g) => { new Image().src = g.after; new Image().src = g.before; }); };
     // the first time it comes into view: the line sweeps in from the right, revealing the grade
+    new IntersectionObserver((es, io) => { if (es[0].isIntersecting) { warm(); io.disconnect(); } }, { rootMargin: "600px 0px" }).observe(st);
     new IntersectionObserver((es, io) => {
       if (!es[0].isIntersecting || seen) return;
       seen = true; io.disconnect(); setTimeout(() => sweep(1, 0.5, 1300), 250);
