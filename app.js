@@ -655,7 +655,6 @@
   stage.appendChild(strip);
   const stripRow = strip.firstChild, stripHead = strip.querySelector(".v-strip-head"), stripTime = strip.querySelector(".v-strip-time");
   let stripSB = null, stripPoll = 0, stripDrag = null;
-  const N_SCENES = 10;
   function fmtT(s) { s = Math.max(0, Math.round(s)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
   function buildStrip(c) {
     clearInterval(stripPoll);
@@ -663,8 +662,13 @@
     stripSB = sb && sb.sheets && sb.sheets.length ? sb : null;
     strip.hidden = !stripSB;
     if (!stripSB) return;
-    const W = parseFloat(stage.style.width) || stage.offsetWidth;
-    const tw = W / N_SCENES, sc = tw / sb.w, per = sb.cols * sb.rows;
+    const W = parseFloat(stage.style.width) || stage.offsetWidth, TH = strip.offsetHeight || 46;
+    // ten scenes on a computer; fewer, wider ones on a phone (a 36px box is too thin to read)
+    const N_SCENES = Math.max(5, Math.min(10, Math.round(W / 64)));
+    // each frame COVERS its box and is centred in it: scaling by width alone left a phone's narrow boxes
+    // taller than the frame, so the neighbouring frames of the sprite sheet showed through (2–4 per box)
+    const tw = W / N_SCENES, sc = Math.max(tw / sb.w, TH / sb.h), per = sb.cols * sb.rows;
+    const ox = (tw - sb.w * sc) / 2, oy = (TH - sb.h * sc) / 2;
     stripRow.innerHTML = "";
     for (let k = 0; k < N_SCENES; k++) {
       const idx = Math.min(sb.count - 1, Math.floor((k + 0.5) / N_SCENES * sb.count));
@@ -672,7 +676,7 @@
       const t = document.createElement("span");
       t.style.backgroundImage = `url("${sb.sheets[Math.min(sh, sb.sheets.length - 1)]}")`;
       t.style.backgroundSize = `${(sb.cols * sb.w * sc).toFixed(1)}px ${(sb.rows * sb.h * sc).toFixed(1)}px`;
-      t.style.backgroundPosition = `${(-(j % sb.cols) * sb.w * sc).toFixed(1)}px ${(-Math.floor(j / sb.cols) * sb.h * sc).toFixed(1)}px`;
+      t.style.backgroundPosition = `${(ox - (j % sb.cols) * sb.w * sc).toFixed(1)}px ${(oy - Math.floor(j / sb.cols) * sb.h * sc).toFixed(1)}px`;
       stripRow.appendChild(t);
     }
     setHead(0);
